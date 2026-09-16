@@ -29,7 +29,11 @@ if (schon.status === 0) {
 }
 const profil = process.env.APPLE_KEYCHAIN_PROFILE;
 const zugang = profil
-  ? ["--keychain-profile", profil]
+  // Schlüsselbund-Pfad IMMER mitgeben (Befund 2026-09-16): ohne ihn legt
+  // `store-credentials` das Profil so ab, dass notarytool es später nicht
+  // wiederfindet — «No Keychain password item found».
+  ? ["--keychain-profile", profil,
+     "--keychain", `${process.env.HOME}/Library/Keychains/login.keychain-db`]
   : ["--apple-id", process.env.APPLE_ID ?? "",
      "--team-id", process.env.APPLE_TEAM_ID ?? "",
      "--password", process.env.APPLE_PASSWORD ?? ""];
