@@ -242,6 +242,17 @@ hervorgehen. Erledigtes wandert ins CHANGELOG.
    LocalTranscript; (c) DeFace Privacy: Datenschutz-Adresse in App Store
    Connect auf bias-city.github.io/deface/privacy.html ändern.
 
+14. **App Store, Variante A — Plan liegt vor (2026-09-17).** `docs/appstore-plan.md`:
+   Tauri und React bleiben, Python läuft per PyO3 im Prozess der Hülle,
+   Oberfläche über Tauri-Befehle statt HTTP, Motor-Schicht mit genau
+   einer Mac-Umsetzung (whisper-rs/Metal, SpeakerKit/Core ML, AVFoundation
+   + LAME). Nur der Mac wird gebaut; Windows und Linux sind in §7 als
+   offene Türen festgehalten. Geschätzt 34–43 Personentage bis zur
+   Einreichung. NÄCHSTER SCHRITT: Phase 0, Versuchs-Branch
+   `eingebettet-spike`, 1–2 Tage, drei Kernfragen mit Abbruchkriterium;
+   der lauffähige PyO3-Spike liegt unter `spike/pyo3/`. Grösstes Risiko:
+   kein belegter Store-Freigabefall für Tauri mit eingebettetem CPython.
+
 ## Gemessen, nicht gebaut
 
 - **Diarisierung: welches Modell? (Recherche 2026-09-12/13)** — GEBAUT
