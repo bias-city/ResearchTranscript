@@ -7,7 +7,7 @@ Zwei Betriebsarten:
   aus den mitgelieferten Resources (bin/, lib/, models/, venv/).
 
 Einstellungen (Bibliotheks-Wurzel, Defaults) leben als JSON unter
-~/Library/Application Support/TurnScript/config.json — das BACKEND
+~/Library/Application Support/ResearchTranscript/config.json — das BACKEND
 besitzt die Config (v1: Electron-main.js besaß sie; die Shell soll
 dumm sein).
 """
@@ -20,13 +20,9 @@ import sys
 import time
 from pathlib import Path
 
-APP_NAME = "TurnScript"
-#: Name bis 2.5.0. Einstellungen früherer Installationen liegen unter
-#: diesem Namen und werden beim ersten Start übernommen; die Bibliothek
-#: bleibt, wo sie liegt — umbenannt wird nie etwas beim Nutzer.
-ALTER_NAME = "LocalTranscript"   # NIE pauschal umbenennen — siehe Test
-APP_VERSION = "3.0.0"
-#: DER TurnScript-Port (2026-09-09): 5628 = „LOCT" auf der
+APP_NAME = "ResearchTranscript"
+APP_VERSION = "0.4.0"
+#: DER ResearchTranscript-Port (2026-09-09): 5628 = „LOCT" auf der
 #: Telefontastatur — enrich 36742 = „ENRIC", Zotero-Tradition
 #: (23119 = „ZOT"). Vier Buchstaben, nicht fünf: „LOCTR" wäre 56287
 #: und läge im EPHEMEREN Bereich, den macOS selbst verteilt
@@ -246,33 +242,7 @@ def _config_dir() -> Path:
     env = os.environ.get("LT_CONFIG_DIR")
     if env:
         return Path(env)
-    basis = Path.home() / "Library" / "Application Support"
-    neu = basis / APP_NAME
-    _alt_uebernehmen(basis / ALTER_NAME, neu)
-    return neu
-
-
-def _alt_uebernehmen(alt: Path, neu: Path) -> None:
-    """Einmalig die Einstellungen von LocalTranscript (bis 2.5.0)
-    KOPIEREN, nicht verschieben: die alte App bleibt benutzbar, und mit
-    `config.json` kommen gewählter Bibliotheksordner, Installations-
-    Kennung, E-Mail-Adresse und Zotero-Einwilligung mit.
-
-    NUR `config.json`, nie der ganze Ordner: bei Installationen aus der
-    Electron-Zeit liegen dort Caches, Cookies und Upload-Reste, und die
-    Merkdatei der alten Shell beschreibt einen fremden Prozess. Ob
-    übernommen wird, entscheidet die Datei, nicht der Ordner — ein
-    leerer neuer Ordner blockiert nichts."""
-    quelle, ziel = alt / "config.json", neu / "config.json"
-    if ziel.exists() or not quelle.is_file():
-        return
-    try:
-        neu.mkdir(parents=True, exist_ok=True)
-        tmp = ziel.with_suffix(".uebernahme.tmp")
-        shutil.copyfile(quelle, tmp)
-        tmp.replace(ziel)
-    except OSError:
-        pass
+    return Path.home() / "Library" / "Application Support" / APP_NAME
 
 
 def _config_file() -> Path:
@@ -352,7 +322,7 @@ def read_config() -> dict:
 def identitaet() -> dict:
     """Wer im Journal eines Dossiers steht: App, Installation, Person."""
     cfg = read_config()
-    return {"app": f"turnscript/{APP_VERSION}",
+    return {"app": f"researchtranscript/{APP_VERSION}",
             "install": cfg["install_id"],
             "user": cfg.get("user_email") or None}
 
@@ -372,11 +342,10 @@ def write_config(aenderungen: dict) -> dict:
 
 
 def default_library_root() -> Path:
-    doku = Path.home() / "Documents"
-    alt, neu = doku / ALTER_NAME, doku / APP_NAME
-    # Wer schon mit LocalTranscript gearbeitet hat, bekommt seinen
-    # bestehenden Ordner vorgeschlagen, nicht einen zweiten leeren.
-    return alt if alt.is_dir() and not neu.exists() else neu
+    # Kein Erbe von den Vorgängern (User-Entscheid 2026-09-16): die App
+    # startet frisch und fragt einmal nach dem Ordner; wer seine alte
+    # Bibliothek weiterführen will, wählt sie im Dialog.
+    return Path.home() / "Documents" / APP_NAME
 
 
 def library_root() -> Path | None:

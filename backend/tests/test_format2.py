@@ -8,7 +8,7 @@ import itertools
 import json
 import zipfile
 
-from turnscript import bibliothek, exporte
+from researchtranscript import bibliothek, exporte
 
 
 def _container(eintrag):
@@ -48,11 +48,11 @@ def test_journal_ist_verkettet(client, eintrag):
     from enrich_core.schemas.manifest import RunRecord
     for vor, nach in itertools.pairwise(runs):
         assert nach["prev"] == run_eintrag_hash(RunRecord.model_validate(vor))
-    eigene = [r for r in runs if r["who"]["app"] == "turnscript"]
+    eigene = [r for r in runs if r["who"]["app"] == "researchtranscript"]
     assert eigene and runs[:len(eigene)] == eigene       # Bibliothek zuerst
     for r in eigene:
         assert r["origin"] in ("source", "machine", "llm", "human")
-        assert r["who"]["app"] == "turnscript"
+        assert r["who"]["app"] == "researchtranscript"
         assert r["who"]["install"].startswith("ins-")
         assert r["did"] and r["started"] and r["path"] == "source/transcript.json"
         assert r["layer"] in m["layers"]                      # WO: die Schicht-ID
@@ -122,8 +122,8 @@ def test_schema1_wird_beim_lesen_ergaenzt(client, eintrag, tmp_path):
 def test_whisper_lauf_steht_im_by(client, tmp_path):
     """Whisper-Modell und Sprechertrennung kommen aus dem Journal des
     Transkriptions-Laufs (dort in `who`) in den Kopf der Schicht."""
-    from turnscript import bibliothek
-    from turnscript.format2 import transkript_schicht
+    from researchtranscript import bibliothek
+    from researchtranscript.format2 import transkript_schicht
     d = bibliothek.anlegen("w", [{"start": 0.0, "end": 1.0, "sprecher": None, "text": "x"}],
                            [], {"erzeugt": "transcription", "model": "large-v3-turbo"},
                            by={"tool": "whisper.cpp", "model": "large-v3-turbo",

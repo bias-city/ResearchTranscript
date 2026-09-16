@@ -3,6 +3,27 @@
 All notable changes to LocalTranscript. The GitHub release notes for
 a version are the corresponding section of this file.
 
+## 0.4.0 — 2026-09-16
+
+### Changed
+
+- **TurnScript is now ResearchTranscript, and version counting restarts
+  at 0.4.0.** Two transcription apps carry names close to the previous
+  ones, so the project takes a name that says what it is for. The count
+  starts over in line with the other B/IAS tools, which are also in
+  their zero series. The application, its bundle identifier
+  (`city.bias.researchtranscript`), the repository and the website carry
+  the new name; old addresses redirect. The releases 2.5.0 and 3.0.0
+  remain available and are superseded.
+- **No settings are carried over.** ResearchTranscript starts as a fresh
+  installation and asks once for the library folder, where an existing
+  library can be picked. That keeps the upgrade path simple and removes
+  the one piece of machinery that had gone wrong in 3.0.0.
+- **Your material stays readable.** Transcripts and dossiers written by
+  LocalTranscript or TurnScript are still recognised as the app's own,
+  and REFI-QDA exports keep the same identifiers, so ATLAS.ti sees the
+  same sources as before.
+
 ## 3.0.0 — 2026-09-15
 
 ### Changed

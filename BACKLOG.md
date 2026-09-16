@@ -192,6 +192,19 @@ hervorgehen. Erledigtes wandert ins CHANGELOG.
    Sprachen nachziehen — der Wortlaut steht im CHANGELOG unter
    «Unreleased» und in Punkt 10 der Recherche.
 
+13a. **Zweite Umbenennung: TurnScript → ResearchTranscript (User
+   2026-09-16).** Anlass: auch «Turnscript» ist als iOS-App vergeben.
+   Geprüft vor der Entscheidung: App Store (CH/DE/US/GB), GitHub-Namen,
+   PyPI, npm — alle frei; Domains researchtranscript.com und .ch beim
+   User (die .ch hat noch keine Nameserver). Versionszählung neu ab
+   0.4.0, Historie des Repos bleibt, alte Releases bleiben stehen.
+   KEINE Übernahme alter Einstellungen (User-Entscheid), kein Ordner-
+   Vorschlag: die App startet frisch.
+   OFFEN: Markenrecherche abwarten; Repo umbenennen; Release 0.4.0;
+   Screenshots neu; Website nach bias.city/researchtranscript mit
+   Weiterleitungen von /turnscript und /localtranscript; später
+   researchtranscript.com im Hostpoint-Panel zuweisen.
+
 13. ~~**Umbenennung in TurnScript**~~ — VERÖFFENTLICHT 2026-09-15 als
    3.0.0 (github.com/bias-city/TurnScript/releases/tag/v3.0.0, notarisiert
    und gestapelt). Anlass: «LocalTranscript» kollidiert mit einer

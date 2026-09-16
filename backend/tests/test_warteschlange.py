@@ -9,7 +9,7 @@ from __future__ import annotations
 import threading
 import time
 
-from turnscript import config, jobs
+from researchtranscript import config, jobs
 
 
 def _job(nr: int) -> dict:

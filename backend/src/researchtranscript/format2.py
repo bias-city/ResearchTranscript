@@ -1,5 +1,5 @@
 """Der .enrich-Container nach FORMAT.md, Format 2 — enrich-core schreibt,
-TurnScript ergänzt.
+ResearchTranscript ergänzt.
 
 `exporte._enrich_paket` legt das Dossier über enrich-core an:
 Transkript-Schicht (die QUELLE, `source/transcript.json`), Audio,
@@ -17,7 +17,7 @@ enrich@f871d33, 2026-09-11):
   als schlanke `RunRecord`s (wann, was, wer, wo; FORMAT.md §3.1) VOR
   den Läufen des Textsatzes (das Transkript ist die Quelle aller anderen
   Schichten); die Kette wird über alle Einträge neu geschlossen.
-- `producer` = TurnScript, `title`. Die Sendung selbst baut enrichs
+- `producer` = ResearchTranscript, `title`. Die Sendung selbst baut enrichs
   `Dossier.pack(profile="handover")`: eine Wurzel, unkomprimiert, ohne
   `_history/`, Inventar vollständig, Kette in sich geschlossen.
 
@@ -42,10 +42,13 @@ from enrich_core.schemas.transcript import Segment, Speaker, TranscriptLayer
 from . import bibliothek
 from .config import APP_VERSION, identitaet
 
-TOOL = "turnscript"
-#: Frühere Namen desselben Schreibers: Dossiers, die LocalTranscript bis
+TOOL = "researchtranscript"
+#: Frühere Namen desselben Schreibers: Dossiers, die LocalTranscript (bis
+#: 2.5.0) und TurnScript (3.0.0) geschrieben haben, gelten weiter als
+#: eigene. Die Zeile NIE pauschal umbenennen — siehe test_kompatibilitaet.
+#: Alt:
 #: 2.5.0 geschrieben hat, gelten beim Einlesen weiter als eigene.
-EIGENE_TOOLS = frozenset({TOOL, "localtranscript"})
+EIGENE_TOOLS = frozenset({TOOL, "turnscript", "localtranscript"})
 
 
 # ---------- Schreiben ----------

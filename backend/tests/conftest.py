@@ -11,15 +11,15 @@ from fastapi.testclient import TestClient
 def _eigener_config_ordner(tmp_path, monkeypatch):
     """JEDER Test bekommt einen eigenen Konfigurationsordner, auch ohne
     Client. Befund 2026-09-15: ein Test ohne diese Regel legte
-    ~/Library/Application Support/TurnScript auf dem echten Rechner an."""
+    ~/Library/Application Support/ResearchTranscript auf dem echten Rechner an."""
     monkeypatch.setenv("LT_CONFIG_DIR", str(tmp_path / "cfg-auto"))
 
 
 @pytest.fixture()
 def client(tmp_path, monkeypatch):
     monkeypatch.setenv("LT_CONFIG_DIR", str(tmp_path / "cfg"))
-    from turnscript import config
-    from turnscript.main import app
+    from researchtranscript import config
+    from researchtranscript.main import app
     lib = tmp_path / "bibliothek"
     lib.mkdir()
     config.write_config({"library_root": str(lib)})

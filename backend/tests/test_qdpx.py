@@ -12,7 +12,7 @@ import zipfile
 from pathlib import Path
 from xml.etree import ElementTree as ET
 
-from turnscript import qdpx
+from researchtranscript import qdpx
 
 NS = "{urn:QDA-XML:project:1.0}"
 
@@ -141,5 +141,5 @@ def test_endpunkt_liefert_paket(client, eintrag):
     assert r.headers["content-type"] == "application/zip"
     wurzel, text, _ = _paket(r.content)
     assert wurzel.tag == f"{NS}Project"
-    assert wurzel.get("origin", "").startswith("TurnScript")
+    assert wurzel.get("origin", "").startswith("ResearchTranscript")
     assert "Anna: " in text and "Ben: " in text

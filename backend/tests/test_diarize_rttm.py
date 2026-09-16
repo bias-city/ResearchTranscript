@@ -7,7 +7,7 @@ Abbildung unserer Trennschärfe auf die VBx-Schwelle.
 """
 from __future__ import annotations
 
-from turnscript.diarize import (
+from researchtranscript.diarize import (
     SpeakerSegment,
     _schwelle,
     get_speaker_at_time,

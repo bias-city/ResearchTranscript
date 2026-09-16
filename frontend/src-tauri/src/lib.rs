@@ -1,13 +1,13 @@
-// TurnScript-Shell (enrich-Muster): die Shell ist dumm — sie spawnt
+// ResearchTranscript-Shell (enrich-Muster): die Shell ist dumm — sie spawnt
 // das Python-Backend auf 127.0.0.1:5628, wartet auf /api/health und
 // beendet beim Quit NUR, was sie selbst gestartet hat. Ein fremd
 // gestartetes gesundes Backend (Terminal-Dev) wird benutzt, nie angefasst.
 //
 // MERKDATEI (aus enrich nachgezogen, 2026-09-09): app+pid+port landen in
-// ~/Library/Application Support/TurnScript/app-backend.json. Stürzt
+// ~/Library/Application Support/ResearchTranscript/app-backend.json. Stürzt
 // die App ab, findet der nächste Start sein verwaistes Backend wieder und
 // übernimmt es — vorher prüft die ps-Kommandozeile, ob die PID überhaupt
-// noch zu einem TurnScript-Backend gehört (PIDs werden vom System
+// noch zu einem ResearchTranscript-Backend gehört (PIDs werden vom System
 // WIEDERVERWENDET; ohne die Probe könnte die App einen wildfremden
 // Prozess „übernehmen" und beim Quit beenden).
 //
@@ -25,7 +25,7 @@ use std::time::{Duration, Instant};
 
 use tauri::{Manager, RunEvent};
 
-/// DER TurnScript-Port: 5628 = „LOCT" auf der Telefontastatur
+/// DER ResearchTranscript-Port: 5628 = „LOCT" auf der Telefontastatur
 /// (enrich 36742 = „ENRIC", Zotero-Tradition). Vier Buchstaben, nicht
 /// fünf: „LOCTR" wäre 56287 und läge damit im EPHEMEREN Bereich
 /// (macOS verteilt 49152–65535 selbst) — als fester Dienst-Port
@@ -52,7 +52,7 @@ fn merkdatei() -> PathBuf {
     let home = std::env::var_os("HOME")
         .map(PathBuf::from)
         .unwrap_or_else(|| PathBuf::from("/"));
-    home.join("Library/Application Support/TurnScript/app-backend.json")
+    home.join("Library/Application Support/ResearchTranscript/app-backend.json")
 }
 
 fn merk_schreiben(pid: u32) {
@@ -121,7 +121,7 @@ fn health_antwortet(frist_s: u64) -> bool {
             );
             let mut antwort = String::new();
             let _ = s.read_to_string(&mut antwort);
-            if antwort.contains("TurnScript") && antwort.contains("\"ok\"") {
+            if antwort.contains("ResearchTranscript") && antwort.contains("\"ok\"") {
                 return true;
             }
         }
@@ -162,20 +162,22 @@ fn ist_eigenes_backend(pid: u32) -> bool {
     if !cmd.contains("uvicorn") {
         return false;
     }
-    if cmd.contains("turnscript") {
+    if cmd.contains("researchtranscript") {
         return true;
     }
-    // Vorgänger LocalTranscript (bis 2.5.0): nur ein VERWAISTES Backend
-    // (Elternprozess launchd, PPID 1) gilt als unseres — es würde sonst
-    // alten Code ausliefern. Lebt die alte App noch, gehört das Backend
-    // ihr und bleibt unangetastet (Eiserne Regel: fremde Prozesse tabu).
-    cmd.contains("localtranscript") && ppid == "1"
+    // Vorgänger LocalTranscript (bis 2.5.0) und TurnScript (3.0.0): nur
+    // ein VERWAISTES Backend (Elternprozess launchd, PPID 1) gilt als
+    // unseres — es würde sonst alten Code ausliefern. Lebt die alte App
+    // noch, gehört das Backend ihr und bleibt unangetastet (Eiserne
+    // Regel: fremde Prozesse tabu). Diese Namen NIE pauschal ersetzen.
+    (cmd.contains("localtranscript") || cmd.contains("turnscript")) && ppid == "1"
 }
 
 fn vorgaenger_laeuft(pid: u32) -> bool {
     ps_zeile(pid)
         .map(|(ppid, cmd)| {
-            cmd.contains("uvicorn") && cmd.contains("localtranscript") && ppid != "1"
+            cmd.contains("uvicorn") && ppid != "1"
+                && (cmd.contains("localtranscript") || cmd.contains("turnscript"))
         })
         .unwrap_or(false)
 }
@@ -306,7 +308,7 @@ async fn backend_starten(
             beende_pid(pid);
         } else if vorgaenger_laeuft(pid) {
             return Err(format!(
-                "Die alte App LocalTranscript läuft noch und belegt Port {} — bitte LocalTranscript beenden und TurnScript neu öffnen.",
+                "Eine frühere Fassung (LocalTranscript oder TurnScript) läuft noch und belegt Port {} — bitte beenden und ResearchTranscript neu öffnen.",
                 port()
             ));
         } else {
@@ -320,7 +322,7 @@ async fn backend_starten(
     cmd.args([
         "-m",
         "uvicorn",
-        "turnscript.main:app",
+        "researchtranscript.main:app",
         "--host",
         "127.0.0.1",
         "--port",
@@ -385,10 +387,10 @@ fn menue(handle: &tauri::AppHandle) -> tauri::Result<tauri::menu::Menu<tauri::Wr
     // öffnet: übersetzt, mit klickbaren Quellen (User 2026-09-09).
     let app = Submenu::with_items(
         handle,
-        "TurnScript",
+        "ResearchTranscript",
         true,
         &[
-            &MenuItem::with_id(handle, "ueber", "About TurnScript",
+            &MenuItem::with_id(handle, "ueber", "About ResearchTranscript",
                                true, None::<&str>)?,
             &PredefinedMenuItem::separator(handle)?,
             &PredefinedMenuItem::hide(handle, None)?,
@@ -439,7 +441,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![backend_starten, ordner_oeffnen,
                                                  geoeffnete_dateien])
         .build(tauri::generate_context!())
-        .expect("TurnScript konnte nicht starten");
+        .expect("ResearchTranscript konnte nicht starten");
 
     app.run(|handle, event| {
         // Doppelklick auf ein .enrich (Info.plist): Pfade merken und dem

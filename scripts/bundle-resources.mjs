@@ -123,12 +123,12 @@ if (forceVenv || leer(venv) || !fs.existsSync(path.join(venv, "bin/python3"))) {
                   path.join(venv, "lib/libpython3.13.dylib"));
   // Smoke-Test
   execFileSync(path.join(venv, "bin/python3"),
-    ["-c", "import turnscript.main, enrich_core; print('venv ok')"],
+    ["-c", "import researchtranscript.main, enrich_core; print('venv ok')"],
     { stdio: "inherit" });
 } else {
   // venv steht — aber unser Backend-Code ändert sich laufend:
-  // turnscript + enrich-core IMMER frisch einspielen (billig)
-  console.log("✓ venv vorhanden — aktualisiere turnscript + enrich-core");
+  // researchtranscript + enrich-core IMMER frisch einspielen (billig)
+  console.log("✓ venv vorhanden — aktualisiere researchtranscript + enrich-core");
   execFileSync(path.join(venv, "bin/pip"),
     ["install", "--force-reinstall", "--no-deps", "-q",
      ENRICH_CORE, path.join(ROOT, "backend")], { stdio: "inherit" });
@@ -136,5 +136,5 @@ if (forceVenv || leer(venv) || !fs.existsSync(path.join(venv, "bin/python3"))) {
 
 // 3. Marker
 fs.writeFileSync(path.join(RES, "BUNDLED"),
-                 `TurnScript bundle ${new Date().toISOString()}\n`);
+                 `ResearchTranscript bundle ${new Date().toISOString()}\n`);
 console.log("Resources bereit:", RES);

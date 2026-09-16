@@ -1,12 +1,12 @@
 [package]
-name = "turnscript-app"
-version = "3.0.0"
-description = "TurnScript — Tauri-Shell (spawnt das Python-Backend)"
+name = "researchtranscript-app"
+version = "0.4.0"
+description = "ResearchTranscript — Tauri-Shell (spawnt das Python-Backend)"
 authors = ["Ben Pohl / BIAS.City"]
 edition = "2021"
 
 [lib]
-name = "turnscript_app_lib"
+name = "researchtranscript_app_lib"
 crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]

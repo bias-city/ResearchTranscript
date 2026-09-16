@@ -1,4 +1,4 @@
-# TurnScript — statische Website
+# ResearchTranscript — statische Website
 
 Ein Ordner, drei Sachen darin, sonst nichts. Zum Veröffentlichen den
 Inhalt auf einen beliebigen Webserver legen; zum Anschauen `index.html`
