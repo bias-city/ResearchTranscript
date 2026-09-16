@@ -44,8 +44,8 @@ conversation, special categories of personal data may be involved
    MOV, M4V with H.264/HEVC — from video only the sound track is read,
    the video is never transcoded).
 2. **Processing.** Speech recognition (whisper.cpp, model
-   large-v3-turbo) and speaker separation (silero-vad, pyannote community-1) run inside the application's process on the device's
-   processor or graphics unit. All models are contained in the
+   large-v3-turbo) and speaker separation (silero-vad, pyannote community-1) run as components of the application on the device, on the GPU
+   and the Neural Engine. All models are contained in the
    application package; nothing is downloaded on first launch. A user
    can add whisper.cpp models only by hand, into the library's
    “Modelle” folder — the application never downloads.

@@ -45,8 +45,8 @@ betroffen sein `[ja / nein: …]`.
    gelesen, das Video wird nie umgewandelt).
 2. **Verarbeitung.** Spracherkennung (whisper.cpp, Modell
    large-v3-turbo) und Sprechertrennung (silero-vad, pyannote community-1)
-   laufen im Prozess der Anwendung auf dem Prozessor bzw. der Grafikkarte
-   des Endgeräts. Sämtliche Modelle sind im Programmpaket enthalten; beim
+   laufen als Bestandteile der Anwendung auf dem Endgerät, auf
+   Grafikeinheit und Neural Engine. Sämtliche Modelle sind im Programmpaket enthalten; beim
    ersten Start wird nichts nachgeladen. Eigene whisper.cpp-Modelle
    kann die Anwenderin nur von Hand in den Ordner «Modelle» der
    Bibliothek legen — die Anwendung lädt nie selbst.
