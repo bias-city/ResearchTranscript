@@ -192,18 +192,31 @@ hervorgehen. Erledigtes wandert ins CHANGELOG.
    Sprachen nachziehen — der Wortlaut steht im CHANGELOG unter
    «Unreleased» und in Punkt 10 der Recherche.
 
-13a. **Zweite Umbenennung: TurnScript → ResearchTranscript (User
-   2026-09-16).** Anlass: auch «Turnscript» ist als iOS-App vergeben.
-   Geprüft vor der Entscheidung: App Store (CH/DE/US/GB), GitHub-Namen,
-   PyPI, npm — alle frei; Domains researchtranscript.com und .ch beim
-   User (die .ch hat noch keine Nameserver). Versionszählung neu ab
-   0.4.0, Historie des Repos bleibt, alte Releases bleiben stehen.
-   KEINE Übernahme alter Einstellungen (User-Entscheid), kein Ordner-
-   Vorschlag: die App startet frisch.
-   OFFEN: Markenrecherche abwarten; Repo umbenennen; Release 0.4.0;
-   Screenshots neu; Website nach bias.city/researchtranscript mit
-   Weiterleitungen von /turnscript und /localtranscript; später
-   researchtranscript.com im Hostpoint-Panel zuweisen.
+13a. ~~**Zweite Umbenennung: TurnScript → ResearchTranscript**~~ —
+   VERÖFFENTLICHT 2026-09-16 als 0.4.0
+   (github.com/bias-city/ResearchTranscript/releases/tag/v0.4.0,
+   notarisiert und gestapelt). Anlass: auch «Turnscript» ist als iOS-App
+   vergeben. Vor der Entscheidung geprüft: App Store CH/DE/US/GB, GitHub,
+   PyPI, npm alle frei; Marken über TMview (CH, EUIPO, US, WIPO) ohne
+   Treffer. Bewusst in Kauf genommen: «Research Transcriptions» als
+   ähnlich benannter US-Anbieter, die Zweitbedeutung «Notenauszug» im
+   englischen Hochschulkontext und die schwache Kennzeichnungskraft.
+   Erledigt: Repo umbenannt (alle drei alten Adressen leiten weiter),
+   Bundle `city.bias.researchtranscript`, Paket `researchtranscript`,
+   Zählung neu ab 0.4.0, KEINE Übernahme alter Einstellungen (auf dem Mac
+   des Users geprüft: First-Run, neue Kennung, alte Ordner unberührt),
+   alle 51 Screenshots neu, Website bias.city/researchtranscript,
+   Weiterleitungen von /turnscript und /localtranscript inklusive der
+   umbenannten Blattnamen, Releases 2.5.0 und 3.0.0 als abgelöst
+   gekennzeichnet.
+   Nebenbefund: `notarytool store-credentials` schreibt sein Profil nur
+   mit ausdrücklichem `--keychain`-Pfad; beide Skripte geben ihn jetzt mit.
+   OFFEN: (a) Open-Tools-Eintrag auf bias.city in WordPress; (b) enrich-core
+   README und FORMAT.md nennen LocalTranscript; (c) DeFace Privacy:
+   Datenschutz-Adresse in App Store Connect; (d) researchtranscript.com und
+   .ch im Hostpoint-Panel zuweisen, danach Seite dorthin und von bias.city
+   weiterleiten; (e) app-spezifisches Passwort bei Apple widerrufen, es
+   steht im Sitzungsverlauf.
 
 13. ~~**Umbenennung in TurnScript**~~ — VERÖFFENTLICHT 2026-09-15 als
    3.0.0 (github.com/bias-city/TurnScript/releases/tag/v3.0.0, notarisiert
