@@ -14,10 +14,13 @@ const MIN_SICHT_S = 2;          // engster Zoom: 2 s über die Breite
 
 type Peaks = { t0: number; t1: number; daten: number[] };
 
-/** Radix-Farbtoken (z. B. «indigo») → CSS-Farbe, einmal je Name. */
+/** Radix-Farbtoken (z. B. «indigo») → CSS-Farbe, einmal je Name UND
+    Modus: die Dunkelpalette hat andere Werte (User 2026-09-17: die
+    Welle blieb nach dem Umschalten hell). */
 const farbCache = new Map<string, string>();
 function cssFarbe(name: string, stufe: number): string {
-  const k = `${name}-${stufe}`;
+  const dunkel = document.documentElement.classList.contains("dark") ? "d" : "l";
+  const k = `${dunkel}-${name}-${stufe}`;
   const c = farbCache.get(k);
   if (c) return c;
   const v = getComputedStyle(document.documentElement)
@@ -45,15 +48,17 @@ export default function Wellenform({ eid, segmente, sprecher, zeit, spielt,
   const ladeTimer = useRef<number | undefined>(undefined);
   const zieht = useRef(false);
 
-  // Breite beobachten (responsiv)
+  // Breite beobachten (responsiv) und Hell/Dunkel (html.dark → neu zeichnen)
   useEffect(() => {
     const el = canvas.current;
     if (!el) return;
     const ro = new ResizeObserver(() => setBreite(el.clientWidth));
     ro.observe(el);
     setBreite(el.clientWidth);
-    return () => ro.disconnect();
-  }, []);
+    const mo = new MutationObserver(() => tick());
+    mo.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+    return () => { ro.disconnect(); mo.disconnect(); };
+  }, [tick]);
 
   const klemme = useCallback(() => {
     const s = sicht.current;
