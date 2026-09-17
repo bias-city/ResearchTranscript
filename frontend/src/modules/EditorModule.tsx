@@ -469,6 +469,12 @@ export default function EditorModule({ id, onExit }: {
           }
         }
       };
+      // ⇧Leertaste / ⌥Leertaste: Play/Pause auch mitten im Text (User
+      // 2026-09-17) — e.code, weil ⌥+Leertaste auf macOS ein geschütztes
+      // Leerzeichen in e.key legt
+      if (e.code === "Space" && (e.shiftKey || e.altKey) && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault(); toggle(); return;
+      }
       if (e.altKey && !e.metaKey && !e.ctrlKey) {
         if (e.code === "KeyJ") { e.preventDefault(); a.currentTime -= 5; }
         else if (e.code === "KeyL") {
