@@ -327,5 +327,32 @@ pub fn selbstlauf(app: tauri::AppHandle) {
         }
         match spike_kind_argmax(app.clone()) { Ok(v) => z(format!("5 kind argmax: {v}")), Err(e) => z(format!("5 FEHLER kind: {e}")) }
         z("selbstlauf: Ende — für Messung 4 bitte im Fenster einen Ordner wählen".into());
+        // Dauerlauf (Plan §9 Risiko 3): SPIKE_DAUER_S Sekunden lang Runden à
+        // vier Fake-Jobs, dazwischen Poll alle 500 ms; je Runde Speicher
+        // (max. RSS), Python-Threads und Zahl der Jobs.
+        let dauer: u64 = std::env::var("SPIKE_DAUER_S").ok().and_then(|v| v.parse().ok()).unwrap_or(0);
+        if dauer == 0 { return; }
+        let start = Instant::now();
+        let mut runde = 0u32;
+        while start.elapsed().as_secs() < dauer {
+            runde += 1;
+            let ids = match spike_job_start(app.clone(), 4) { Ok(v) => v, Err(e) => { z(format!("dauer FEHLER start: {e}")); break; } };
+            let mut polls = 0u32;
+            loop {
+                std::thread::sleep(std::time::Duration::from_millis(500));
+                polls += 1;
+                let p = match spike_job_poll(app.clone()) { Ok(v) => v, Err(e) => { z(format!("dauer FEHLER poll: {e}")); break; } };
+                let jobs = p["jobs"].as_array().cloned().unwrap_or_default();
+                if polls == 2 { let _ = spike_job_abbruch(app.clone(), ids[0].clone()); }
+                let fertig = jobs.iter().filter(|j| ids.contains(&j[0].as_str().unwrap_or("").to_string()))
+                    .all(|j| ["completed", "failed", "cancelled"].contains(&j[1].as_str().unwrap_or("")));
+                if fertig || polls > 60 { break; }
+            }
+            let mess = Python::attach(|py| -> PyResult<String> {
+                py.eval(c"(lambda r, t, j: f'rss_max={r.getrusage(r.RUSAGE_SELF).ru_maxrss // 1048576} MB threads={t.active_count()} jobs={len(j.JOBS)}')(__import__('resource'), __import__('threading'), __import__('researchtranscript.jobs').jobs)", None, None)?.extract::<String>()
+            }).unwrap_or_else(|e| format!("FEHLER {e}"));
+            z(format!("dauer Runde {runde} nach {} s, {polls} Polls: {mess}", start.elapsed().as_secs()));
+        }
+        z(format!("dauer: Ende nach {} Runden, {} s", runde, start.elapsed().as_secs()));
     });
 }

@@ -128,8 +128,12 @@ oder Patch. **E5: Variante (a)**, Kindprozess (b) belegt und bleibt Rückfall.
 - §5 E5: Shim im Prozess; `spawn_blocking`; Fortschritt selbst skalieren.
 - §5 Ton: AVFoundation nativ + `AVAudioConverter`; `libmp3lame` als
   dynamische Bibliothek mit LGPL-Hinweis; WebM raus.
-- §9 Risiko 3 (GIL) unverändert offen — der 20-min-Dauerlauf aus §3
-  wurde nicht gefahren (nur 26 s).
+- §9 Risiko 3 (GIL): Dauerlauf gefahren — 20 min (1224 s), 40 Runden à
+  vier Fake-Jobs mit je einem Abbruch (160 Jobs, ~2400 Polls aus einem
+  Rust-Thread), max. RSS konstant 128 MB von Runde 1 bis 40, Python-Threads
+  nach jeder Runde wieder 1, kein Hänger, keine Sandbox-Verstösse. `JOBS`
+  wächst um 4 je Runde (kein Aufräumen — heute schon so, Backlog).
+  Bleibt offen: echte Motoren statt Schlaf-Fakes.
 
 ## Was im Branch liegt
 
