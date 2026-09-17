@@ -181,10 +181,18 @@ class ProzessMotor(KindMotor):
             raise MotorFehler(str(aus["error"]))
         return aus
 
+    #: AVFoundation nennt Vierbuchstaben-Tags, video.CODECS_OK erwartet
+    #: die ffmpeg-Namen (Live-Befund 17.9.2026: «hvc1 in .mov» abgewiesen)
+    CODEC_NAMEN = {"avc1": "h264", "avc3": "h264", "hvc1": "hevc",
+                   "hev1": "hevc", "jpeg": "mjpeg", "png": "png",
+                   "mp4a": "aac", ".mp3": "mp3", "lpcm": "pcm_s16le"}
+
     def sondiere(self, pfad: Path) -> dict:
         info = self._pruefe(self._m.sondiere(str(pfad)))
-        return {"video_codec": info.get("video_codec"),
-                "audio_codec": info.get("audio_codec"),
+        def name(tag):
+            return self.CODEC_NAMEN.get(tag, tag) if tag else None
+        return {"video_codec": name(info.get("video_codec")),
+                "audio_codec": name(info.get("audio_codec")),
                 "breite": info.get("breite"), "hoehe": info.get("hoehe"),
                 "dauer_s": info.get("dauer_s")}
 

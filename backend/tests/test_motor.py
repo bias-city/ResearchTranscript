@@ -31,7 +31,7 @@ def _fake_modul(aufrufe: list):
 
     def sondiere(pfad):
         aufrufe.append(("sondiere", pfad))
-        return {"video_codec": "avc1", "audio_codec": "aac", "breite": 1920,
+        return {"video_codec": "hvc1", "audio_codec": "mp4a", "breite": 1920,
                 "hoehe": 1080, "dauer_s": 12.5, "bitrate": 100, "playable": True}
 
     def wav16k(quelle, ziel, start, dauer, abbruch=None, fortschritt=None):
@@ -67,7 +67,8 @@ def test_prozess_motor_bildet_auf_das_modul_ab(tmp_path, monkeypatch):
     mo = m.motor()
     assert mo.name == "prozess"
     info = mo.sondiere(tmp_path / "v.mp4")
-    assert info == {"video_codec": "avc1", "audio_codec": "aac",
+    # Tags werden auf die ffmpeg-Namen abgebildet, die video.pruefe kennt
+    assert info == {"video_codec": "hevc", "audio_codec": "aac",
                     "breite": 1920, "hoehe": 1080, "dauer_s": 12.5}
     fort: list[float] = []
     ziel = mo.wav16k(tmp_path / "a.mp3", tmp_path / "a.wav", start=1.0,
