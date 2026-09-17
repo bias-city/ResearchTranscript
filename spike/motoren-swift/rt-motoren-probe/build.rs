@@ -4,7 +4,7 @@ use swift_rs::SwiftLinker;
 
 fn main() {
     SwiftLinker::new("13.0")
-        .with_package("RTMotoren", "../RTMotoren")
+        .with_package("RTMotoren", "../../../frontend/src-tauri/swift/RTMotoren")
         .link();
     // libswift_Concurrency wird sonst aus der Xcode-Toolchain mit
     // @rpath-Install-Name gelinkt → dyld «no LC_RPATH's found».

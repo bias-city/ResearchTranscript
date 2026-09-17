@@ -12,9 +12,10 @@ let package = Package(
         .library(name: "RTMotoren", type: .static, targets: ["RTMotoren"]),
     ],
     dependencies: [
-        // Lokaler Klon auf Commit ea872ff (wie scripts/hole-argmax.mjs, Shim-Spike).
-        // Produktiv: .package(url: "https://github.com/argmaxinc/argmax-oss-swift.git", revision: "ea872ff")
-        .package(path: "../../speakerkit-shim/argmax-oss-swift"),
+        // Angeheftet auf denselben Commit wie scripts/hole-argmax.mjs
+        // (Modell-Layout muss zur Bibliothek passen, Review-Befund 2026-09-13).
+        .package(url: "https://github.com/argmaxinc/argmax-oss-swift.git",
+                 revision: "ea872ffd35705aa757f33033500b9b0d40bd38df"),
     ],
     targets: [
         .target(

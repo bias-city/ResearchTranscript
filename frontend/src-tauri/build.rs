@@ -18,7 +18,7 @@ fn main() {
     #[cfg(feature = "motoren")]
     {
         swift_rs::SwiftLinker::new("14.0")
-            .with_package("RTMotoren", "../../spike/motoren-swift/RTMotoren")
+            .with_package("RTMotoren", "./swift/RTMotoren")
             .link();
         println!("cargo:rustc-link-arg=-Wl,-rpath,/usr/lib/swift");
     }

@@ -33,3 +33,4 @@ spike/speakerkit-shim/argmax-oss-swift/
 spike/speakerkit-shim/**/.build/
 spike/speakerkit-shim/**/target/
 frontend/node_modules
+frontend/src-tauri/swift/RTMotoren/.build/
