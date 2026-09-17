@@ -20,7 +20,7 @@ import { useT } from "../lib/i18n";
 import { KEYS, lget, lset } from "../lib/storage";
 import { isTauri, ordnerOeffnen, savePath } from "../lib/tauri";
 
-const SPEEDS = [1, 1.25, 1.5, 1.75, 2];
+const SPEEDS = [0.75, 1, 1.25, 1.5, 1.75, 2];   // 0,75 für schnelle Sprecher (User 2026-09-17)
 
 let letzteZehntel = -1;
 function zehntelMelden(sekunden: number): void {
