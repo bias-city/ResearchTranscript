@@ -3,7 +3,7 @@
 //!   probe sondiere <datei>
 //!   probe wav16k <datei> <ziel.wav> [start dauer]
 //!   probe mp3 <datei> <ziel.mp3>                  (RT_LAME_DYLIB, sonst Homebrew-Pfad; RT_VBR_Q, sonst 2)
-//!   probe diarize <wav> <modelldir> [n] [aus.rttm]  (Schwelle RT_SCHWELLE, sonst 0.62; exclusive)
+//!   probe diarize <wav> <modelldir> [n] [aus.rttm]  (Schwelle RT_SCHWELLE, sonst 0.62; exclusive; RT_WIEDERHOLE=k)
 //!   probe parallel <wav> <modelldir> <datei> <ziel.wav> [<datei2> <ziel2> …]
 //!                                                  (Thread 0: diarize, Threads 1..k: wav16k, gleichzeitig)
 //!   probe parallel-diarize <wav> <modelldir> <k>   (k Diarisierungen gleichzeitig)
@@ -169,6 +169,9 @@ fn main() {
         }
         "diarize" => {
             let n: i32 = a.get(4).map(|s| s.parse().unwrap()).unwrap_or(0);
+            // RT_WIEDERHOLE=k: k Aufrufe im selben Prozess (Modelle bleiben warm), letzter zählt.
+            let k: usize = std::env::var("RT_WIEDERHOLE").ok().and_then(|s| s.parse().ok()).unwrap_or(1);
+            for _ in 1..k { diarize("diarize warm", &a[2], &a[3], n); }
             let (json, f) = diarize("diarize", &a[2], &a[3], n);
             fehler = f;
             if !f {
@@ -185,7 +188,7 @@ fn main() {
             let paare: Vec<(String, String)> = a[4..].chunks(2).map(|p| (p[0].clone(), p[1].clone())).collect();
             let t0 = Instant::now();
             let mut hs = Vec::new();
-            hs.push(std::thread::spawn(move || { let (j, f) = diarize("T0 diarize", &wav, &modelldir, 0); if !f { let _ = rttm(&j, "ton"); } f }));
+            hs.push(std::thread::spawn(move || { let (j, f) = diarize("T0 diarize", &wav, &modelldir, 0); if !f { print!("{}", rttm(&j, "ton")); } f }));
             for (i, (d, z)) in paare.into_iter().enumerate() {
                 hs.push(std::thread::spawn(move || wav16k(&format!("T{} wav16k", i + 1), &d, &z, 0.0, 0.0).1));
             }
@@ -199,7 +202,8 @@ fn main() {
                 std::thread::spawn(move || { let (j, f) = diarize(&format!("T{i} diarize"), &wav, &m, 0); (j, f) }) }).collect();
             let mut jsons = Vec::new();
             for h in hs { let (j, f) = h.join().unwrap(); fehler |= f; jsons.push(j); }
-            let gleich = jsons.windows(2).all(|w| w[0].split("\"model_load_ms\"").next() == w[1].split("\"model_load_ms\"").next());
+            let segs = |j: &str| serde_json::from_str::<serde_json::Value>(j).ok().and_then(|v| v.get("segments").cloned());
+            let gleich = jsons.windows(2).all(|w| segs(&w[0]) == segs(&w[1]));
             eprintln!("parallel-diarize k={k} gesamt wall={:.3}s segmente identisch={gleich}", t0.elapsed().as_secs_f64());
             if !fehler { print!("{}", rttm(&jsons[0], "ton")); }
         }

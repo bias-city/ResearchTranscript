@@ -72,6 +72,8 @@ func nachMp3(pfad: String, ziel: String, vbrQ: Int, dylib: String,
     let outCh = ch >= 2 ? 2 : 1
     let fort = Fortschritt(fortschritt, ctx)
     let gesamt = leser.trackDauer * rate
+    // mp3-Quelle: LAME-Padding am Ende kommt vom Reader nicht deterministisch (siehe Ton.swift) → kappen.
+    let kappe = (URL(fileURLWithPath: pfad).pathExtension.lowercased() == "mp3" && gesamt > 0) ? Int(gesamt.rounded()) : Int.max
 
     let fm = FileManager.default
     if fm.fileExists(atPath: ziel) { try fm.removeItem(atPath: ziel) }
@@ -95,7 +97,12 @@ func nachMp3(pfad: String, ziel: String, vbrQ: Int, dylib: String,
     do {
         try pruefeAbbruch(abbruch, ctx)
         fort.melde(0)
-        while let b = try leser.naechster() {
+        while var b = try leser.naechster() {
+            if Int(frames) + b.frames > kappe {
+                let n = max(0, kappe - Int(frames))
+                if n == 0 { break }
+                b.samples = Array(b.samples[0..<(n * ch)]); b.frames = n
+            }
             let need = Int(1.25 * Double(b.frames)) + 7200
             if buf.count < need { buf = [UInt8](repeating: 0, count: need) }
             let w: Int32
