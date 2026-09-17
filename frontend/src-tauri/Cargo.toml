@@ -1,6 +1,6 @@
 [package]
 name = "researchtranscript-app"
-version = "0.5.0"
+version = "0.6.0"
 description = "ResearchTranscript — Tauri-Hülle mit eingebettetem Python (PyO3)"
 authors = ["Ben Pohl / BIAS.City"]
 edition = "2021"
@@ -23,6 +23,7 @@ swift-rs = { version = "1.0.8", features = ["build"], optional = true }
 # Swift-Paket RTMotoren — ohne das Feature bleibt LT_MOTOR=kind der
 # einzige Weg (Plan §5, Standard bis zur belegten Parität, E3).
 motoren = ["dep:swift-rs"]
+default = ["motoren"]
 
 [dependencies]
 # protocol-asset: Medien über asset:// (Phase 0, F2) statt HTTP

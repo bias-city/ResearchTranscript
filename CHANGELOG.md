@@ -3,6 +3,40 @@
 All notable changes to LocalTranscript. The GitHub release notes for
 a version are the corresponding section of this file.
 
+## 0.6.0 — unreleased
+
+### Changed
+
+- **Audio and speaker separation run inside the app.** Decoding,
+  probing and clipping use Apple's AVFoundation; MP3 is written by LAME
+  (LGPL-2.0+, built from the official 4.0 sources without decoder,
+  dynamically linked so it can be replaced — the source tarball ships
+  with the app and is linked from the About dialog). Speaker separation
+  calls SpeakerKit (Core ML) directly instead of a helper process, with
+  real progress. Speech recognition still runs `whisper-cli` as a
+  separate process, deliberately: a crash or the model's memory stays
+  outside the app. Results are the same — measured against ffmpeg and
+  argmax-cli: identical sample counts, speaker segments byte-identical,
+  MP3 within 0.4 %.
+- **ffmpeg and argmax-cli are no longer bundled.** The app is 100 MB
+  smaller and carries no GPL component any more; the strictest bundled
+  licence is now the LGPL of LAME.
+- **WebM is no longer accepted as an audio source** (AVFoundation does
+  not read it). Existing entries with a WebM audio file stay readable;
+  new recordings in WebM must be converted first — mp3, m4a, aac, wav,
+  ogg, flac and H.264/HEVC video remain.
+- Cancelling a run during speaker separation now takes effect when the
+  separation finishes (about 25 s for a 3.4-hour recording) instead of
+  immediately; decoding, encoding and transcription cancel at once.
+
+### Internal
+
+- Motor protocol (`motor.py`, `LT_MOTOR=kind|prozess`): the old child
+  processes remain available in a checkout for comparison. Swift package
+  `RTMotoren` (src-tauri/swift), Rust module `researchtranscript_motoren`
+  (PyO3), Cargo feature `motoren` (default). `scripts/baue-lame.sh`.
+  Parity report: spike/motoren-swift/BEFUND.md.
+
 ## 0.5.0 — unreleased
 
 ### Changed

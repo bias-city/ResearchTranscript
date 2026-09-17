@@ -20,7 +20,7 @@ import time
 from pathlib import Path
 
 APP_NAME = "ResearchTranscript"
-APP_VERSION = "0.5.0"
+APP_VERSION = "0.6.0"
 #: DER ResearchTranscript-Port (2026-09-09): 5628 = „LOCT" auf der
 #: Telefontastatur — enrich 36742 = „ENRIC", Zotero-Tradition
 #: (23119 = „ZOT"). Vier Buchstaben, nicht fünf: „LOCTR" wäre 56287

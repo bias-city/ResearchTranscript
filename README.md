@@ -225,8 +225,8 @@ backend/    Python ≥3.12 (uv): FastAPI, whisper-cli wrapper,
 frontend/   React 18 + TS + Vite, Radix Themes, enrich kit
             (components/ui.tsx), i18n de/en/fr/it
             └─ src-tauri/   shell: spawns the backend, save dialogs
-scripts/    bundle-resources.mjs (python runtime, whisper-cli, ffmpeg,
-            model, venv → src-tauri/resources)
+scripts/    bundle-resources.mjs (python runtime, whisper-cli, models,
+            python/site-packages → src-tauri/resources), baue-lame.sh
             sign-resources.mjs, notarize-dmg.mjs
 ```
 
@@ -237,7 +237,7 @@ never touched; the app only shuts down what it started itself.
 ## Development
 
 Requirements: macOS on Apple Silicon, uv, Node 18+, Rust/cargo,
-`brew install whisper-cpp ffmpeg`, and `ggml-large-v3-turbo.bin` under
+`brew install whisper-cpp` (ffmpeg only for `LT_MOTOR=kind`), and `ggml-large-v3-turbo.bin` under
 `models/` or `~/whisper-models/` (or `LT_MODELS_DIR`). An **enrich
 checkout as a sibling** (`../enrich`) — enrich-core is a path dependency
 of the `.enrich` export.
@@ -260,8 +260,8 @@ cd frontend && npx tauri build      # .app + .dmg, shell sealed
 ```
 
 **The order is mandatory.** Tauri signs the shell and the main binary
-only; the bundled executables (python3, whisper-cli, ffmpeg,
-argmax-cli and the libraries) would otherwise keep the linker's ad-hoc
+only; the bundled executables and libraries (libpython, whisper-cli,
+libmp3lame, pydantic_core …) would otherwise keep the linker's ad-hoc
 signature — and
 Apple's notary service rejects those, after the 1.9 GB upload.
 `sign-resources.mjs` signs them with the Developer ID, hardened runtime,
@@ -301,12 +301,14 @@ dossier reader/writer comes from the public package
 [enrich-core](https://github.com/bias-city/enrich-core) (MIT), pinned
 to a tag in `backend/pyproject.toml` — the same code the tests run
 against.
-**ffmpeg**: a redistributable GPL static build from
-<https://ffmpeg.martin-riedl.de> (macos/arm64/release) →
-`frontend/src-tauri/resources/bin/ffmpeg`; the script refuses nonfree
-builds (the v1 binary declared itself "not legally redistributable").
-For GPL §6 compliance, attach the build and source links to the GitHub
-release.
+**Audio**: since 0.6.0 the app decodes and probes media with Apple's
+AVFoundation and encodes MP3 with **LAME** (LGPL-2.0+), built from the
+official 4.0 tarball without decoder and frontend by
+`scripts/baue-lame.sh` and linked dynamically from `Contents/Frameworks`
+so it can be replaced. The tarball ships next to the library and is
+hosted at bias.city/researchtranscript/quellen/. ffmpeg is no longer
+bundled; `LT_MOTOR=kind` in a checkout still runs the old child
+processes (ffmpeg, argmax-cli) for comparison.
 
 ## Interchange formats and their licences
 
@@ -333,9 +335,9 @@ the **MIT licence** (B/IAS).
 was also forced by PyMuPDF (AGPL-3.0), which typeset the dossier PDF;
 since 2.3.0 the enrich export carries no PDF (enrich typesets the
 reading copy itself on import, FORMAT.md §5), so PyMuPDF and the
-Recursive fonts are no longer bundled. The strictest bundled tool is
-now ffmpeg (GPL-3.0 build); GPLv3 and AGPLv3 are compatible (GPLv3
-§13).
+Recursive fonts are no longer bundled; since 0.6.0 ffmpeg is gone as
+well. No bundled component requires the AGPL — the strictest is LAME
+(LGPL-2.0+, dynamically linked).
 
 **Texts and images are CC BY 4.0.** The website in `site/`, the eight
 sheets in `site/docs/`, this README, the changelog and the backlog may

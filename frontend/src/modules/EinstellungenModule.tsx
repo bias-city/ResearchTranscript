@@ -217,11 +217,11 @@ export default function EinstellungenModule({ settings, onChange }: {
                 + "ResearchTranscript/releases")}>
               {tr("st.link.releases")}</Button>
             <Button size="1" variant="soft" onClick={() =>
-              void ordnerOeffnen("https://ffmpeg.martin-riedl.de")}>
-              {tr("st.link.ffmpegbuild")}</Button>
+              void ordnerOeffnen("https://lame.sourceforge.io/")}>
+              {tr("st.link.lamesrc")}</Button>
             <Button size="1" variant="soft" onClick={() =>
-              void ordnerOeffnen("https://ffmpeg.org/download.html")}>
-              {tr("st.link.ffmpegsrc")}</Button>
+              void ordnerOeffnen("https://bias.city/researchtranscript/quellen/lame-4.0.tar.gz")}>
+              {tr("st.link.lamekopie")}</Button>
           </Flex>
         </Flex>
       </Karte>

@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 // Bundle-Resources für den Tauri-Build zusammenstellen:
-// python-runtime + whisper-cli/dylibs + ffmpeg + Modelle werden aus dem
+// python-runtime + whisper-cli/dylibs + Modelle werden aus dem
 // alten LocalTranscript-v1-Checkout ÜBERNOMMEN, wenn er daneben liegt
 // (whisper-web/electron/resources — dort hat build-python-runtime.mjs
 // sie einst gebaut); sonst bricht das Skript mit Anleitung ab.
@@ -63,22 +63,31 @@ for (const teil of ["python-runtime", "bin", "lib", "models"]) {
   if (n) console.log(`✓ Laufzeit gestutzt: ${n} Einträge (Tcl/Tk, tkinter, IDLE, Tests, ensurepip)`);
 }
 
-// 1a. SpeakerKit (Sprechertrennung): argmax-cli + Core-ML-Modelle.
-//     Beides liegt im Checkout unter bin/ bzw. models/speakerkit und
-//     wird von `node scripts/hole-argmax.mjs` beschafft.
+// 1a. SpeakerKit-Modelle (Core ML) für den Shim im Prozess; die CLI
+//     argmax-cli kommt seit 0.6.0 NICHT mehr ins Bundle (nur noch
+//     LT_MOTOR=kind im Checkout braucht sie, aus <repo>/bin).
 {
-  const cli = path.join(ROOT, "bin/argmax-cli");
   const mdl = path.join(ROOT, "models/speakerkit");
-  if (!fs.existsSync(cli) || !da(path.join(mdl, "speaker_segmenter"))) {
-    console.error("FEHLT: argmax-cli und/oder models/speakerkit — " +
-      "einmal `node scripts/hole-argmax.mjs` laufen lassen " +
-      "(baut die Swift-CLI, lädt die Core-ML-Modelle).");
+  if (!da(path.join(mdl, "speaker_segmenter"))) {
+    console.error("FEHLT: models/speakerkit — einmal `node scripts/hole-argmax.mjs` laufen lassen.");
     process.exit(1);
   }
-  fs.copyFileSync(cli, path.join(RES, "bin/argmax-cli"));
-  fs.chmodSync(path.join(RES, "bin/argmax-cli"), 0o755);
   kopiere(mdl, path.join(RES, "models/speakerkit"));
-  console.log("✓ SpeakerKit: CLI + Modelle im Bundle");
+  for (const alt of ["bin/argmax-cli", "bin/ffmpeg"]) {
+    const p = path.join(RES, alt);
+    if (fs.existsSync(p)) { fs.rmSync(p); console.log(`✓ ${alt} entfernt (Motoren im Prozess)`); }
+  }
+  console.log("✓ SpeakerKit-Modelle im Bundle");
+}
+
+// 1a1. libmp3lame (LGPL, dynamisch) aus eigenem Bau — scripts/baue-lame.sh
+{
+  const lame = path.join(RES, "frameworks/libmp3lame.dylib");
+  if (!fs.existsSync(lame)) {
+    console.error("FEHLT: resources/frameworks/libmp3lame.dylib — `scripts/baue-lame.sh` laufen lassen.");
+    process.exit(1);
+  }
+  console.log("✓ libmp3lame.dylib vorhanden");
 }
 
 // 1a2. Altlast wegräumen: die SpeechBrain-Gewichte (85 MB) trug das
@@ -88,23 +97,6 @@ for (const teil of ["python-runtime", "bin", "lib", "models"]) {
   const alt = path.join(RES, "models/speechbrain");
   if (da(alt)) { fs.rmSync(alt, { recursive: true, force: true });
                  console.log("✓ alte SpeechBrain-Modelle entfernt (85 MB)"); }
-}
-
-// 1b. LIZENZ-WÄCHTER (Live-Befund 2026-08-30): der v1-ffmpeg
-//     (osxexperts-Build) erklärte sich selbst „not legally
-//     redistributable" (--enable-nonfree) — so ein Binary darf NIE
-//     in ein Release. Ersatz: GPL-Static-Build von
-//     https://ffmpeg.martin-riedl.de (macos/arm64/release).
-{
-  const probe = execFileSync(path.join(RES, "bin/ffmpeg"), ["-L"],
-                             { encoding: "utf8" });
-  if (probe.includes("not legally redistributable")) {
-    console.error("ABBRUCH: gebündelter ffmpeg ist nonfree/nicht " +
-      "weiterverteilbar — GPL-Build von " +
-      "https://ffmpeg.martin-riedl.de nach resources/bin/ffmpeg legen.");
-    process.exit(1);
-  }
-  console.log("✓ ffmpeg-Lizenz: redistributabel (GPL)");
 }
 
 // 2. Python-Pakete DIREKT nach python/site-packages (Plan §4 1.13):

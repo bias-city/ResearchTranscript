@@ -516,10 +516,10 @@ const W: Record<string, Eintrag> = {
   "st.lizenzen": { de: "Lizenzen", en: "Licenses", fr: "Licences",
     it: "Licenze" },
   "st.lizenzen.text": {
-    de: "whisper.cpp (MIT) · Modell large-v3-turbo (OpenAI, MIT) · silero-vad (MIT, auch als ggml für whisper.cpp) · SpeakerKit (Argmax, MIT) mit den Modellen pyannote community-1 und WeSpeaker ResNet34 (CC BY 4.0, von Argmax nach Core ML umgewandelt und quantisiert) · enrich-core (B/IAS, MIT — github.com/bias-city/enrich-core) · FastAPI/uvicorn (MIT) · React/Radix (MIT) · Lucide (ISC) · ffmpeg (GPL-Build) u. a. — ResearchTranscript selbst: AGPL-3.0-or-later.",
-    en: "whisper.cpp (MIT) · large-v3-turbo model (OpenAI, MIT) · silero-vad (MIT) · SpeakerKit (Argmax, MIT) with the pyannote community-1 and WeSpeaker ResNet34 models (CC BY 4.0, converted to Core ML and quantised by Argmax) · enrich-core (B/IAS, MIT — github.com/bias-city/enrich-core) · FastAPI/uvicorn (MIT) · React/Radix (MIT) · Lucide (ISC) · ffmpeg (GPL build) and others — ResearchTranscript itself: AGPL-3.0-or-later.",
-    fr: "whisper.cpp (MIT) · modèle large-v3-turbo (OpenAI, MIT) · silero-vad (MIT) · SpeakerKit (Argmax, MIT) avec les modèles pyannote community-1 et WeSpeaker ResNet34 (CC BY 4.0, convertis en Core ML et quantifiés par Argmax) · enrich-core (B/IAS, MIT — github.com/bias-city/enrich-core) · FastAPI/uvicorn (MIT) · React/Radix (MIT) · Lucide (ISC) · ffmpeg (build GPL) etc. — ResearchTranscript : AGPL-3.0-or-later.",
-    it: "whisper.cpp (MIT) · modello large-v3-turbo (OpenAI, MIT) · silero-vad (MIT) · SpeakerKit (Argmax, MIT) con i modelli pyannote community-1 e WeSpeaker ResNet34 (CC BY 4.0, convertiti in Core ML e quantizzati da Argmax) · enrich-core (B/IAS, MIT — github.com/bias-city/enrich-core) · FastAPI/uvicorn (MIT) · React/Radix (MIT) · Lucide (ISC) · ffmpeg (build GPL) etc. — ResearchTranscript: AGPL-3.0-or-later." },
+    de: "whisper.cpp (MIT) · Modell large-v3-turbo (OpenAI, MIT) · silero-vad (MIT, auch als ggml für whisper.cpp) · SpeakerKit (Argmax, MIT) mit den Modellen pyannote community-1 und WeSpeaker ResNet34 (CC BY 4.0, von Argmax nach Core ML umgewandelt und quantisiert) · enrich-core (B/IAS, MIT — github.com/bias-city/enrich-core) · CPython (PSF) · pydantic (MIT) · React/Radix (MIT) · Lucide (ISC) · LAME (LGPL-2.0+, dynamisch gelinkt, Quelle über den Knopf unten) · Ton über Apples AVFoundation — ResearchTranscript selbst: AGPL-3.0-or-later.",
+    en: "whisper.cpp (MIT) · large-v3-turbo model (OpenAI, MIT) · silero-vad (MIT) · SpeakerKit (Argmax, MIT) with the pyannote community-1 and WeSpeaker ResNet34 models (CC BY 4.0, converted to Core ML and quantised by Argmax) · enrich-core (B/IAS, MIT — github.com/bias-city/enrich-core) · CPython (PSF) · pydantic (MIT) · React/Radix (MIT) · Lucide (ISC) · LAME (LGPL-2.0+, dynamically linked, source via the button below) · audio through Apple's AVFoundation — ResearchTranscript itself: AGPL-3.0-or-later.",
+    fr: "whisper.cpp (MIT) · modèle large-v3-turbo (OpenAI, MIT) · silero-vad (MIT) · SpeakerKit (Argmax, MIT) avec les modèles pyannote community-1 et WeSpeaker ResNet34 (CC BY 4.0, convertis en Core ML et quantifiés par Argmax) · enrich-core (B/IAS, MIT — github.com/bias-city/enrich-core) · CPython (PSF) · pydantic (MIT) · React/Radix (MIT) · Lucide (ISC) · LAME (LGPL-2.0+, lié dynamiquement, source via le bouton ci-dessous) · audio via AVFoundation d'Apple — ResearchTranscript : AGPL-3.0-or-later.",
+    it: "whisper.cpp (MIT) · modello large-v3-turbo (OpenAI, MIT) · silero-vad (MIT) · SpeakerKit (Argmax, MIT) con i modelli pyannote community-1 e WeSpeaker ResNet34 (CC BY 4.0, convertiti in Core ML e quantizzati da Argmax) · enrich-core (B/IAS, MIT — github.com/bias-city/enrich-core) · CPython (PSF) · pydantic (MIT) · React/Radix (MIT) · Lucide (ISC) · LAME (LGPL-2.0+, collegata dinamicamente, sorgente tramite il pulsante sotto) · audio tramite AVFoundation di Apple — ResearchTranscript: AGPL-3.0-or-later." },
   "st.app": { de: "ResearchTranscript", en: "ResearchTranscript",
     fr: "ResearchTranscript", it: "ResearchTranscript" },
   "st.app.sub": {
@@ -528,13 +528,14 @@ const W: Record<string, Eintrag> = {
     fr: "Logiciel libre — AGPL-3.0-or-later · BIAS.City",
     it: "Software libero — AGPL-3.0-or-later · BIAS.City" },
   // 2.3.0: PyMuPDF ist weg (kein Dossier-PDF mehr, enrich setzt die
-  // Lesefassung selbst). Die AGPL bleibt als eigene Wahl — das strengste
-  // mitgelieferte Werkzeug ist jetzt ffmpeg (GPL-3.0-Build).
+  // Lesefassung selbst). 0.6.0: ffmpeg ist weg (AVFoundation + LAME) —
+  // die AGPL bleibt als eigene Wahl, kein mitgeliefertes Werkzeug
+  // verlangt sie mehr.
   "st.app.text": {
-    de: "Quellcode, Lizenztext und Releases auf GitHub. Die App steht bewusst unter der AGPL; das strengste mitgelieferte Werkzeug ist ffmpeg (GPL-3.0-Build). Die Netzwerkklausel ist erfüllt, bevor sie greift: die App öffnet keine Netzwerkverbindung.",
-    en: "Source code, license text and releases on GitHub. The app is deliberately under the AGPL; the strictest bundled tool is ffmpeg (GPL-3.0 build). The network clause is satisfied before it applies: the app opens no network connection.",
-    fr: "Code source, licence et versions sur GitHub. L'application est délibérément sous AGPL ; l'outil embarqué le plus strict est ffmpeg (build GPL-3.0). La clause réseau est satisfaite avant de s'appliquer : l'application n'ouvre aucune connexion réseau.",
-    it: "Codice sorgente, licenza e release su GitHub. L'app è deliberatamente sotto AGPL; lo strumento incluso più restrittivo è ffmpeg (build GPL-3.0). La clausola di rete è soddisfatta prima di applicarsi: l'app non apre alcuna connessione di rete." },
+    de: "Quellcode, Lizenztext und Releases auf GitHub. Die App steht bewusst unter der AGPL — kein mitgeliefertes Werkzeug verlangt sie, das strengste ist LAME (LGPL, dynamisch gelinkt). Die Netzwerkklausel ist erfüllt, bevor sie greift: die App öffnet keine Netzwerkverbindung.",
+    en: "Source code, license text and releases on GitHub. The app is deliberately under the AGPL — no bundled tool requires it; the strictest is LAME (LGPL, dynamically linked). The network clause is satisfied before it applies: the app opens no network connection.",
+    fr: "Code source, licence et versions sur GitHub. L'application est délibérément sous AGPL — aucun outil embarqué ne l'exige ; le plus strict est LAME (LGPL, lié dynamiquement). La clause réseau est satisfaite avant de s'appliquer : l'application n'ouvre aucune connexion réseau.",
+    it: "Codice sorgente, licenza e release su GitHub. L'app è deliberatamente sotto AGPL — nessuno strumento incluso la richiede; il più restrittivo è LAME (LGPL, collegata dinamicamente). La clausola di rete è soddisfatta prima di applicarsi: l'app non apre alcuna connessione di rete." },
   "ueber.titel": { de: "Über ResearchTranscript",
     en: "About ResearchTranscript", fr: "À propos de ResearchTranscript",
     it: "Informazioni su ResearchTranscript" },
@@ -554,12 +555,11 @@ const W: Record<string, Eintrag> = {
     fr: "Code source (GitHub)", it: "Codice sorgente (GitHub)" },
   "st.link.releases": { de: "Releases", en: "Releases",
     fr: "Versions", it: "Release" },
-  "st.link.ffmpegbuild": { de: "ffmpeg-Build (martin-riedl.de)",
-    en: "ffmpeg build (martin-riedl.de)",
-    fr: "Build ffmpeg (martin-riedl.de)",
-    it: "Build ffmpeg (martin-riedl.de)" },
-  "st.link.ffmpegsrc": { de: "ffmpeg-Quellcode", en: "ffmpeg source",
-    fr: "Source ffmpeg", it: "Sorgente ffmpeg" },
+  "st.link.lamesrc": { de: "LAME-Quellcode (LGPL)", en: "LAME source (LGPL)",
+    fr: "Source LAME (LGPL)", it: "Sorgente LAME (LGPL)" },
+  "st.link.lamekopie": { de: "LAME-Quelle, wie mitgeliefert",
+    en: "LAME source as shipped", fr: "Source LAME telle qu'embarquée",
+    it: "Sorgente LAME come inclusa" },
   "st.modelle": { de: "Mitgelieferte Modelle in {d}",
     en: "Bundled models in {d}", fr: "Modèles fournis dans {d}",
     it: "Modelli forniti in {d}" },

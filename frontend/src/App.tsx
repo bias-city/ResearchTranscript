@@ -227,8 +227,8 @@ function UeberDialog({ open, onClose }: {
         <Text size="1" color="gray">{tr("st.lizenzen.text")}</Text>
         <Text size="1" color="gray">{tr("st.agpl")}</Text>
         <Flex gap="2" wrap="wrap">
-          {link(tr("st.link.ffmpegbuild"), "https://ffmpeg.martin-riedl.de")}
-          {link(tr("st.link.ffmpegsrc"), "https://ffmpeg.org/download.html")}
+          {link(tr("st.link.lamesrc"), "https://lame.sourceforge.io/")}
+          {link(tr("st.link.lamekopie"), "https://bias.city/researchtranscript/quellen/lame-4.0.tar.gz")}
         </Flex>
       </Flex>
     </ModalDialog>

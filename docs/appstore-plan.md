@@ -145,7 +145,9 @@ Grosse Nutzlasten (1148 Segmente) laufen durch vier JSON-Wandlungen; Latenz beim
 | R6 | **Kein Homebrew-Rückfall** im Bundle | 1.6 |
 | R7 | **Bundle-Hygiene:** Mach-O-Zähler, `otool -L`-Wächter, keine `.pth`/`bin/`/lokale `__pycache__`, jede `.so` signiert | 1.13, 1.14 |
 
-## 5. Phase 2 «Motor-Schicht, Mac» (8–11 PT)
+## 5. Phase 2 «Motor-Schicht, Mac» (8–11 PT) — **umgesetzt 17.9.2026** (Branch `eingebettet-spike`, 0.6.0 unveröffentlicht)
+
+Stand: `motor.py` (Kind/Prozess, `LT_MOTOR`), Swift-Paket `frontend/src-tauri/swift/RTMotoren` (Ton + Sprecher, C-Schnittstelle), Rust-Modul `researchtranscript_motoren`, eigene `libmp3lame` (`scripts/baue-lame.sh`), ffmpeg und argmax-cli aus dem Bundle, WebM raus (E4), Standard = Prozess (E3, Parität: `spike/motoren-swift/BEFUND.md`). Offen: Diarize-Abbruch wirkt erst am Ende (SpeakerKit-Task, Fork-Patch möglich); LAME-Tarball auf bias.city hosten; Website-Texte.
 
 Ergebnis: 0.6.0 — kein ffmpeg, kein `argmax-cli` im Bundle; einziger Kindprozess ist `whisper-cli` (R1). Standardmotor bleibt `kind`, bis der Paritätstest grün ist (`LT_MOTOR`).
 

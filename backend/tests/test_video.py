@@ -121,4 +121,4 @@ def test_fremder_container_wird_vor_dem_job_abgewiesen(client, tmp_path):
     assert r.status_code == 400, r.text                    # Endung nicht in der Liste
     webm = _fixture(tmp_path, "vortrag.webm", "libvpx-vp9", "libopus")
     r = client.post("/api/transcribe", files={"file": ("vortrag.webm", webm.read_bytes(), "video/webm")})
-    assert r.status_code == 422 and "HandBrake" in r.text    # webm mit Bild: Codec-Hinweis
+    assert r.status_code == 400 and ".webm" in r.text      # seit 0.6.0 nicht mehr in der Liste (E4)

@@ -189,6 +189,9 @@ pub fn init_pfad(res: &Path, app: Option<&tauri::AppHandle>) -> Result<f64, Stri
                         Some(res.join("frameworks/libmp3lame.dylib"))]
                 .into_iter().flatten().find(|p| p.is_file());
             if let Some(p) = lame { std::env::set_var("LT_LAME_DYLIB", p); }
+            // Standard seit 0.6.0 (E3, Parität belegt): Motoren im Prozess;
+            // LT_MOTOR=kind in der Umgebung erzwingt die Kinder (Fehlersuche).
+            if std::env::var_os("LT_MOTOR").is_none() { std::env::set_var("LT_MOTOR", "prozess"); }
         }
         let r = unsafe { interpreter_starten(&res.join("python-runtime"), &site) };
         if let Err(e) = r {
@@ -288,11 +291,20 @@ pub fn selbstpruefung(res: &Path) -> Vec<String> {
         }
         Err(e) => probleme.push(Python::attach(|py| py_text(&e, py))),
     }
-    for (name, muss) in [("bin/whisper-cli", true), ("bin/ffmpeg", true), ("models", true), ("bin/argmax-cli", false)] {
-        if !res.join(name).exists() {
-            let text = format!("{name} fehlt in den Ressourcen");
-            if muss { probleme.push(text) } else { protokoll::schreibe("start", &text) }
-        }
+    // Whisper bleibt Kind (bin/whisper-cli); ffmpeg und argmax-cli braucht
+    // nur noch LT_MOTOR=kind — im Bundle liegen sie seit 0.6.0 nicht mehr.
+    let prozess = std::env::var("LT_MOTOR").map(|m| m == "prozess").unwrap_or(false);
+    let mut noetig = vec!["bin/whisper-cli", "models"];
+    if !prozess { noetig.extend(["bin/ffmpeg", "bin/argmax-cli"]); }
+    for name in noetig {
+        if !res.join(name).exists() { probleme.push(format!("{name} fehlt in den Ressourcen")); }
     }
+    if prozess && std::env::var_os("LT_LAME_DYLIB").is_none() {
+        probleme.push("libmp3lame.dylib fehlt (Contents/Frameworks) — scripts/baue-lame.sh".into());
+    }
+    let motor = Python::attach(|py| -> PyResult<String> {
+        Ok(py.import("researchtranscript.motor")?.getattr("motor")?.call0()?.getattr("name")?.extract()?)
+    }).unwrap_or_else(|e| format!("? ({e})"));
+    protokoll::schreibe("start", &format!("Motor: {motor}"));
     probleme
 }

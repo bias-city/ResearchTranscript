@@ -46,8 +46,10 @@ _STANDARDNAME = re.compile(r"^(Sprecher|Speaker|Locuteur|Parlante) \d+$")
 #: Journal-Eintrag (FORMAT.md §3.1 — je Sitzung, nicht je Tastendruck)
 SITZUNG_RUHE_S = 600
 HISTORY_MAX = 30
-AUDIO_ENDUNGEN = (".mp3", ".m4a", ".aac", ".wav", ".ogg", ".flac",
-                  ".webm")
+#: Was AVFoundation liest (Plan §5, M4/E4): WebM/Matroska nicht mehr —
+#: seit 0.6.0 dekodiert die App ohne ffmpeg. Alte Einträge mit
+#: audio.webm bleiben lesbar (paket.AUDIO_NAMEN), neue Quellen nicht.
+AUDIO_ENDUNGEN = (".mp3", ".m4a", ".aac", ".wav", ".ogg", ".flac")
 #: Video-Container, die als Quelle angenommen werden (video.py prüft
 #: den Codec); der Ton wird nach mp3 gezogen, das Video liegt daneben
 VIDEO_ENDUNGEN = (".mp4", ".m4v", ".mov")
