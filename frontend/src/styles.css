@@ -614,7 +614,9 @@ body { margin: 0; background: var(--gray-1); }
    Zeile voraus; sie ist hier aus, der aktive Knopf trägt die Pille als
    eigenen Hintergrund. */
 .ui-segtabs-fit { display: flex; flex-wrap: wrap; width: 100%; min-width: 0;
-  height: auto; row-gap: 4px; }
+  height: auto; row-gap: 4px; column-gap: 4px;
+  /* keine Schiene: die Knöpfe tragen ihre Fläche selbst (User 2026-09-17) */
+  background: transparent; box-shadow: none; padding: 0; }
 .ui-segtabs-fit .rt-SegmentedControlIndicator,
 .ui-segtabs-fit .rt-SegmentedControlSeparator { display: none; }
 .ui-segtabs-fit .rt-SegmentedControlItem { flex: 0 0 auto; }
