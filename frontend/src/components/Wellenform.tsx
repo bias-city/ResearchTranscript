@@ -129,8 +129,10 @@ export default function Wellenform({ eid, segmente, sprecher, zeit, spielt,
       const farbe = sprecherFarbe(sprecher, seg.sprecher);
       const a = Math.max(0, x(seg.start)), b = Math.min(breite, x(seg.end));
       if (b <= a) continue;
-      ctx.globalAlpha = farbe === "gray" ? 0.35 : 0.9;
-      ctx.fillStyle = cssFarbe(farbe === "gray" ? "gray" : farbe, 9);
+      // Pastell wie die Badges (Stufe 3–4), aber nicht ganz so blass:
+      // Stufe 7 der Radix-Skala (User 2026-09-17)
+      ctx.globalAlpha = farbe === "gray" ? 0.5 : 1;
+      ctx.fillStyle = cssFarbe(farbe === "gray" ? "gray" : farbe, 7);
       ctx.fillRect(Math.floor(a), 0, Math.max(1, Math.ceil(b) - Math.floor(a)), HOEHE);
       belegt.fill(1, Math.floor(a), Math.ceil(b));
     }
@@ -146,7 +148,7 @@ export default function Wellenform({ eid, segmente, sprecher, zeit, spielt,
         if (i < 0 || i >= n) continue;
         const amp = (pk.daten[i] / 255) * (HOEHE / 2 - 3);
         if (amp <= 0.3) continue;
-        ctx.fillStyle = belegt[px] ? "rgba(255,255,255,0.7)" : frei;
+        ctx.fillStyle = belegt[px] ? "rgba(255,255,255,0.85)" : frei;
         ctx.fillRect(px, mid - amp, 1, amp * 2);
       }
     }
