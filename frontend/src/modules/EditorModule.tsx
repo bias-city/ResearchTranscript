@@ -443,6 +443,11 @@ export default function EditorModule({ id, onExit }: {
         || ziel?.tagName === "INPUT";
       const a = audioRef.current;
       if (!a) return;
+      // Kürzel enden hier: preventDefault UND stopPropagation, sonst
+      // sieht ein fokussierter Knopf (z. B. «Export» nach dem Klick) das
+      // ⌥↓ und öffnet sein Menü (User 2026-09-17). Deshalb läuft der
+      // Handler in der Capture-Phase.
+      const halt = () => { e.preventDefault(); e.stopPropagation(); };
       const toggle = () => {
         if (a.paused) void a.play(); else a.pause();
       };
@@ -473,15 +478,15 @@ export default function EditorModule({ id, onExit }: {
       // 2026-09-17) — e.code, weil ⌥+Leertaste auf macOS ein geschütztes
       // Leerzeichen in e.key legt
       if (e.code === "Space" && (e.shiftKey || e.altKey) && !e.metaKey && !e.ctrlKey) {
-        e.preventDefault(); toggle(); return;
+        halt(); toggle(); return;
       }
       if (e.altKey && !e.metaKey && !e.ctrlKey) {
-        if (e.code === "KeyJ") { e.preventDefault(); a.currentTime -= 5; }
+        if (e.code === "KeyJ") { halt(); a.currentTime -= 5; }
         else if (e.code === "KeyL") {
-          e.preventDefault(); a.currentTime += 5;
-        } else if (e.code === "KeyK") { e.preventDefault(); toggle(); }
+          halt(); a.currentTime += 5;
+        } else if (e.code === "KeyK") { halt(); toggle(); }
         else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
-          e.preventDefault(); turn(e.key === "ArrowDown" ? 1 : -1, tippt);
+          halt(); turn(e.key === "ArrowDown" ? 1 : -1, tippt);
         }
         return;
       }
@@ -489,12 +494,12 @@ export default function EditorModule({ id, onExit }: {
       // ↑/↓ wieder für Audio und Turns (User 2026-09-17: die Leertaste
       // löscht sonst den markierten Text)
       if (tippt && e.key === "Escape") {
-        e.preventDefault(); ziel?.blur(); return;
+        halt(); ziel?.blur(); return;
       }
       if (e.ctrlKey && !e.metaKey && !e.altKey) {
-        if (e.code === "KeyL") { e.preventDefault(); setLoop((l) => !l); }
+        if (e.code === "KeyL") { halt(); setLoop((l) => !l); }
         else if (e.code === "KeyX") {
-          e.preventDefault();
+          halt();
           setSpeed((s) => SPEEDS[(SPEEDS.indexOf(s) + 1)
             % SPEEDS.length]);
         }
@@ -505,20 +510,20 @@ export default function EditorModule({ id, onExit }: {
         return;
       }
       if (e.code === "KeyJ" || e.key === "ArrowLeft") {
-        e.preventDefault(); a.currentTime -= 5;
+        halt(); a.currentTime -= 5;
       } else if (e.code === "KeyL" || e.key === "ArrowRight") {
-        e.preventDefault(); a.currentTime += 5;
+        halt(); a.currentTime += 5;
       } else if (e.code === "KeyK" || e.key === " ") {
-        e.preventDefault(); toggle();
+        halt(); toggle();
       } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
         // Absatz-Schritt (User 2026-08-30): ↑/↓ laufen die Segmente
         // entlang — Audio auf den Segment-Anfang, Zeile aktiv+scrollen
-        e.preventDefault();
+        halt();
         turn(e.key === "ArrowDown" ? 1 : -1, false);
       }
     };
-    document.addEventListener("keydown", h);
-    return () => document.removeEventListener("keydown", h);
+    document.addEventListener("keydown", h, true);
+    return () => document.removeEventListener("keydown", h, true);
   }, []);
 
   // EIN geteiltes Sprecher-Menü für alle Zeilen (PERF-Umbau)
