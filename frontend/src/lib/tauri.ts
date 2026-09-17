@@ -57,10 +57,25 @@ export async function pickTranskript(): Promise<string | null> {
   return typeof r === "string" ? r : null;
 }
 
-export async function pickOrdner(): Promise<string | null> {
+export async function pickOrdner(defaultPath?: string): Promise<string | null> {
   const { open } = await import("@tauri-apps/plugin-dialog");
-  const r = await open({ directory: true, multiple: false });
+  const r = await open({ directory: true, multiple: false, defaultPath });
   return typeof r === "string" ? r : null;
+}
+
+/** Freigabe eines gewählten Ordners dauerhaft machen (Bookmark) — in der
+    Sandbox Pflicht, sonst ist er nach dem Neustart weg. */
+export async function ordnerMerken(pfad: string): Promise<void> {
+  if (!isTauri()) return;
+  const { invoke } = await import("@tauri-apps/api/core");
+  await invoke("ordner_merken", { pfad });
+}
+
+/** Vorschlag für den Bibliotheksordner: das echte ~/Documents. */
+export async function standardOrdner(): Promise<string | undefined> {
+  if (!isTauri()) return undefined;
+  const { invoke } = await import("@tauri-apps/api/core");
+  return invoke<string>("standard_ordner");
 }
 
 export async function ordnerOeffnen(pfad: string): Promise<void> {

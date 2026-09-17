@@ -36,3 +36,7 @@ serde_json = "1"
 # `auto-initialize`: ein früher Python::attach würde mit der
 # Standard-Pfadsuche initialisieren, nicht mit unserer PyConfig.
 pyo3 = { version = "0.29", features = [] }
+# Security-scoped Bookmarks (Plan §6): NSURL aus Foundation
+objc2 = "0.6"
+objc2-foundation = { version = "0.3", features = ["NSURL", "NSData", "NSError", "NSString"] }
+libc = "0.2"

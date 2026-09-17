@@ -44,8 +44,6 @@
     "resources": {
       "resources/python-runtime": "python-runtime",
       "resources/python": "python",
-      "resources/bin": "bin",
-      "resources/lib": "lib",
       "resources/models": "models",
       "resources/BUNDLED": "BUNDLED"
     },
@@ -55,8 +53,19 @@
       "entitlements": "entitlements.plist",
       "frameworks": [
         "resources/python-runtime/lib/libpython3.13.dylib",
-        "resources/frameworks/libmp3lame.dylib"
+        "resources/frameworks/libmp3lame.dylib",
+        "resources/lib/libggml-base.dylib",
+        "resources/lib/libggml-blas.dylib",
+        "resources/lib/libggml-cpu.dylib",
+        "resources/lib/libggml-metal.dylib",
+        "resources/lib/libggml.dylib",
+        "resources/lib/libwhisper.1.8.2.dylib",
+        "resources/lib/libwhisper.1.dylib"
       ]
-    }
+    },
+    "externalBin": [
+      "binaries/whisper-cli"
+    ],
+    "category": "Productivity"
   }
 }

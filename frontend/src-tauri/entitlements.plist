@@ -2,20 +2,26 @@
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
   "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <!--
-  Developer-ID-Kanal (DMG): Hardened Runtime OHNE Ausnahmen.
+  Developer-ID-Kanal (DMG) — seit 0.6.0 ebenfalls sandboxed (User-Entscheid
+  17.9.2026: EIN Dateifluss-Modell für DMG und Store). Dieselben Schlüssel
+  wie entitlements.mas.plist ohne application-identifier/team-identifier.
 
-  Bis 0.4.0 brauchte die Hülle vier cs.*-Ausnahmen (Library-Validation
-  aus, JIT, unsigned-executable-memory, dyld-Variablen), weil ein
-  fremd signiertes venv als Kindprozess lief. Seit Python im Prozess
-  läuft (Plan §6): jede .so/.dylib trägt die eigene Team-Signatur
-  (scripts/sign-resources.mjs), CPython 3.13 braucht kein JIT, und es
-  gibt keine PYTHON*/DYLD_-Variablen mehr. Im Phase-0-Spike ohne diese
-  Schlüssel verifiziert.
-
-  Der Store-Kanal bekommt eine eigene Datei (entitlements.mas.plist:
-  app-sandbox, files.user-selected, bookmarks, network.client).
+  - app-sandbox: Container statt Home; Ordner nur per Dialog/Drop
+  - files.user-selected.read-write: Open-/Save-Panel (Powerbox)
+  - files.bookmarks.app-scope: Freigaben über den Neustart hinaus (bookmarks.rs)
+  - network.client: WKWebView lädt in der Sandbox sonst KEINE Seite (Phase-0-
+    Befund 1) — die App öffnet trotzdem keine Verbindung
+  Keine cs.*-Ausnahmen: alle Mach-O tragen die Team-Signatur, kein JIT.
 -->
 <plist version="1.0">
 <dict>
+  <key>com.apple.security.app-sandbox</key>
+  <true/>
+  <key>com.apple.security.files.user-selected.read-write</key>
+  <true/>
+  <key>com.apple.security.files.bookmarks.app-scope</key>
+  <true/>
+  <key>com.apple.security.network.client</key>
+  <true/>
 </dict>
 </plist>

@@ -13,6 +13,12 @@
 -->
 <plist version="1.0">
 <dict>
+  <!-- App Store: Kategorie und Exportkontrolle (Verschlüsselung nur in
+       libpython/OpenSSL, keine eigene — «exempt»). -->
+  <key>LSApplicationCategoryType</key>
+  <string>public.app-category.productivity</string>
+  <key>ITSAppUsesNonExemptEncryption</key>
+  <false/>
   <key>UTImportedTypeDeclarations</key>
   <array>
     <dict>

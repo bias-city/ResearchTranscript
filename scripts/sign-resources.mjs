@@ -22,7 +22,6 @@ import { fileURLToPath } from "node:url";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const RES = path.join(ROOT, "frontend/src-tauri/resources");
-const ENTITLEMENTS = path.join(ROOT, "frontend/src-tauri/entitlements.plist");
 const CONF = path.join(ROOT, "frontend/src-tauri/tauri.conf.json");
 
 function identitaet() {
@@ -88,6 +87,10 @@ if (!fs.existsSync(RES)) {
 }
 const dateien = sammle(RES);
 console.log(`${dateien.length} Mach-O-Dateien unter resources/`);
+// Der Whisper-Sidecar (binaries/) bekommt app-sandbox + inherit — er läuft
+// als Kind der sandboxed Hülle (Phase-0-Messung 5).
+const SIDECAR = path.join(ROOT, "frontend/src-tauri/binaries/whisper-cli-aarch64-apple-darwin");
+const KIND_PLIST = path.join(ROOT, "frontend/src-tauri/entitlements.child.plist");
 const fremd = dateien.map((f) => [f, fremdePfade(f)]).filter(([, p]) => p.length);
 if (fremd.length) {
   console.error("ABBRUCH: Bibliotheken mit absoluten Fremdpfaden (R7):");
@@ -107,11 +110,13 @@ const fehler = [];
 const t0 = Date.now();
 for (const [i, f] of dateien.entries()) {
   try {
+    // OHNE Entitlements (Plan 1.14): Bibliotheken und Werkzeuge tragen nur
+    // Signatur + Hardened Runtime. Mit den Sandbox-Entitlements der Hülle
+    // stürzte python3 der Laufzeit beim direkten Start ab (SIGTRAP).
     execFileSync("/usr/bin/codesign", [
       "--force", "--sign", id,
       "--options", "runtime",
       "--timestamp",
-      "--entitlements", ENTITLEMENTS,
       f,
     ], { stdio: ["ignore", "ignore", "pipe"] });
     ok += 1;
@@ -125,6 +130,12 @@ for (const [i, f] of dateien.entries()) {
   }
 }
 process.stdout.write("\n");
+if (fs.existsSync(SIDECAR)) {
+  execFileSync("/usr/bin/codesign", ["--force", "--sign", id, "--options", "runtime", "--timestamp",
+    "--entitlements", KIND_PLIST, SIDECAR], { stdio: ["ignore", "ignore", "pipe"] });
+  ok += 1;
+  console.log("Sidecar whisper-cli mit app-sandbox + inherit signiert");
+}
 console.log(`signiert: ${ok}${fehler.length ? `, Fehler: ${fehler.length}` : ""}`);
 for (const f of fehler.slice(0, 10)) console.error("  " + f);
 if (fehler.length) process.exit(1);

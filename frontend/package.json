@@ -8,7 +8,7 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "tauri": "tauri",
-    "release": "node ../scripts/bundle-resources.mjs && node ../scripts/sign-resources.mjs && env -u APPLE_ID -u APPLE_PASSWORD -u APPLE_TEAM_ID tauri build --bundles app && node ../scripts/notarize-app.mjs && node ../scripts/build-dmg.mjs && node ../scripts/notarize-dmg.mjs"
+    "release": "node ../scripts/bundle-resources.mjs && node ../scripts/sign-resources.mjs && env -u APPLE_ID -u APPLE_PASSWORD -u APPLE_TEAM_ID tauri build --bundles app && node ../scripts/nachsignieren.mjs && node ../scripts/notarize-app.mjs && node ../scripts/build-dmg.mjs && node ../scripts/notarize-dmg.mjs"
   },
   "dependencies": {
     "@radix-ui/themes": "^3.3.0",

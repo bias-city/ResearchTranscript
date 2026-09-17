@@ -14,6 +14,7 @@ use std::time::Duration;
 
 use tauri::{Emitter, Manager, RunEvent};
 
+pub mod bookmarks;
 #[cfg(feature = "motoren")]
 pub mod motoren;
 pub mod protokoll;
@@ -80,6 +81,25 @@ async fn medien_pfad(app: tauri::AppHandle, eid: String, art: String) -> Result<
     }
     Ok(v)
 }
+
+/// Ein per Dialog freigegebener Ordner (Bibliothek, Zotero) bleibt über
+/// den Neustart hinaus erreichbar (Bookmark) und ist für asset:// offen.
+#[tauri::command]
+fn ordner_merken(app: tauri::AppHandle, pfad: String) -> Result<(), String> {
+    let p = Path::new(&pfad);
+    bookmarks::merken(p)?;
+    app.asset_protocol_scope().allow_directory(p, true).map_err(|e| e.to_string())
+}
+
+/// Vorschlag für den Bibliotheksordner: das ECHTE ~/Documents der Person
+/// (in der Sandbox wäre `HOME` der unsichtbare Container).
+#[tauri::command]
+fn standard_ordner() -> String {
+    bookmarks::echtes_home().join("Documents").to_string_lossy().into_owned()
+}
+
+#[tauri::command]
+fn ist_sandboxed() -> bool { bookmarks::sandboxed() }
 
 #[tauri::command]
 fn protokoll_pfad() -> Option<String> {
@@ -214,6 +234,17 @@ pub fn run() {
             let ordner = handle.path().app_log_dir().unwrap_or_else(|_| std::env::temp_dir());
             protokoll::einrichten(ordner);
             protokoll::panics_fangen();
+            protokoll::schreibe("start", &format!("Sandbox: {}", bookmarks::sandboxed()));
+            // VOR Python: gemerkte Ordner freigeben (Sandbox-Erweiterung gilt
+            // dann für Python, Core ML und das Whisper-Kind) und für asset://
+            for p in bookmarks::wiederherstellen() {
+                let _ = handle.asset_protocol_scope().allow_directory(&p, true);
+            }
+            // Whisper als Sidecar in Contents/MacOS (Store: inherit-Entitlement)
+            if let Ok(exe) = std::env::current_exe() {
+                let kind = exe.with_file_name("whisper-cli");
+                if kind.is_file() { std::env::set_var("LT_WHISPER_CLI", &kind); }
+            }
             // Interpreter + Fassade: ~150 ms, VOR dem ersten Befehl der
             // Oberfläche — auf einem Arbeits-Thread, nie auf dem
             // Hauptthread (python.rs-Kopf).
@@ -236,7 +267,8 @@ pub fn run() {
         .manage(Geoeffnet(Mutex::new(Vec::new())))
         .invoke_handler(tauri::generate_handler![api, sprecher_probe, medien_pfad,
                                                  ordner_oeffnen, geoeffnete_dateien,
-                                                 protokoll_pfad, neustart])
+                                                 protokoll_pfad, neustart, ordner_merken,
+                                                 standard_ordner, ist_sandboxed])
         .build(tauri::generate_context!())
         .expect("ResearchTranscript konnte nicht starten");
 

@@ -9,7 +9,8 @@ import {
   type Settings, type ZoteroStatus,
 } from "../lib/api";
 import { setSprache, useT, type Sprache } from "../lib/i18n";
-import { isTauri, ordnerOeffnen, pickOrdner, protokollPfad } from "../lib/tauri";
+import { isTauri, ordnerMerken, ordnerOeffnen, pickOrdner, protokollPfad,
+  standardOrdner } from "../lib/tauri";
 
 const BIAS_URL = "https://bias.city/researchtranscript/";
 
@@ -66,8 +67,11 @@ export default function EinstellungenModule({ settings, onChange }: {
           {isTauri() && (
             <>
               <Button size="1" variant="soft" onClick={() => {
-                void pickOrdner().then((p) => p
-                  && setze({ library_root: p }));
+                void pickOrdner(settings.library_root).then(async (p) => {
+                  if (!p) return;
+                  await ordnerMerken(p);           // Freigabe überlebt den Neustart
+                  setze({ library_root: p });
+                });
               }}>{tr("st.aendern")}</Button>
               <Button size="1" variant="ghost" onClick={() =>
                 void ordnerOeffnen(settings.library_root)}>
@@ -181,13 +185,28 @@ export default function EinstellungenModule({ settings, onChange }: {
           <Text size="1" color="gray">{tr("st.zotero.hinweis")}</Text>
           <Flex direction="column" gap="1">
             <Text size="1" weight="medium">{tr("st.zotero.dir")}</Text>
-            <TextField.Root size="2" value={zdir}
-              placeholder="~/Zotero"
-              onChange={(e) => setZdir(e.target.value)}
-              onBlur={() => { if (zdir.trim() !== settings.zotero_dir)
-                setze({ zotero_dir: zdir.trim() }); }}
-              onKeyDown={(e) => { if (e.key === "Enter")
-                (e.target as HTMLInputElement).blur(); }} />
+            <Flex align="center" gap="2">
+              <TextField.Root size="2" value={zdir} style={{ flex: 1 }}
+                placeholder="~/Zotero"
+                onChange={(e) => setZdir(e.target.value)}
+                onBlur={() => { if (zdir.trim() !== settings.zotero_dir)
+                  setze({ zotero_dir: zdir.trim() }); }}
+                onKeyDown={(e) => { if (e.key === "Enter")
+                  (e.target as HTMLInputElement).blur(); }} />
+              {isTauri() && (
+                // In der Sandbox zählt nur ein per Dialog freigegebener
+                // Ordner (Bookmark); ein getippter Pfad bleibt unsichtbar.
+                <Button size="1" variant="soft" onClick={() => {
+                  void standardOrdner().then((d) => pickOrdner(
+                    d ? d.replace(/\/Documents$/, "/Zotero") : undefined))
+                    .then(async (p) => {
+                      if (!p) return;
+                      await ordnerMerken(p);
+                      setZdir(p); setze({ zotero_dir: p });
+                    });
+                }}>{tr("st.aendern")}</Button>
+              )}
+            </Flex>
             <Text size="1" color="gray">{tr("st.zotero.dir.hinweis")}</Text>
             {zstatus && zstatus.found !== null && (
               <Text size="1" color={zstatus.found ? "gray" : "red"}>

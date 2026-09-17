@@ -10,7 +10,7 @@ import { Icon } from "./components/icons";
 import { apiGet, apiSend, errMsg, type Settings } from "./lib/api";
 import { setSprache, useT, type Sprache } from "./lib/i18n";
 import { geoeffneteDateien, isTauri, neustart, onBlockiert, onDateien,
-  onUeber, ordnerOeffnen, pickOrdner } from "./lib/tauri";
+  onUeber, ordnerMerken, ordnerOeffnen, pickOrdner, standardOrdner } from "./lib/tauri";
 import AiTranscriptModule from "./modules/AiTranscriptModule";
 import EditorModule from "./modules/EditorModule";
 import EinstellungenModule from "./modules/EinstellungenModule";
@@ -253,12 +253,21 @@ function FirstRun({ onDone }: { onDone: (s: Settings) => void }) {
             style={{ maxWidth: 440, textAlign: "center" }}>
         {tr("firstrun.text")}</Text>
       <Flex gap="3">
-        <Button onClick={() => void setze("default")}>
-          {tr("firstrun.standard")}</Button>
-        {isTauri() && (
-          <Button variant="soft" onClick={() => {
-            void pickOrdner().then((p) => { if (p) void setze(p); });
+        {/* In der App (Sandbox) gibt es keinen sichtbaren Standardordner
+            ohne Freigabe: der Dialog öffnet im echten ~/Documents, dort
+            kann die Person «ResearchTranscript» anlegen oder wählen; die
+            Freigabe wird als Bookmark gemerkt. Im Browser wie bisher. */}
+        {isTauri() ? (
+          <Button onClick={() => {
+            void standardOrdner().then((d) => pickOrdner(d)).then(async (p) => {
+              if (!p) return;
+              await ordnerMerken(p);
+              await setze(p);
+            });
           }}>{tr("firstrun.waehlen")}</Button>
+        ) : (
+          <Button onClick={() => void setze("default")}>
+            {tr("firstrun.standard")}</Button>
         )}
       </Flex>
       {fehler && <Text size="1" color="red">{fehler}</Text>}

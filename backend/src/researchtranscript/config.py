@@ -80,6 +80,11 @@ def _find_executable(name: str, bundled: Path) -> str:
 
 
 def get_whisper_cli() -> str:
+    # Im Bundle liegt whisper-cli seit 0.6.0 als Sidecar in Contents/MacOS
+    # (die Hülle setzt LT_WHISPER_CLI); im Checkout wie gehabt
+    env = os.environ.get("LT_WHISPER_CLI")
+    if env and os.access(env, os.X_OK):
+        return env
     return _find_executable("whisper-cli", get_app_root() / "bin" / "whisper-cli")
 
 

@@ -294,7 +294,12 @@ pub fn selbstpruefung(res: &Path) -> Vec<String> {
     // Whisper bleibt Kind (bin/whisper-cli); ffmpeg und argmax-cli braucht
     // nur noch LT_MOTOR=kind — im Bundle liegen sie seit 0.6.0 nicht mehr.
     let prozess = std::env::var("LT_MOTOR").map(|m| m == "prozess").unwrap_or(false);
-    let mut noetig = vec!["bin/whisper-cli", "models"];
+    // whisper-cli: Sidecar in Contents/MacOS (LT_WHISPER_CLI, seit 0.6.0)
+    // oder im Checkout unter resources/bin
+    let whisper = std::env::var_os("LT_WHISPER_CLI").map(PathBuf::from)
+        .filter(|p| p.is_file()).or_else(|| Some(res.join("bin/whisper-cli")).filter(|p| p.is_file()));
+    if whisper.is_none() { probleme.push("whisper-cli fehlt (Contents/MacOS oder resources/bin)".into()); }
+    let mut noetig = vec!["models"];
     if !prozess { noetig.extend(["bin/ffmpeg", "bin/argmax-cli"]); }
     for name in noetig {
         if !res.join(name).exists() { probleme.push(format!("{name} fehlt in den Ressourcen")); }

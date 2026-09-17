@@ -80,6 +80,23 @@ for (const teil of ["python-runtime", "bin", "lib", "models"]) {
   console.log("✓ SpeakerKit-Modelle im Bundle");
 }
 
+// 1a0b. whisper-cli als Tauri-Sidecar (Contents/MacOS, Store: Entitlement
+//       inherit). Die ggml-/whisper-Bibliotheken wandern als Frameworks
+//       nach Contents/Frameworks; der rpath des Sidecars zeigt dorthin.
+{
+  const quelle = path.join(RES, "bin/whisper-cli");
+  const binDir = path.join(ROOT, "frontend/src-tauri/binaries");
+  const ziel = path.join(binDir, "whisper-cli-aarch64-apple-darwin");
+  fs.mkdirSync(binDir, { recursive: true });
+  fs.copyFileSync(quelle, ziel);
+  fs.chmodSync(ziel, 0o755);
+  const rpaths = execFileSync("/usr/bin/otool", ["-l", ziel], { encoding: "utf8" });
+  if (!rpaths.includes("@loader_path/../Frameworks")) {
+    execFileSync("/usr/bin/install_name_tool", ["-add_rpath", "@loader_path/../Frameworks", ziel]);
+  }
+  console.log("✓ whisper-cli als Sidecar (binaries/, rpath ../Frameworks)");
+}
+
 // 1a1. libmp3lame (LGPL, dynamisch) aus eigenem Bau — scripts/baue-lame.sh
 {
   const lame = path.join(RES, "frameworks/libmp3lame.dylib");
