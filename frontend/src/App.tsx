@@ -246,8 +246,8 @@ function UeberDialog({ open, onClose }: {
   );
 }
 
-/** Laufender Timecode im Kopf: der Editor meldet die Sekunde als
-    Ereignis «rt-zeit» (nur bei Änderung), der Kopf zeigt sie in
+/** Laufender Timecode im Kopf: der Editor meldet Zehntelsekunden als
+    Ereignis «rt-zeit» (nur bei Änderung), der Kopf zeigt hh:mm:ss.z in
     Tabellenziffern; ohne Editor eine leere Zeile gleicher Höhe. */
 function KopfZeit({ aktiv }: { aktiv: boolean }) {
   const [zeit, setZeit] = useState(0);
@@ -259,7 +259,7 @@ function KopfZeit({ aktiv }: { aktiv: boolean }) {
   return (
     <Heading size="4" style={{ fontVariantNumeric: "tabular-nums",
                                minWidth: 96 }}>
-      {aktiv ? hms(zeit) : "\u00a0"}
+      {aktiv ? `${hms(Math.floor(zeit / 10))}.${zeit % 10}` : "\u00a0"}
     </Heading>
   );
 }

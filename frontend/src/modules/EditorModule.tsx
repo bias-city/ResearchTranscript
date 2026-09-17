@@ -22,6 +22,14 @@ import { isTauri, ordnerOeffnen, savePath } from "../lib/tauri";
 
 const SPEEDS = [1, 1.25, 1.5, 1.75, 2];
 
+let letzteZehntel = -1;
+function zehntelMelden(sekunden: number): void {
+  const z = Math.floor(sekunden * 10);
+  if (z === letzteZehntel) return;
+  letzteZehntel = z;
+  window.dispatchEvent(new CustomEvent("rt-zeit", { detail: z }));
+}
+
 /** «hh:mm:ss», «mm:ss», «ss», optional «.mmm» → Sekunden; null, wenn
     unlesbar. Gegenstück zu hms() aus lib/api. */
 function parseHms(text: string): number | null {
@@ -526,11 +534,10 @@ export default function EditorModule({ id, onExit }: {
     const a = audioRef.current;
     if (!a) return;
     const sek = Math.floor(a.currentTime);
-    setZeit((z) => {
-      if (z === sek) return z;
-      window.dispatchEvent(new CustomEvent("rt-zeit", { detail: sek }));
-      return sek;
-    });
+    setZeit((z) => (z === sek ? z : sek));
+    // Kopfzeile mit Zehntelsekunden — beim Abspielen übernimmt die
+    // rAF-Schleife unten, hier reicht die Meldung bei Sprüngen/Pause
+    if (a.paused) zehntelMelden(a.currentTime);
     if (loop && aktiv >= 0 && segmente[aktiv]
         && a.currentTime > segmente[aktiv].end - 0.04) {
       a.currentTime = segmente[aktiv].start;
@@ -544,6 +551,21 @@ export default function EditorModule({ id, onExit }: {
       }
     }
   }, [aktiv, folgen, indexBei, loop, segmente, zeigeAktiv]);
+
+  // Zehntelsekunden für die Kopfzeile (User 2026-09-17): timeupdate
+  // feuert nur 4×/s — beim Abspielen liest eine rAF-Schleife die
+  // Position und meldet jede neue Zehntel als Ereignis «rt-zeit».
+  useEffect(() => {
+    if (!laeuft) return;
+    let lauf = 0;
+    const schritt = () => {
+      const a = audioRef.current;
+      if (a) zehntelMelden(a.currentTime);
+      lauf = requestAnimationFrame(schritt);
+    };
+    lauf = requestAnimationFrame(schritt);
+    return () => cancelAnimationFrame(lauf);
+  }, [laeuft]);
 
   const springe = useCallback((t: number, abspielen = false) => {
     const a = audioRef.current;
