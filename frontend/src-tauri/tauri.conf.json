@@ -1,13 +1,13 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "ResearchTranscript",
+  "productName": "ResearchTranscriptSpike",
   "version": "0.4.0",
-  "identifier": "city.bias.researchtranscript",
+  "identifier": "city.bias.researchtranscript.spike",
   "build": {
     "beforeDevCommand": "npm run dev",
     "devUrl": "http://localhost:1421",
-    "beforeBuildCommand": "npm run build",
-    "frontendDist": "../dist"
+    "beforeBuildCommand": "",
+    "frontendDist": "../spike-ui"
   },
   "app": {
     "windows": [
@@ -23,14 +23,20 @@
       }
     ],
     "security": {
-      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost http://127.0.0.1:*; img-src 'self' data: blob:; script-src 'self'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: http://127.0.0.1:*"
-    }
+      "csp": "default-src 'self'; connect-src 'self' ipc: http://ipc.localhost rtmedia: asset: http://asset.localhost; img-src 'self' data: blob: rtmedia:; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; font-src 'self' data:; media-src 'self' blob: rtmedia: asset: http://asset.localhost",
+      "assetProtocol": {
+        "enable": true,
+        "scope": [
+          "**"
+        ]
+      }
+    },
+    "withGlobalTauri": true
   },
   "bundle": {
     "active": true,
     "targets": [
-      "app",
-      "dmg"
+      "app"
     ],
     "icon": [
       "icons/icon.icns",
@@ -49,7 +55,10 @@
     "macOS": {
       "minimumSystemVersion": "14.0",
       "signingIdentity": "A24B887F1B465B0F6767E8EF61FF12A00CAA66D1",
-      "entitlements": "entitlements.plist"
+      "entitlements": "entitlements.spike.plist",
+      "frameworks": [
+        "resources/python-runtime/lib/libpython3.13.dylib"
+      ]
     }
   }
 }

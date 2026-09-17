@@ -25,6 +25,10 @@ use std::time::{Duration, Instant};
 
 use tauri::{Manager, RunEvent};
 
+// Phase-0-Spike F1 (docs/appstore-plan.md §3): Python im Prozess
+mod python;
+mod medien;
+
 /// DER ResearchTranscript-Port: 5628 = „LOCT" auf der Telefontastatur
 /// (enrich 36742 = „ENRIC", Zotero-Tradition). Vier Buchstaben, nicht
 /// fünf: „LOCTR" wäre 56287 und läge damit im EPHEMEREN Bereich
@@ -436,10 +440,28 @@ pub fn run() {
             }
         })
         .plugin(tauri_plugin_dialog::init())
+        .on_page_load(|w, p| { python::protokoll(&w.app_handle().clone(), &format!("seite {:?} {}", p.event(), p.url())); })
+        .setup(|app| {
+            // Phase-0-Spike: Messungen 1–3 und 5 laufen ohne Zutun der
+            // Oberfläche, damit das Protokoll auch ohne Fenster entsteht.
+            python::selbstlauf(app.handle().clone());
+            Ok(())
+        })
+        .manage(medien::Medien(Mutex::new(std::collections::HashMap::new())))
+        .register_asynchronous_uri_scheme_protocol("rtmedia", |ctx, req, responder| {
+            // Phase-0-Spike F2: eigener Thread je Anfrage, kein Python darin
+            let app = ctx.app_handle().clone();
+            std::thread::spawn(move || responder.respond(medien::bedienen(&app, req)));
+        })
         .manage(EigenesBackend(Mutex::new(None)))
         .manage(Geoeffnet(Mutex::new(Vec::new())))
         .invoke_handler(tauri::generate_handler![backend_starten, ordner_oeffnen,
-                                                 geoeffnete_dateien])
+                                                 geoeffnete_dateien,
+                                                 python::spike_log, python::spike_health,
+                                                 python::spike_import, python::spike_job_start,
+                                                 python::spike_job_poll, python::spike_job_abbruch,
+                                                 python::spike_ordner, python::spike_kind_argmax,
+                                                 medien::spike_medien_registrieren])
         .build(tauri::generate_context!())
         .expect("ResearchTranscript konnte nicht starten");
 
