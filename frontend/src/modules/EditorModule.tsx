@@ -368,9 +368,15 @@ export default function EditorModule({ id, onExit }: {
     return aus;
   }, [starts]);
 
+  // Laufende Zeit rechts im Transport (User 2026-09-17: «der Zähler
+  // sollte bei Play mitzählen») — nur bei vollen Sekunden setzen, mehr
+  // zeigt hh:mm:ss ohnehin nicht, und timeupdate feuert 4×/s
+  const [zeit, setZeit] = useState(0);
   const onTime = useCallback(() => {
     const a = audioRef.current;
     if (!a) return;
+    const sek = Math.floor(a.currentTime);
+    setZeit((z) => (z === sek ? z : sek));
     if (loop && aktiv >= 0 && segmente[aktiv]
         && a.currentTime > segmente[aktiv].end - 0.04) {
       a.currentTime = segmente[aktiv].start;
@@ -698,8 +704,7 @@ export default function EditorModule({ id, onExit }: {
               <Flex justify="end" align="center" style={{ flex: 1 }}>
                 <Text size="1" color="gray"
                       style={{ fontVariantNumeric: "tabular-nums" }}>
-                  {aktiv >= 0 && segmente[aktiv]
-                    ? hms(segmente[aktiv].start) : ""}
+                  {hms(zeit)}
                 </Text>
               </Flex>
             </>
