@@ -1174,9 +1174,10 @@ function ExportMenu({ onExport, hatVideo }: {
 }) {
   const tr = useT();
   return (
-    <Select.Root value="" onValueChange={(v) => v && onExport(v)}>
+    // Grösse 1 wie die Auswahlfelder im AI-Tab (User 2026-09-17)
+    <Select.Root value="" size="1" onValueChange={(v) => v && onExport(v)}>
       <Select.Trigger placeholder={tr("ed.export")} variant="soft" />
-      <Select.Content>
+      <Select.Content position="popper">
         <Select.Item value="vtt">VTT</Select.Item>
         <Select.Item value="csv">CSV</Select.Item>
         <Select.Item value="txt">TXT</Select.Item>
