@@ -320,6 +320,29 @@ export default function EditorModule({ id, onExit }: {
     dirty();
   }, [dirty]);
 
+  /** Zwischenruf (User 2026-09-17): Whisper hört nur die dominante
+      Stimme — ein Turn an der AKTUELLEN Abspielposition, unabhängig von
+      der offenen Zeile, ohne Sprecher (Badge setzt ihn), nach Zeit
+      einsortiert, darf sich mit dem laufenden Turn überlappen. ⌥Enter. */
+  const turnBeiZeit = useCallback((t: number) => {
+    const idN = neueId();
+    const start = Math.round(Math.max(0, t) * 1000) / 1000;
+    setSegmente((s) => {
+      let i = s.findIndex((x) => x.start > start);
+      if (i < 0) i = s.length;
+      const next = s[i];
+      const end = next && next.start - start >= 0.5
+        ? Math.min(next.start, start + 2) : start + 2;
+      const neu: Segment = { id: idN, start, end: Math.round(end * 1000) / 1000,
+                             sprecher: null, text: "" };
+      fokusZiel.current = { id: idN, pos: 0 };
+      return [...s.slice(0, i), neu, ...s.slice(i)];
+    });
+    dirty();
+  }, [dirty]);
+  const turnBeiZeitRef = useRef(turnBeiZeit);
+  turnBeiZeitRef.current = turnBeiZeit;
+
   const verbinden = useCallback((sid: string) => {
     const idZ = neueId();
     setSegmente((s) => {
@@ -597,6 +620,9 @@ export default function EditorModule({ id, onExit }: {
         } else if (e.code === "KeyK") { halt(); toggle(); }
         else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
           halt(); turn(e.key === "ArrowDown" ? 1 : -1, tippt);
+        } else if (e.key === "Enter") {
+          // Zwischenruf an der Abspielposition — auch mitten im Tippen
+          halt(); turnBeiZeitRef.current(a.currentTime);
         }
         return;
       }
