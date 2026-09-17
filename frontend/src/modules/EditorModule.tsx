@@ -742,6 +742,8 @@ export default function EditorModule({ id, onExit }: {
   // EIN geteiltes Sprecher-Menü für alle Zeilen (PERF-Umbau)
   const [menue, setMenue] = useState<{ segId: string; x: number;
     y: number } | null>(null);
+  // Reihenfolge im Sprecher-Menü: zuletzt gewählte zuerst
+  const [zuletzt, setZuletzt] = useState<string[]>([]);
   const menueOeffnen = useCallback((segId: string, x: number,
                                    y: number) => {
     setMenue({ segId, x, y });
@@ -917,15 +919,23 @@ export default function EditorModule({ id, onExit }: {
                       borderRadius: 8, boxShadow: "var(--shadow-4)",
                       padding: 4, minWidth: 160, maxHeight: 250,
                       overflowY: "auto" }}>
+          {/* Zuletzt gewählte zuerst (User 2026-09-17: bei Wiederholungen
+              nicht scrollen), dann die übrigen in Listenreihenfolge,
+              «ohne Sprecher» zum Schluss */}
+          {[...zuletzt.map((id) => sprecher.find((s) => s.id === id))
+              .filter((s): s is Sprecher => !!s),
+            ...sprecher.filter((s) => !zuletzt.includes(s.id))].map((s) => (
+            <MenueEintrag key={s.id} label={s.name}
+                          farbe={sprecherFarbe(sprecher, s.id)}
+                          onClick={() => {
+                            sprecherSetzen(menue.segId, s.id);
+                            setZuletzt((z) => [s.id, ...z.filter((x) => x !== s.id)]);
+                            setMenue(null);
+                          }} />
+          ))}
           <MenueEintrag label={tr("ed.sprecher.ohne")} farbe="gray"
                         onClick={() => { sprecherSetzen(menue.segId,
                           null); setMenue(null); }} />
-          {sprecher.map((s) => (
-            <MenueEintrag key={s.id} label={s.name}
-                          farbe={sprecherFarbe(sprecher, s.id)}
-                          onClick={() => { sprecherSetzen(menue.segId,
-                            s.id); setMenue(null); }} />
-          ))}
         </div>
       )}
       <SidePanel side="right" storageKey={KEYS.sidebarSprecher}
