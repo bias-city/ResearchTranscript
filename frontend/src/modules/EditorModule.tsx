@@ -223,7 +223,27 @@ export default function EditorModule({ id, onExit }: {
     dirty();
   }, [dirty]);
 
+  // Nach Teilen/Neu/Verbinden/Löschen wandert der Fokus ins richtige
+  // Textfeld (Tastaturfluss, User 2026-09-17: Enter = neuer Turn). Die
+  // Zeilen remounten (neue ids), deshalb erst nach dem Render suchen.
+  const fokusZiel = useRef<{ id: string; pos: number | "ende" } | null>(null);
+  useEffect(() => {
+    const z = fokusZiel.current;
+    if (!z) return;
+    const i = segmente.findIndex((s) => s.id === z.id);
+    if (i < 0) return;
+    fokusZiel.current = null;
+    requestAnimationFrame(() => {
+      const ta = listRef.current?.querySelector(`[data-seg="${i}"] textarea`);
+      if (!(ta instanceof HTMLTextAreaElement)) return;
+      ta.focus();
+      const p = z.pos === "ende" ? ta.value.length : Math.min(z.pos, ta.value.length);
+      ta.setSelectionRange(p, p);
+    });
+  }, [segmente]);
+
   const teilen = useCallback((sid: string, cursor: number) => {
+    const idB = neueId();
     setSegmente((s) => {
       const i = s.findIndex((x) => x.id === sid);
       if (i < 0) return s;
@@ -238,29 +258,56 @@ export default function EditorModule({ id, onExit }: {
       const neu: Segment[] = [
         { ...seg, id: neueId(),
           end: Math.round(mitte * 1000) / 1000, text: a },
-        { id: neueId(), start: Math.round(mitte * 1000) / 1000,
+        { id: idB, start: Math.round(mitte * 1000) / 1000,
           end: seg.end, sprecher: seg.sprecher, text: b }];
+      fokusZiel.current = { id: idB, pos: 0 };
       return [...s.slice(0, i), ...neu, ...s.slice(i + 1)];
     });
     dirty();
   }, [dirty]);
 
+  /** Neuer, leerer Turn NACH diesem (Enter am Textende): gleicher
+      Sprecher, Zeit vom Ende des aktuellen bis zum nächsten Anfang —
+      mindestens eine halbe Sekunde, die Zeiten richtet man später. */
+  const neuerTurn = useCallback((sid: string) => {
+    const idN = neueId();
+    setSegmente((s) => {
+      const i = s.findIndex((x) => x.id === sid);
+      if (i < 0) return s;
+      const seg = s[i], next = s[i + 1];
+      const start = seg.end;
+      const end = Math.max(start + 0.5, next && next.start > start ? next.start : start + 0.5);
+      const neu: Segment = { id: idN, start, end: Math.round(end * 1000) / 1000,
+                             sprecher: seg.sprecher, text: "" };
+      fokusZiel.current = { id: idN, pos: 0 };
+      return [...s.slice(0, i + 1), neu, ...s.slice(i + 1)];
+    });
+    dirty();
+  }, [dirty]);
+
   const verbinden = useCallback((sid: string) => {
+    const idZ = neueId();
     setSegmente((s) => {
       const i = s.findIndex((x) => x.id === sid);
       if (i < 1) return s;
       const prev = s[i - 1], seg = s[i];
       // NEUE id: die Textarea ist unkontrolliert (defaultValue) und
       // zeigt den zusammengeführten Text nur nach Remount
-      const zusammen = { ...prev, id: neueId(), end: seg.end,
+      const zusammen = { ...prev, id: idZ, end: seg.end,
         text: `${prev.text} ${seg.text}`.trim() };
+      fokusZiel.current = { id: idZ, pos: prev.text.trim().length };
       return [...s.slice(0, i - 1), zusammen, ...s.slice(i + 1)];
     });
     dirty();
   }, [dirty]);
 
   const entfernen = useCallback((sid: string) => {
-    setSegmente((s) => s.filter((x) => x.id !== sid));
+    setSegmente((s) => {
+      const i = s.findIndex((x) => x.id === sid);
+      const nachbar = s[i - 1] ?? s[i + 1];
+      if (nachbar) fokusZiel.current = { id: nachbar.id, pos: "ende" };
+      return s.filter((x) => x.id !== sid);
+    });
     dirty();
   }, [dirty]);
 
@@ -650,7 +697,7 @@ export default function EditorModule({ id, onExit }: {
               laufzeit={i === aktiv ? zeit : undefined}
               onSpringe={springe}
               onText={textAendern} onMenue={menueOeffnen}
-              onTeilen={teilen} onVerbinden={verbinden}
+              onTeilen={teilen} onNeu={neuerTurn} onVerbinden={verbinden}
               onEntfernen={entfernen} />
           ))}
         </div>
@@ -1033,7 +1080,7 @@ function planeWachsen(el: HTMLTextAreaElement) {
 
 const SegmentZeile = memo(function SegmentZeile({
   seg, index, aktiv, treffer, name, farbe, hatAudio, laufzeit, onSpringe,
-  onText, onMenue, onTeilen, onVerbinden, onEntfernen,
+  onText, onMenue, onTeilen, onNeu, onVerbinden, onEntfernen,
 }: {
   seg: Segment; index: number; aktiv: boolean;
   /** laufender Playhead, nur in der aktiven Zeile (User 2026-09-17:
@@ -1049,6 +1096,8 @@ const SegmentZeile = memo(function SegmentZeile({
   onText: (id: string, text: string) => void;
   onMenue: (segId: string, x: number, y: number) => void;
   onTeilen: (id: string, cursor: number) => void;
+  /** Enter am Textende: neuer leerer Turn danach */
+  onNeu: (id: string) => void;
   onVerbinden: (id: string) => void;
   onEntfernen: (id: string) => void;
 }) {
@@ -1118,6 +1167,25 @@ const SegmentZeile = memo(function SegmentZeile({
                 }}
                 defaultValue={seg.text}
                 rows={1}
+                onKeyDown={(e) => {
+                  // Tastaturfluss wie in einem Texteditor (User 2026-09-17):
+                  // Enter teilt am Cursor, am Textende legt es einen neuen
+                  // Turn an; ⌫ im leeren Feld löscht die Zeile, ⌫ ganz am
+                  // Anfang verbindet mit der vorigen. Ein Zeilenumbruch
+                  // IM Turn ist nie gewollt.
+                  const ta = e.currentTarget;
+                  if (e.key === "Enter" && !e.altKey && !e.metaKey && !e.ctrlKey) {
+                    e.preventDefault();
+                    const pos = ta.selectionStart ?? ta.value.length;
+                    if (pos >= ta.value.trimEnd().length) onNeu(seg.id);
+                    else onTeilen(seg.id, pos);
+                  } else if (e.key === "Backspace" && !e.altKey && !e.metaKey) {
+                    if (ta.value === "") { e.preventDefault(); onEntfernen(seg.id); }
+                    else if (ta.selectionStart === 0 && ta.selectionEnd === 0 && index > 0) {
+                      e.preventDefault(); onVerbinden(seg.id);
+                    }
+                  }
+                }}
                 onInput={(e) => {
                   wachsen(e.currentTarget);
                   onText(seg.id, e.currentTarget.value);
