@@ -16,7 +16,6 @@ from __future__ import annotations
 import json
 import os
 import shutil
-import sys
 import time
 from pathlib import Path
 
@@ -33,12 +32,17 @@ PORT = int(os.environ.get("LT_SERVE_PORT") or 5628)
 
 
 def get_app_root() -> Path:
-    """Bundle: Resources-Ordner; dev: Repo-Wurzel (backend/..)."""
+    """Bundle: Resources-Ordner; dev: Repo-Wurzel (backend/..).
+
+    Im Bundle MUSS `LT_APP_ROOT` gesetzt sein (die Hülle tut das vor
+    dem Interpreter-Start, Plan §4 1.6): das Paket liegt dort unter
+    `python/site-packages`, der Weg über `__file__` zeigte im Spike auf
+    `venv/lib` — bin/, models/ und BUNDLED waren unauffindbar. Der
+    `sys.frozen`-Zweig (PyInstaller-Erbe) ist weg; `sys.executable`
+    zeigt im Prozess der Hülle auf die App, nie auf Python."""
     env = os.environ.get("LT_APP_ROOT")
     if env:
         return Path(env)
-    if getattr(sys, "frozen", False):
-        return Path(sys.executable).parent.parent / "Resources"
     return Path(__file__).resolve().parent.parent.parent.parent
 
 
@@ -47,14 +51,23 @@ def is_bundled() -> bool:
             or (get_app_root() / "BUNDLED").exists())
 
 
+def is_embedded() -> bool:
+    """Läuft Python im Prozess der Hülle (PyO3) statt als Server?"""
+    return os.environ.get("LT_EMBEDDED") == "1"
+
+
 def _find_executable(name: str, bundled: Path) -> str:
-    kandidaten: list[Path] = []
+    """Im Bundle NUR der mitgelieferte Pfad (Plan R6): ein Homebrew-
+    Binary wäre unsigniert und unsandboxed — im Store ein
+    Ablehnungsgrund, im DMG eine Überraschung. Im Checkout wie bisher
+    Homebrew, PATH, dann der Repo-Ordner."""
     if is_bundled():
-        kandidaten.append(bundled)
-    kandidaten += [Path("/opt/homebrew/bin") / name,
-                   Path("/usr/local/bin") / name]
-    if not is_bundled():
-        kandidaten.append(bundled)
+        if bundled.is_file() and os.access(bundled, os.X_OK):
+            return str(bundled)
+        raise FileNotFoundError(
+            f"{name} fehlt im Bundle ({bundled}) — Paket unvollständig")
+    kandidaten = [Path("/opt/homebrew/bin") / name,
+                  Path("/usr/local/bin") / name, bundled]
     for k in kandidaten:
         if k.is_file() and os.access(k, os.X_OK):
             return str(k)

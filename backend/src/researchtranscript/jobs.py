@@ -18,7 +18,9 @@ from __future__ import annotations
 
 import subprocess
 import threading
+import time
 import uuid
+from collections.abc import Callable
 from datetime import UTC, datetime
 from pathlib import Path
 
@@ -31,6 +33,41 @@ from .transcribe import (
 
 JOBS: dict[str, dict] = {}
 _LOCK = threading.Lock()
+
+#: Beendete Jobs bleiben so lange sichtbar (Plan 1.19 — der Dauerlauf
+#: zeigte +4 Einträge je Runde ohne Aufräumen); die Bibliothek hat das
+#: Ergebnis längst.
+AUFRAEUMEN_NACH_S = 24 * 3600
+ENDZUSTAENDE = ("completed", "failed", "cancelled")
+
+# ---------- Beobachter (Plan 1.5) ----------
+# Die Hülle will Job-Änderungen als Ereignis statt per Polling. Ein
+# Beobachter bekommt die `sicht()` eines Jobs — gedrosselt auf 10 Hz je
+# Job, denn `partial_text` (bis 4000 Zeichen je whisper-Zeile) würde
+# den IPC fluten; Statuswechsel gehen immer sofort durch.
+_BEOBACHTER: Callable[[dict], None] | None = None
+_ZULETZT: dict[str, float] = {}
+DROSSEL_S = 0.1
+
+
+def setze_beobachter(cb: Callable[[dict], None] | None) -> None:
+    global _BEOBACHTER
+    _BEOBACHTER = cb
+    _ZULETZT.clear()
+
+
+def _melde(job: dict, sofort: bool) -> None:
+    cb = _BEOBACHTER
+    if cb is None:
+        return
+    jetzt = time.monotonic()
+    if not sofort and jetzt - _ZULETZT.get(job["id"], 0.0) < DROSSEL_S:
+        return
+    _ZULETZT[job["id"]] = jetzt
+    try:
+        cb(sicht(job))
+    except Exception:  # noqa: BLE001 — ein kaputter Beobachter darf
+        pass           # nie den Job umbringen
 
 
 class Abbruch(Exception):
@@ -50,11 +87,48 @@ def _neu(filename: str, params: dict) -> dict:
            "started_at": None}
     with _LOCK:
         JOBS[job["id"]] = job
+    _melde(job, sofort=True)
     return job
 
 
 def _setze(job: dict, **kv) -> None:
     job.update(kv)
+    _melde(job, sofort="status" in kv or "eintrag" in kv
+           or "error" in kv)
+
+
+def aufraeumen(jetzt: float | None = None) -> int:
+    """Beendete Jobs älter als AUFRAEUMEN_NACH_S vergessen. Liefert die
+    Zahl der entfernten Einträge."""
+    from datetime import datetime as _dt
+    jetzt = time.time() if jetzt is None else jetzt
+    weg = []
+    with _LOCK:
+        for jid, j in JOBS.items():
+            if j["status"] not in ENDZUSTAENDE:
+                continue
+            try:
+                alter = jetzt - _dt.fromisoformat(j["created_at"]).timestamp()
+            except (KeyError, ValueError):
+                alter = 0
+            if alter > AUFRAEUMEN_NACH_S:
+                weg.append(jid)
+        for jid in weg:
+            JOBS.pop(jid, None)
+            _ZULETZT.pop(jid, None)
+    return len(weg)
+
+
+def alle_abbrechen(frist_s: float = 3.0) -> None:
+    """Beim Beenden der Hülle: jedes Abbruch-Ereignis setzen, laufende
+    Kinder töten, kurz auf die Threads warten. Die Threads sind
+    daemon — ein hängendes Kind blockiert das Ende nicht."""
+    for jid in list(_CANCEL):
+        abbrechen(jid)
+    frist = time.monotonic() + frist_s
+    for t in threading.enumerate():
+        if t.name.startswith("lt-job-") and t.is_alive():
+            t.join(max(0.0, frist - time.monotonic()))
 
 
 _CANCEL: dict[str, threading.Event] = {}
@@ -353,6 +427,7 @@ def _lauf(job: dict, quelle: Path, name: str) -> None:
 
 def starte(quelle: Path, filename: str, params: dict,
            quelle_ist_temp: bool = False) -> dict:
+    aufraeumen()
     job = _neu(filename, params)
     if quelle_ist_temp:
         job["_quelle_tmp"] = str(quelle)

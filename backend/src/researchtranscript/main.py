@@ -1,16 +1,19 @@
-"""ResearchTranscript 2.0 — FastAPI-Backend (Loopback, Port 5628).
+"""ResearchTranscript — dünne HTTP-Hülle (FastAPI, Loopback, Port 5628).
 
-Die Shell (Tauri) ist dumm: sie spawnt uvicorn und lädt das UI; Config,
-Bibliothek und Jobs besitzt das Backend. Statisches Frontend wird —
-falls gebaut — same-origin mitserviert (Browser-Betrieb ohne App).
+Seit Variante A (App-Store-Plan §4) ist das hier nur noch Transport:
+jede Route übersetzt in eine Funktion aus `api.py` und `ApiFehler` in
+eine HTTPException. Die App selbst spricht nicht mehr HTTP — sie ruft
+die Fassade im Prozess (PyO3). Der Server bleibt für den Browser-Betrieb
+(Vite-Proxy, Playwright, Screenshots) und für pytest (`TestClient`).
+
+Nur hier: Upload-Routen (Multipart), Download-Routen, Streaming von
+Medien, statisches Frontend, CORS, Host-Wache.
 """
 from __future__ import annotations
 
-import tempfile
 from pathlib import Path
 
 from fastapi import (
-    BackgroundTasks,
     FastAPI,
     File,
     Form,
@@ -18,17 +21,16 @@ from fastapi import (
     UploadFile,
 )
 from fastapi.responses import FileResponse, Response
-from pydantic import BaseModel, ConfigDict
 
-from . import bibliothek, config, exporte, jobs
-from .bibliothek import BibliothekFehler
+from . import api, config
+from .api import ApiFehler
 
 app = FastAPI(title=config.APP_NAME, version=config.APP_VERSION)
 
-# Das Tauri-Fenster (Origin tauri://localhost) spricht 127.0.0.1:5628
+# Das Tauri-Fenster (Origin tauri://localhost) sprach 127.0.0.1:5628
 # CROSS-origin — ohne CORS blockt WebKit die Antwort („Load failed",
-# Live-Befund 2026-08-30). Allowlist statt "*": nur eigene Fenster;
-# der Browser-Betrieb ist same-origin und braucht keins.
+# Live-Befund 2026-08-30). Bleibt für den Dev-Server (`tauri dev` mit
+# Vite) — die gebaute App braucht es nicht mehr.
 from fastapi.middleware.cors import CORSMiddleware
 
 app.add_middleware(
@@ -50,115 +52,36 @@ async def host_wache(request, call_next):
                             content={"detail": f"Host nicht erlaubt: {host}"})
     return await call_next(request)
 
-VIDEO_MEDIA = {".mp4": "video/mp4", ".m4v": "video/mp4",
-               ".mov": "video/quicktime"}
-AUDIO_MEDIA = {".mp3": "audio/mpeg", ".m4a": "audio/mp4",
-               ".aac": "audio/aac", ".wav": "audio/wav",
-               ".ogg": "audio/ogg", ".flac": "audio/flac",
-               ".webm": "audio/webm"}
 
-
-class ApiModel(BaseModel):
-    model_config = ConfigDict(extra="forbid")
-
-
-def _tmpdatei(suffix: str, prefix: str) -> Path:
-    """mkstemp OHNE fd-Leck (Review-Befund: der fd wurde nie
-    geschlossen — drei Aufrufstellen)."""
-    import os
-    fd, name = tempfile.mkstemp(suffix=suffix, prefix=prefix)
-    os.close(fd)
-    return Path(name)
-
-
-def _err(e: Exception) -> HTTPException:
-    if isinstance(e, BibliothekFehler):
-        return HTTPException(status_code=404, detail=str(e))
-    return HTTPException(status_code=500, detail=str(e))
+@app.exception_handler(ApiFehler)
+async def _api_fehler(_request, e: ApiFehler):
+    from fastapi.responses import JSONResponse
+    return JSONResponse(status_code=e.status, content={"detail": e.detail})
 
 
 # ---------- Health / Modelle / Einstellungen ----------
 
 @app.get("/api/health")
 def health() -> dict:
-    return {"status": "ok", "app": config.APP_NAME,
-            "version": config.APP_VERSION}
+    return api.health()
 
 
 @app.get("/api/models")
 def models() -> dict:
-    """Mitgelieferte + eigene Modelle. Jeder Aufruf ist ein Scan (ein
-    Glob) — ein in `<Bibliothek>/Modelle/` abgelegtes Modell erscheint
-    beim nächsten Öffnen der Einstellungen. Der Ordner wird hier
-    angelegt, damit er im Finder existiert."""
-    eigene = config.get_eigene_modelle_dir()
-    if eigene is not None:
-        try:
-            eigene.mkdir(parents=True, exist_ok=True)
-        except OSError:
-            pass
-    return {"models": config.get_available_models(),
-            "models_dir": str(config.get_models_dir()),
-            "eigene_dir": str(eigene) if eigene else None,
-            "ungueltig": config.get_ungueltige_modelle()}
+    return api.models()
 
 
 @app.get("/api/settings")
 def settings_get() -> dict:
-    cfg = config.read_config()
-    cfg["default_library_root"] = str(config.default_library_root())
-    return cfg
-
-
-class SettingsReq(ApiModel):
-    model_config = ConfigDict(extra="allow")
+    return api.settings_get()
 
 
 @app.post("/api/settings")
-def settings_post(req: SettingsReq) -> dict:
-    aend = req.model_dump()
-    mail = aend.get("user_email")
-    if mail is not None:
-        mail = str(mail).strip()
-        if mail and ("@" not in mail or " " in mail):
-            raise HTTPException(status_code=422,
-                                detail="Keine E-Mail-Adresse")
-        aend["user_email"] = mail
-    if aend.get("install_id") == "neu":          # Einstellungen: «Neu erzeugen»
-        aend["install_id"] = config.neue_install_id()
-    elif "install_id" in aend:
-        aend.pop("install_id")                    # sonst nie von aussen setzbar
-    root = aend.get("library_root")
-    if root == "default":
-        p = config.default_library_root()
-        p.mkdir(parents=True, exist_ok=True)
-        aend["library_root"] = str(p)
-    elif root:
-        p = Path(root).expanduser()
-        if not p.is_dir():
-            raise HTTPException(status_code=409,
-                                detail=f"Kein Ordner: {p}")
-        aend["library_root"] = str(p)
-    return config.write_config(aend)
+def settings_post(req: dict) -> dict:
+    return api.settings_post(req)
 
 
 # ---------- Transkription ----------
-
-def _params(model: str, language: str, speaker_range: str,
-            cluster_threshold: float, diarize: bool) -> dict:
-    min_sp = max_sp = 0
-    if speaker_range and speaker_range != "auto" \
-            and "-" in speaker_range:
-        a, _, b = speaker_range.partition("-")
-        try:
-            min_sp, max_sp = int(a), int(b)
-        except ValueError:
-            min_sp = max_sp = 0
-    return {"model": model, "language": language,
-            "min_speakers": min_sp, "max_speakers": max_sp,
-            "speaker_range": speaker_range or "auto",
-            "cluster_threshold": cluster_threshold, "diarize": diarize}
-
 
 @app.post("/api/transcribe")
 async def transcribe_upload(file: UploadFile = File(...),
@@ -169,178 +92,40 @@ async def transcribe_upload(file: UploadFile = File(...),
                             diarize: bool = Form(True)) -> dict:
     name = file.filename or "audio"
     endung = Path(name).suffix.lower()
-    if endung not in bibliothek.AUDIO_ENDUNGEN + bibliothek.VIDEO_ENDUNGEN:
+    if not api.endung_erlaubt(endung):
         raise HTTPException(status_code=400,
                             detail=f"Nicht unterstützt: {endung}")
-    tmp = _tmpdatei(endung, "lt-up-")
+    tmp = api.tmpdatei(endung, "lt-up-")
     with tmp.open("wb") as f:
         while chunk := await file.read(1 << 20):
             f.write(chunk)
-    _video_pruefen(tmp, aufraeumen=True)
-    job = jobs.starte(tmp, name,
-                      _params(model, language, speaker_range,
-                              cluster_threshold, diarize),
-                      quelle_ist_temp=True)
-    return {"job_id": job["id"]}
-
-
-def _video_pruefen(p: Path, *, aufraeumen: bool = False) -> None:
-    """Abweisen VOR dem Job (422 mit Hinweis), nie still im Thread."""
-    from . import video
-    try:
-        video.pruefe(p)
-    except video.VideoFehler as e:
-        if aufraeumen:
-            p.unlink(missing_ok=True)
-        raise HTTPException(status_code=422, detail=str(e)) from e
-
-
-class TranscribePathReq(ApiModel):
-    path: str
-    model: str = "large-v3-turbo"
-    language: str = "de"
-    speaker_range: str = "auto"
-    cluster_threshold: float = 0.5
-    diarize: bool = True
+    return api.transcribe_temp(tmp, name, {
+        "model": model, "language": language,
+        "speaker_range": speaker_range,
+        "cluster_threshold": cluster_threshold, "diarize": diarize})
 
 
 @app.post("/api/transcribe-path")
-def transcribe_path(req: TranscribePathReq) -> dict:
-    """App-Weg (nativer Datei-Drop): Pfad statt Multipart — große
-    Audios werden nie durch HTTP kopiert."""
-    p = Path(req.path).expanduser()
-    if not p.is_file():
-        raise HTTPException(status_code=404, detail=f"{p} fehlt")
-    if p.suffix.lower() not in bibliothek.AUDIO_ENDUNGEN + bibliothek.VIDEO_ENDUNGEN:
-        raise HTTPException(status_code=400,
-                            detail=f"Nicht unterstützt: {p.suffix}")
-    _video_pruefen(p)
-    job = jobs.starte(p, p.name,
-                      _params(req.model, req.language,
-                              req.speaker_range, req.cluster_threshold,
-                              req.diarize))
-    return {"job_id": job["id"]}
+def transcribe_path(req: dict) -> dict:
+    return api.transcribe_path(req)
 
 
 @app.get("/api/jobs")
 def jobs_liste() -> dict:
-    return {"jobs": [jobs.sicht(j) for j in list(jobs.JOBS.values())]}
+    return api.jobs_liste()
 
 
 @app.get("/api/jobs/{job_id}")
 def job_get(job_id: str) -> dict:
-    j = jobs.JOBS.get(job_id)
-    if j is None:
-        raise HTTPException(status_code=404, detail="Job unbekannt")
-    return jobs.sicht(j)
+    return api.job_get(job_id)
 
 
 @app.post("/api/jobs/{job_id}/cancel")
 def job_cancel(job_id: str) -> dict:
-    if job_id not in jobs.JOBS:
-        raise HTTPException(status_code=404, detail="Job unbekannt")
-    jobs.abbrechen(job_id)
-    return {"status": "cancelling"}
+    return api.job_cancel(job_id)
 
 
 # ---------- Import ----------
-
-def _import_turns(turns: list[dict], name: str, quelle_art: str,
-                  audio: Path | None) -> dict:
-    """`audio` darf auch ein Video sein: dann wird der Ton gezogen und
-    das Video unverändert mitgenommen (BACKLOG 8)."""
-    import shutil
-    import tempfile
-
-    from . import video as _video
-    tmp: Path | None = None
-    try:
-        video_pfad: Path | None = None
-        if audio is not None and audio.is_file() \
-                and audio.suffix.lower() in bibliothek.VIDEO_ENDUNGEN:
-            _video_pruefen(audio)
-            # Video nur, wenn ein Bild drin ist (pruefe() sagt es) — ein
-            # reiner Ton-Container (.m4a-artige .mp4) wird zur mp3
-            if _video.pruefe(audio) is not None:
-                video_pfad = audio
-            tmp = Path(tempfile.mkdtemp(prefix="lt-imp-video-"))
-            try:
-                audio = _video.ton_extrahieren(audio, tmp / "audio.mp3")
-            except RuntimeError as e:
-                raise HTTPException(status_code=422, detail=str(e)) from e
-        return _import_turns_roh(turns, name, quelle_art, audio, video_pfad)
-    finally:
-        if tmp is not None:
-            shutil.rmtree(tmp, ignore_errors=True)
-
-
-def _import_turns_roh(turns: list[dict], name: str, quelle_art: str,
-                      audio: Path | None, video: Path | None) -> dict:
-    if not turns:
-        raise HTTPException(status_code=400,
-                            detail="Keine Segmente gefunden")
-    namen: list[str] = []
-    for t in turns:
-        sp = (t.get("speaker") or "").strip()
-        if sp and sp not in namen:
-            namen.append(sp)
-    sprecher = [{"id": f"sp{i + 1}", "name": n}
-                for i, n in enumerate(namen)]
-    sid = {s["name"]: s["id"] for s in sprecher}
-    segmente = [{"start": t["t0_s"], "end": t["t1_s"],
-                 "sprecher": sid.get((t.get("speaker") or "").strip()),
-                 "text": t["text"]} for t in turns]
-    # Eine fremde VTT/CSV ist die Quelle, wie sie kam — `source`
-    eintrag = bibliothek.anlegen(
-        name=name, segmente=segmente, sprecher=sprecher,
-        quelle={"datei": name, "erzeugt": quelle_art}, audio=audio,
-        video=video, origin="source")
-    return {"eintrag": eintrag["id"], "segmente": len(segmente),
-            "sprecher": len(sprecher)}
-
-
-def _import_paket(daten: bytes, fallback: str) -> dict:
-    """.enrich (Datei, Verzeichnis oder .zip) → Eintrag. NUR transkript.json und Audio werden
-    gezogen; Analyse-Schichten fallen weg — nach dem ersten Edit
-    stimmte keine davon mehr (User-Regel 2026-09-09)."""
-    from . import paket
-    try:
-        p = paket.lies(daten)
-    except paket.PaketFehler as e:
-        raise HTTPException(status_code=400, detail=str(e)) from e
-    audio_tmp: Path | None = None
-    try:
-        if p["audio_bytes"]:
-            audio_tmp = _tmpdatei(Path(p["audio_name"]).suffix,
-                                  "lt-paket-")
-            audio_tmp.write_bytes(p["audio_bytes"])
-        # Herkunftsflags kommen aus dem Paket mit (FORMAT.md §5); das
-        # Journal wird übernommen und um den Import-Run verlängert.
-        eintrag = bibliothek.anlegen(
-            name=p["name"] or fallback,
-            segmente=p["segmente"], sprecher=p["sprecher"],
-            quelle={"datei": f"{fallback}.enrich",
-                    "erzeugt": "import-enrich",
-                    "genau": p["genau"]},
-            audio=audio_tmp, origin="source",
-            journal=p.get("journal") or [], zotero=p.get("zotero"))
-    finally:
-        if audio_tmp is not None:
-            audio_tmp.unlink(missing_ok=True)
-    return {"eintrag": eintrag["id"], "segmente": len(p["segmente"]),
-            "sprecher": len(p["sprecher"]), "genau": p["genau"]}
-
-
-def _parse_import(daten: bytes, endung: str) -> list[dict]:
-    from .enrich_export.turns import parse_transkript_csv, parse_transkript_vtt
-    if endung in (".vtt", ".webvtt"):
-        return parse_transkript_vtt(daten)
-    if endung == ".csv":
-        return parse_transkript_csv(daten)
-    raise HTTPException(
-        status_code=400,
-        detail=f"Nur .vtt/.csv/.enrich — nicht {endung}")
-
 
 @app.post("/api/import")
 async def import_upload(datei: UploadFile = File(...),
@@ -348,260 +133,97 @@ async def import_upload(datei: UploadFile = File(...),
     name = Path(datei.filename or "transkript")
     roh = await datei.read()
     if name.suffix.lower() == ".enrich" or name.name.lower().endswith(".enrich.zip"):
-        return _import_paket(roh, name.stem.removesuffix(".enrich"))
-    turns = _parse_import(roh, name.suffix.lower())
+        return api.import_paket(roh, name.stem.removesuffix(".enrich"))
+    turns = api.parse_import(roh, name.suffix.lower())
     audio_tmp: Path | None = None
     try:
         if audio is not None and audio.filename:
             endung = Path(audio.filename).suffix.lower()
-            if endung in bibliothek.AUDIO_ENDUNGEN + bibliothek.VIDEO_ENDUNGEN:
-                audio_tmp = _tmpdatei(endung, "lt-imp-")
+            if api.endung_erlaubt(endung):
+                audio_tmp = api.tmpdatei(endung, "lt-imp-")
                 audio_tmp.write_bytes(await audio.read())
-        return _import_turns(turns, name.stem,
-                             f"import-{name.suffix.lstrip('.')}",
-                             audio_tmp)
+        return api.import_turns(turns, name.stem,
+                                f"import-{name.suffix.lstrip('.')}",
+                                audio_tmp)
     finally:
         if audio_tmp is not None:
             audio_tmp.unlink(missing_ok=True)
 
 
-class ImportPathReq(ApiModel):
-    path: str
-    audio_path: str | None = None
-
-
 @app.post("/api/import-path")
-def import_path(req: ImportPathReq) -> dict:
-    from . import paket
-    p = Path(req.path).expanduser()
-    if not p.exists():
-        raise HTTPException(status_code=404, detail=f"{p} fehlt")
-    if paket.ist_paket(p):
-        # Datei, Verzeichnis (macOS-Package) oder .zip — ein Leser
-        try:
-            daten = p.read_bytes() if p.is_file() else None
-        except OSError as e:
-            raise HTTPException(status_code=400, detail=str(e)) from e
-        if daten is None:
-            from .exporte import packe_verzeichnis
-            daten = packe_verzeichnis(p)
-        return _import_paket(daten, p.stem.removesuffix(".enrich"))
-    if not p.is_file():
-        raise HTTPException(status_code=400,
-                            detail=f"{p.name} ist ein Ordner, kein Transkript")
-    turns = _parse_import(p.read_bytes(), p.suffix.lower())
-    audio: Path | None = None
-    if req.audio_path:
-        a = Path(req.audio_path).expanduser()
-        if a.is_file():
-            audio = a
-    if audio is None:
-        for endung in bibliothek.AUDIO_ENDUNGEN + bibliothek.VIDEO_ENDUNGEN:
-            k = p.with_suffix(endung)
-            if k.is_file():
-                audio = k
-                break
-    return _import_turns(turns, p.stem,
-                         f"import-{p.suffix.lstrip('.')}", audio)
+def import_path(req: dict) -> dict:
+    return api.import_path(req)
 
 
-# ---------- Bibliothek ----------
-
-# ---------- Zotero (Metadaten, lokal, lesend, mit Einwilligung) ----------
+# ---------- Zotero ----------
 
 @app.get("/api/zotero/status")
 def zotero_status() -> dict:
-    from . import zotero
-    return zotero.status()
+    return api.zotero_status()
 
 
 @app.get("/api/zotero/candidates")
 def zotero_candidates(q: str = "") -> dict:
-    from . import zotero
-    try:
-        return {"candidates": zotero.kandidaten(q)}
-    except zotero.ZoteroFehler as e:
-        raise HTTPException(status_code=424, detail=str(e)) from e
-
-
-class ZoteroLinkReq(ApiModel):
-    item_key: str
-    roles: list[str]
+    return api.zotero_candidates(q)
 
 
 @app.post("/api/transcripts/{eid}/zotero")
-def zotero_link(eid: str, req: ZoteroLinkReq) -> dict:
-    from . import zotero
-    try:
-        bibliothek.lese(eid)
-    except (OSError, ValueError, BibliothekFehler) as e:
-        raise HTTPException(status_code=404, detail=eid) from e
-    try:
-        it = zotero.eintrag(req.item_key)
-    except zotero.ZoteroFehler as e:
-        raise HTTPException(status_code=424, detail=str(e)) from e
-    d = bibliothek.zotero_setzen(eid, zotero.schnappschuss(it, req.roles))
-    return {"status": "linked", "zotero": d["zotero"]}
+def zotero_link(eid: str, req: dict) -> dict:
+    return api.zotero_link(eid, req)
 
 
 @app.delete("/api/transcripts/{eid}/zotero")
 def zotero_unlink(eid: str) -> dict:
-    try:
-        bibliothek.lese(eid)
-    except (OSError, ValueError, BibliothekFehler) as e:
-        raise HTTPException(status_code=404, detail=eid) from e
-    bibliothek.zotero_loesen(eid)
-    return {"status": "unlinked"}
+    return api.zotero_unlink(eid)
 
+
+# ---------- Bibliothek ----------
 
 @app.get("/api/transcripts")
 def transcripts() -> dict:
-    return {"transcripts": bibliothek.liste(),
-            "library_root": str(config.library_root() or "")}
+    return api.transcripts()
 
 
 @app.get("/api/transcripts/{eid}")
 def transcript_get(eid: str) -> dict:
-    try:
-        return bibliothek.lese(eid)
-    except BibliothekFehler as e:
-        raise _err(e) from e
-
-
-class SprecherReq(ApiModel):
-    id: str
-    name: str
-    #: kommt vom GET zurück; beim Schreiben ignoriert — die Bibliothek
-    #: entscheidet, was `human` wird (FORMAT.md §0.1: nie ableitbar)
-    origin: str | None = None
-
-
-class SegmentReq(ApiModel):
-    id: str = ""
-    start: float
-    end: float
-    sprecher: str | None = None
-    text: str
-    origin: str | None = None
-
-
-class SaveReq(ApiModel):
-    sprecher: list[SprecherReq]
-    segmente: list[SegmentReq]
+    return api.transcript_get(eid)
 
 
 @app.put("/api/transcripts/{eid}")
-def transcript_put(eid: str, req: SaveReq) -> dict:
-    try:
-        d = bibliothek.lese(eid)
-    except BibliothekFehler as e:
-        raise _err(e) from e
-    ids = {s.id for s in req.sprecher}
-    for seg in req.segmente:
-        if seg.sprecher and seg.sprecher not in ids:
-            raise HTTPException(status_code=422,
-                                detail=f"Unbekannter Sprecher: "
-                                       f"{seg.sprecher}")
-    # Der Editor schickt Records ohne origin — die Bibliothek setzt
-    # `human` auf alles, was sich gegenüber dem alten Stand geändert
-    # hat, und lässt den Rest, wie er war.
-    alt_seg = {s["id"]: s for s in d.get("segmente", [])}
-    alt_sp = {p["id"]: p for p in d.get("sprecher", [])}
-    d["sprecher"] = [{**alt_sp.get(s.id, {}), **s.model_dump(exclude={"origin"})}
-                     for s in req.sprecher]
-    d["segmente"] = [{**alt_seg.get(s.id, {}), **s.model_dump(exclude={"origin"})}
-                     for s in req.segmente]
-    d = bibliothek.schreibe(eid, d)
-    return {"status": "saved", "updated": d["updated"]}
-
-
-class RenameReq(ApiModel):
-    name: str
+def transcript_put(eid: str, req: dict) -> dict:
+    return api.transcript_put(eid, req)
 
 
 @app.post("/api/transcripts/{eid}/rename")
-def transcript_rename(eid: str, req: RenameReq) -> dict:
-    try:
-        d = bibliothek.umbenennen(eid, req.name)
-    except BibliothekFehler as e:
-        raise _err(e) from e
-    return {"status": "renamed", "name": d["name"]}
-
-
-class DeleteReq(ApiModel):
-    confirm: str
+def transcript_rename(eid: str, req: dict) -> dict:
+    return api.transcript_rename(eid, req)
 
 
 @app.post("/api/transcripts/{eid}/delete")
-def transcript_delete(eid: str, req: DeleteReq) -> dict:
-    if req.confirm != eid:
-        raise HTTPException(status_code=409,
-                            detail="confirm muss die ID sein")
-    try:
-        bibliothek.loeschen(eid)
-    except BibliothekFehler as e:
-        raise _err(e) from e
-    return {"status": "deleted"}
+def transcript_delete(eid: str, req: dict) -> dict:
+    return api.transcript_delete(eid, req)
 
+
+# ---------- Medien (nur Browser: die App nutzt asset://) ----------
 
 @app.get("/api/transcripts/{eid}/video")
 def transcript_video(eid: str):
     """Das Video unverändert; FileResponse beantwortet Range-Anfragen —
-    der WebView springt damit direkt an die Stelle."""
-    try:
-        p = bibliothek.video_pfad(eid)
-    except BibliothekFehler as e:
-        raise _err(e) from e
-    if p is None:
-        raise HTTPException(status_code=404, detail="Kein Video")
-    return FileResponse(p, media_type=VIDEO_MEDIA.get(
-        p.suffix.lower(), "application/octet-stream"))
+    der Browser springt damit direkt an die Stelle."""
+    v = api.video_pfad(eid)
+    return FileResponse(v["path"], media_type=v["media"])
 
 
 @app.get("/api/transcripts/{eid}/audio")
 def transcript_audio(eid: str):
-    try:
-        p = bibliothek.audio_pfad(eid)
-    except BibliothekFehler as e:
-        raise _err(e) from e
-    if p is None:
-        raise HTTPException(status_code=404, detail="Kein Audio")
-    return FileResponse(p, media_type=AUDIO_MEDIA.get(
-        p.suffix.lower(), "application/octet-stream"))
+    a = api.audio_pfad(eid)
+    return FileResponse(a["path"], media_type=a["media"])
 
 
 @app.get("/api/transcripts/{eid}/sprecher/{sid}/sample")
-def sprecher_sample(eid: str, sid: str, tasks: BackgroundTasks):
-    """~8-s-Hörprobe: das LÄNGSTE Segment dieses Sprechers, aus dem
-    Bibliotheks-Audio geschnitten (v2: braucht keine Diarisierungs-
-    Rohdaten mehr — funktioniert auch für Importe und nach Neustarts)."""
-    import subprocess
-
-    from .config import get_ffmpeg_cli
-    try:
-        d = bibliothek.lese(eid)
-        audio = bibliothek.audio_pfad(eid)
-    except BibliothekFehler as e:
-        raise _err(e) from e
-    if audio is None:
-        raise HTTPException(status_code=404, detail="Kein Audio")
-    kandidaten = [s for s in d["segmente"] if s.get("sprecher") == sid]
-    if not kandidaten:
-        raise HTTPException(status_code=404, detail="Sprecher leer")
-    seg = max(kandidaten, key=lambda s: s["end"] - s["start"])
-    dauer = min(8.0, max(seg["end"] - seg["start"], 1.0))
-    tmp = _tmpdatei(".wav", "lt-sample-")
-    r = subprocess.run(
-        [get_ffmpeg_cli(), "-y", "-ss", f"{seg['start']:.3f}",
-         "-t", f"{dauer:.3f}", "-i", str(audio), "-ar", "16000",
-         "-ac", "1", "-c:a", "pcm_s16le", str(tmp)],
-        capture_output=True)
-    if r.returncode != 0:
-        tmp.unlink(missing_ok=True)
-        raise HTTPException(status_code=500,
-                            detail="Probe fehlgeschlagen (ffmpeg)")
-    tasks.add_task(tmp.unlink, True)
-    return FileResponse(tmp, media_type="audio/wav")
+def sprecher_sample(eid: str, sid: str):
+    return Response(api.sprecher_probe_bytes(eid, sid),
+                    media_type="audio/wav")
 
 
 # ---------- Export ----------
@@ -612,48 +234,18 @@ def export_download(eid: str, format: str) -> Response:
         # Das Video kann Gigabytes haben: auf die Platte streamen, nie
         # als ein bytes-Objekt (Review 2026-09-11)
         from starlette.background import BackgroundTask
-        tmp = _tmpdatei(".zip", "lt-exp-")
-        try:
-            name = exporte.export_nach(eid, format, tmp)
-        except (BibliothekFehler, ValueError) as e:
-            tmp.unlink(missing_ok=True)
-            raise HTTPException(status_code=409, detail=str(e)) from e
+        tmp = api.tmpdatei(".zip", "lt-exp-")
+        name = api.export_nach_temp(eid, format, tmp)
         return FileResponse(tmp, media_type="application/zip", filename=name,
                             background=BackgroundTask(tmp.unlink, missing_ok=True))
-    try:
-        inhalt, name, media = exporte.export_bytes(eid, format)
-    except (BibliothekFehler, ValueError) as e:
-        raise HTTPException(status_code=409, detail=str(e)) from e
+    inhalt, name, media = api.export_bytes(eid, format)
     return Response(inhalt, media_type=media, headers={
         "Content-Disposition": f'attachment; filename="{name}"'})
 
 
-class ExportReq(ApiModel):
-    format: str
-    path: str
-
-
 @app.post("/api/transcripts/{eid}/export")
-def export_datei(eid: str, req: ExportReq) -> dict:
-    """App-Weg: nativer Save-Dialog liefert den Zielpfad."""
-    ziel = Path(req.path).expanduser().resolve()
-    if not ziel.parent.is_dir():
-        raise HTTPException(status_code=409,
-                            detail=f"Ordner fehlt: {ziel.parent}")
-    # Review-Befund: beliebige Pfade konnten JEDE User-Datei
-    # überschreiben (~/.zshrc, LaunchAgents) — die Endung muss zum
-    # Format passen, mehr Constraint erlaubt der freie Save-Dialog nicht
-    erlaubt = {"vtt": ".vtt", "csv": ".csv", "txt": ".txt",
-               "enrich": ".enrich", "qdpx": ".zip",
-               "qdpx-video": ".zip"}[req.format]
-    if ziel.suffix.lower() != erlaubt:
-        raise HTTPException(status_code=409,
-                            detail=f"Zieldatei muss auf {erlaubt} enden")
-    try:
-        exporte.export_nach(eid, req.format, ziel)
-    except (BibliothekFehler, ValueError) as e:
-        raise HTTPException(status_code=409, detail=str(e)) from e
-    return {"status": "exported", "path": str(ziel)}
+def export_datei(eid: str, req: dict) -> dict:
+    return api.export_datei(eid, req)
 
 
 # ---------- Statisches Frontend (Browser-Betrieb) ----------
@@ -678,7 +270,6 @@ for kandidat in _KANDIDATEN:
         app.mount("/", StaticFiles(directory=kandidat, html=True),
                   name="static")
         break
-
 
 def cli() -> None:
     import uvicorn
