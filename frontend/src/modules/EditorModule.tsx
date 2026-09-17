@@ -27,7 +27,8 @@ function zehntelMelden(sekunden: number): void {
   const z = Math.floor(sekunden * 10);
   if (z === letzteZehntel) return;
   letzteZehntel = z;
-  window.dispatchEvent(new CustomEvent("rt-zeit", { detail: z }));
+  window.dispatchEvent(new CustomEvent("rt-kopf", {
+    detail: `${hms(Math.floor(z / 10))}.${z % 10}` }));
 }
 
 /** «hh:mm:ss», «mm:ss», «ss», optional «.mmm» → Sekunden; null, wenn
@@ -204,6 +205,11 @@ export default function EditorModule({ id, onExit }: {
     if (aktiv >= 0) lset(KEYS.editorAktiv + id, String(aktiv));
   }, [id, aktiv]);
   useEffect(() => { if (ladeN === 0) ende(); }, [ladeN]);
+  // beim Verlassen: Kopfzeile leeren, nächste Meldung wieder frisch
+  useEffect(() => () => {
+    letzteZehntel = -1;
+    window.dispatchEvent(new CustomEvent("rt-kopf", { detail: "" }));
+  }, []);
 
   // Höhen der Textfelder gelten nur für die Breite, bei der sie gemessen
   // wurden (User 2026-09-17: «merkwürdig hohe Zeilenabstände» nach dem

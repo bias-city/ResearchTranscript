@@ -8,7 +8,7 @@ import {
 } from "../components/ui";
 import { Icon } from "../components/icons";
 import {
-  apiGet, apiSend, apiUpload, errMsg, kuerze, onJobs, type Job,
+  apiGet, apiSend, apiUpload, errMsg, hms, kuerze, onJobs, type Job,
   type ModellInfo, type Settings,
 } from "../lib/api";
 import { jobText, useT } from "../lib/i18n";
@@ -66,6 +66,28 @@ export default function AiTranscriptModule({ settings, onEdit }: {
 
   const aktiveJobs = jobs.some((j) =>
     !["completed", "failed", "cancelled"].includes(j.status));
+  // Kopfzeile (User 2026-09-17): Laufzeit und Schätzung des laufenden
+  // Jobs wie der Timecode im Editor — hh:mm:ss, jede Sekunde neu;
+  // ohne laufenden Job leer
+  useEffect(() => {
+    const melde = () => {
+      const j = jobs.find((x) => x.started_at
+        && !["completed", "failed", "cancelled"].includes(x.status));
+      let text = "";
+      if (j) {
+        const v = (Date.now() - Date.parse(j.started_at!)) / 1000;
+        const p = Math.min(99, Math.max(0, j.progress));
+        text = p >= 5 ? `${hms(v)} · ~${hms(v * 100 / p)}` : hms(v);
+      }
+      window.dispatchEvent(new CustomEvent("rt-kopf", { detail: text }));
+    };
+    melde();
+    const t = window.setInterval(melde, 1000);
+    return () => window.clearInterval(t);
+  }, [jobs]);
+  useEffect(() => () => {
+    window.dispatchEvent(new CustomEvent("rt-kopf", { detail: "" }));
+  }, []);
   // App: Job-Ereignisse aus der Hülle (gedrosselt), einmal beim Mount
   // die Liste. Browser: Polling wie bisher.
   useEffect(() => {

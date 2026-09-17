@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Badge, Busy, Button, ErrorNote, Flex, Heading, ModalDialog,
   SegTabs, Text } from "./components/ui";
 import { Icon } from "./components/icons";
-import { apiGet, apiSend, errMsg, hms, type Settings } from "./lib/api";
+import { apiGet, apiSend, errMsg, type Settings } from "./lib/api";
 import { setSprache, useT, type Sprache } from "./lib/i18n";
 import { KEYS, lget, lset } from "./lib/storage";
 import { geoeffneteDateien, isTauri, neustart, onBlockiert, onDateien,
@@ -151,7 +151,7 @@ export default function App() {
                      background: "var(--gray-a3)" }}>
         {/* Der Name steht in der Menüleiste — hier läuft im Editor der
             Timecode, sonst bleibt der Platz leer (User 2026-09-17) */}
-        <KopfZeit aktiv={!!editorId} />
+        <KopfZeit schluessel={editorId ?? tab} />
         <Busy />
         <div style={{ flex: 1 }} />
         {/* im Editor-Drilldown ist KEIN Tab aktiv — so feuert der
@@ -246,20 +246,23 @@ function UeberDialog({ open, onClose }: {
   );
 }
 
-/** Laufender Timecode im Kopf: der Editor meldet Zehntelsekunden als
-    Ereignis «rt-zeit» (nur bei Änderung), der Kopf zeigt hh:mm:ss.z in
-    Tabellenziffern; ohne Editor eine leere Zeile gleicher Höhe. */
-function KopfZeit({ aktiv }: { aktiv: boolean }) {
-  const [zeit, setZeit] = useState(0);
+/** Anzeige oben links statt des App-Namens (User 2026-09-17): der
+    Editor meldet den Timecode hh:mm:ss.z, der AI-Tab Laufzeit und
+    Schätzung des laufenden Jobs — als Ereignis «rt-kopf» mit fertigem
+    Text; sonst eine leere Zeile gleicher Höhe. */
+function KopfZeit({ schluessel }: { schluessel: string }) {
+  const [text, setText] = useState("");
   useEffect(() => {
-    const h = (e: Event) => setZeit((e as CustomEvent<number>).detail);
-    window.addEventListener("rt-zeit", h);
-    return () => window.removeEventListener("rt-zeit", h);
+    const h = (e: Event) => setText((e as CustomEvent<string>).detail);
+    window.addEventListener("rt-kopf", h);
+    return () => window.removeEventListener("rt-kopf", h);
   }, []);
+  // Tab- oder Editorwechsel: alte Anzeige weg, bis das Modul meldet
+  useEffect(() => { setText(""); }, [schluessel]);
   return (
     <Heading size="4" style={{ fontVariantNumeric: "tabular-nums",
-                               minWidth: 96 }}>
-      {aktiv ? `${hms(Math.floor(zeit / 10))}.${zeit % 10}` : "\u00a0"}
+                               minWidth: 96, whiteSpace: "nowrap" }}>
+      {text || "\u00a0"}
     </Heading>
   );
 }
