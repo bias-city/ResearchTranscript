@@ -644,3 +644,14 @@ body { margin: 0; background: var(--gray-1); }
 .rt-SegmentedControlRoot .rt-SegmentedControlItem[data-state='on'] .rt-SegmentedControlItemLabel {
   background: var(--accent-a5); color: var(--accent-a12); font-weight: 600;
   box-shadow: none; }
+
+/* ---------- Pillenform (User 2026-09-17): Knöpfe und Tab-Einträge mit
+   runden Enden und einer Haarlinie in der Schriftfarbe. ---------- */
+.rt-Button.rt-variant-soft,
+.rt-SegmentedControlRoot .rt-SegmentedControlItemLabel {
+  border-radius: 9999px;
+  box-shadow: inset 0 0 0 1px currentColor;
+}
+.rt-SegmentedControlRoot .rt-SegmentedControlItem[data-state='on'] .rt-SegmentedControlItemLabel {
+  box-shadow: inset 0 0 0 1px currentColor;
+}
