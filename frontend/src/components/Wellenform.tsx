@@ -18,14 +18,14 @@ type Peaks = { t0: number; t1: number; daten: number[] };
     Modus: die Dunkelpalette hat andere Werte (User 2026-09-17: die
     Welle blieb nach dem Umschalten hell). */
 const farbCache = new Map<string, string>();
-function cssFarbe(name: string, stufe: number): string {
+function cssFarbe(name: string, stufe: number | string): string {
   const dunkel = document.documentElement.classList.contains("dark") ? "d" : "l";
   const k = `${dunkel}-${name}-${stufe}`;
   const c = farbCache.get(k);
   if (c) return c;
   const v = getComputedStyle(document.documentElement)
     .getPropertyValue(`--${name}-${stufe}`).trim();
-  const aus = v || (stufe >= 9 ? "#6e6e6e" : "rgba(128,128,128,0.2)");
+  const aus = v || (String(stufe).includes("1") ? "#6e6e6e" : "rgba(128,128,128,0.2)");
   farbCache.set(k, aus);
   return aus;
 }
@@ -128,8 +128,8 @@ export default function Wellenform({ eid, segmente, sprecher, zeit, spielt,
     // Sprecherstreifen: kräftige Farbe, volle Höhe, durchgehend — keine
     // Rundungen, keine Lücken (User 2026-09-17); die Welle weiss darüber,
     // ausserhalb der Turns grau. Je Pixel merken, ob ein Turn darunter liegt.
-    const belegt = new Uint8Array(breite);
-    const dunkel = document.documentElement.classList.contains("dark");
+    // je Pixel die Sprecherfarbe des Turns darunter (für die Welle)
+    const belegt: (string | null)[] = new Array(breite).fill(null);
     for (let k = 0; k < segmente.length; k += 1) {
       const seg = segmente[k];
       // Lücke bis zum nächsten Turn mit dem Vorgänger auffüllen (User
@@ -139,28 +139,25 @@ export default function Wellenform({ eid, segmente, sprecher, zeit, spielt,
       const farbe = sprecherFarbe(sprecher, seg.sprecher);
       const a = Math.max(0, x(seg.start)), b = Math.min(breite, x(bis));
       if (b <= a) continue;
-      // Dieselbe Farbe wie der Punkt im Sprecher-Panel (Badge solid =
-      // Stufe 9 der Radix-Skala), in beiden Modi
-      ctx.globalAlpha = farbe === "gray" ? 0.5 : 1;
-      ctx.fillStyle = cssFarbe(farbe === "gray" ? "gray" : farbe, 9);
+      // Farbschema der Sprecher-Badges (Radix «soft»): Hintergrund
+      // Stufe a3, Welle in der Schriftfarbe a11 (User 2026-09-17)
+      ctx.fillStyle = cssFarbe(farbe, "a3");
       ctx.fillRect(Math.floor(a), 0, Math.max(1, Math.ceil(b) - Math.floor(a)), HOEHE);
-      belegt.fill(1, Math.floor(a), Math.ceil(b));
+      belegt.fill(farbe, Math.floor(a), Math.ceil(b));
     }
-    ctx.globalAlpha = 1;
     // Welle (drawWave-Muster aus PrepareMedia: ein Balken je Pixel)
     const pk = peaks.current;
     if (pk && pk.daten.length && pk.t1 > pk.t0) {
       const mid = HOEHE / 2, n = pk.daten.length;
-      const frei = cssFarbe("gray", 9);
+      const frei = cssFarbe("gray", "a9");
       for (let px = 0; px < breite; px += 1) {
         const t = s.t0 + (px + 0.5) * s.spp;
         const i = Math.floor(((t - pk.t0) / (pk.t1 - pk.t0)) * n);
         if (i < 0 || i >= n) continue;
         const amp = (pk.daten[i] / 255) * (HOEHE / 2 - 3);
         if (amp <= 0.3) continue;
-        // Welle: hell auf den Streifen, im Dunkelmodus schwarz
-        ctx.fillStyle = belegt[px]
-          ? (dunkel ? "rgba(0,0,0,0.75)" : "rgba(255,255,255,0.85)") : frei;
+        const f = belegt[px];
+        ctx.fillStyle = f ? cssFarbe(f, "a11") : frei;
         ctx.fillRect(px, mid - amp, 1, amp * 2);
       }
     }
