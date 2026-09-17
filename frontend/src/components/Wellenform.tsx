@@ -129,15 +129,20 @@ export default function Wellenform({ eid, segmente, sprecher, zeit, spielt,
     // Rundungen, keine Lücken (User 2026-09-17); die Welle weiss darüber,
     // ausserhalb der Turns grau. Je Pixel merken, ob ein Turn darunter liegt.
     const belegt = new Uint8Array(breite);
-    for (const seg of segmente) {
-      if (seg.end < s.t0 || seg.start > t1) continue;
+    const dunkel = document.documentElement.classList.contains("dark");
+    for (let k = 0; k < segmente.length; k += 1) {
+      const seg = segmente[k];
+      // Lücke bis zum nächsten Turn mit dem Vorgänger auffüllen (User
+      // 2026-09-17); Zwischenrufe liegen als spätere Einträge darüber
+      const bis = Math.max(seg.end, segmente[k + 1]?.start ?? seg.end);
+      if (bis < s.t0 || seg.start > t1) continue;
       const farbe = sprecherFarbe(sprecher, seg.sprecher);
-      const a = Math.max(0, x(seg.start)), b = Math.min(breite, x(seg.end));
+      const a = Math.max(0, x(seg.start)), b = Math.min(breite, x(bis));
       if (b <= a) continue;
-      // Pastell wie die Badges (Stufe 3–4), aber nicht ganz so blass:
-      // Stufe 8 der Radix-Skala (User 2026-09-17: «doch gesättigter»)
+      // Dieselbe Farbe wie der Punkt im Sprecher-Panel (Badge solid =
+      // Stufe 9 der Radix-Skala), in beiden Modi
       ctx.globalAlpha = farbe === "gray" ? 0.5 : 1;
-      ctx.fillStyle = cssFarbe(farbe === "gray" ? "gray" : farbe, 8);
+      ctx.fillStyle = cssFarbe(farbe === "gray" ? "gray" : farbe, 9);
       ctx.fillRect(Math.floor(a), 0, Math.max(1, Math.ceil(b) - Math.floor(a)), HOEHE);
       belegt.fill(1, Math.floor(a), Math.ceil(b));
     }
@@ -153,7 +158,9 @@ export default function Wellenform({ eid, segmente, sprecher, zeit, spielt,
         if (i < 0 || i >= n) continue;
         const amp = (pk.daten[i] / 255) * (HOEHE / 2 - 3);
         if (amp <= 0.3) continue;
-        ctx.fillStyle = belegt[px] ? "rgba(255,255,255,0.85)" : frei;
+        // Welle: hell auf den Streifen, im Dunkelmodus schwarz
+        ctx.fillStyle = belegt[px]
+          ? (dunkel ? "rgba(0,0,0,0.75)" : "rgba(255,255,255,0.85)") : frei;
         ctx.fillRect(px, mid - amp, 1, amp * 2);
       }
     }
