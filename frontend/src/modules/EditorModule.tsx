@@ -129,6 +129,22 @@ export default function EditorModule({ id, onExit }: {
   const saveTimer = useRef<number | undefined>(undefined);
   const zustand = useRef({ sprecher, segmente });
   zustand.current = { sprecher, segmente };
+
+  // Aktive Zeile im Blick halten (User 2026-09-17: «ungefähr in halber
+  // Seitenhöhe, nicht ganz unten»): liegt sie ausserhalb der Zone
+  // 20–60 % der Listenhöhe, wird so gescrollt, dass sie bei 40 % steht;
+  // innerhalb der Zone bleibt die Liste ruhig (kein Teleprompter-Ruckeln
+  // je Turn). `sofort` ohne Animation (Wiederaufnahme).
+  const zeigeAktiv = useCallback((i: number, sofort = false) => {
+    const liste = listRef.current;
+    const zeile = liste?.querySelector<HTMLElement>(`[data-seg="${i}"]`);
+    if (!liste || !zeile) return;
+    const l = liste.getBoundingClientRect(), z = zeile.getBoundingClientRect();
+    const oben = z.top - l.top, unten = z.bottom - l.top;
+    if (!sofort && oben >= l.height * 0.2 && unten <= l.height * 0.6) return;
+    liste.scrollTo({ top: liste.scrollTop + oben - l.height * 0.4,
+                     behavior: sofort ? "auto" : "smooth" });
+  }, []);
   const aktivRef = useRef(aktiv);
   aktivRef.current = aktiv;
 
@@ -161,8 +177,7 @@ export default function EditorModule({ id, onExit }: {
             && gemerkt < t.segmente.length) {
           setAktiv(gemerkt);
           requestAnimationFrame(() => {
-            listRef.current?.querySelector(`[data-seg="${gemerkt}"]`)
-              ?.scrollIntoView({ block: "center" });
+            zeigeAktiv(gemerkt, true);
             if (audioRef.current) {
               audioRef.current.currentTime = t.segmente[gemerkt].start;
             }
@@ -176,7 +191,7 @@ export default function EditorModule({ id, onExit }: {
       if (/nicht gefunden|not found/i.test(text)) onExit();
     });
     return () => { offen = false; };
-  }, [id, onExit]);
+  }, [id, onExit, zeigeAktiv]);
   useEffect(() => {
     if (aktiv >= 0) lset(KEYS.editorAktiv + id, String(aktiv));
   }, [id, aktiv]);
@@ -521,11 +536,10 @@ export default function EditorModule({ id, onExit }: {
     if (i !== aktiv) {
       setAktiv(i);
       if (folgen && i >= 0) {
-        listRef.current?.querySelector(`[data-seg="${i}"]`)
-          ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        zeigeAktiv(i);
       }
     }
-  }, [aktiv, folgen, indexBei, loop, segmente]);
+  }, [aktiv, folgen, indexBei, loop, segmente, zeigeAktiv]);
 
   const springe = useCallback((t: number, abspielen = false) => {
     const a = audioRef.current;
@@ -629,7 +643,7 @@ export default function EditorModule({ id, onExit }: {
         a.currentTime = segs[i].start;
         setAktiv(i);
         const zeile = listRef.current?.querySelector(`[data-seg="${i}"]`);
-        zeile?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        zeigeAktiv(i);
         if (fokus) {
           const ta = zeile?.querySelector("textarea");
           if (ta instanceof HTMLTextAreaElement) {
