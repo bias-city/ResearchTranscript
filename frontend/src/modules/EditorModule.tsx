@@ -21,6 +21,16 @@ import { isTauri, ordnerOeffnen, savePath } from "../lib/tauri";
 
 const SPEEDS = [1, 1.25, 1.5, 1.75, 2];
 
+/** «hh:mm:ss», «mm:ss», «ss», optional «.mmm» → Sekunden; null, wenn
+    unlesbar. Gegenstück zu hms() aus lib/api. */
+function parseHms(text: string): number | null {
+  const t = text.trim().replace(",", ".");
+  if (!/^\d{1,2}(:\d{1,2}){0,2}(\.\d{1,3})?$/.test(t)) return null;
+  const teile = t.split(":").map(Number);
+  if (teile.some((n) => Number.isNaN(n))) return null;
+  return teile.reduce((sum, n) => sum * 60 + n, 0);
+}
+
 // EIN Zeilen-Slot für alle Zellen einer Segmentzeile (User
 // 2026-09-09: „ausrichten der Zeilen"): 28 px = Rahmen 1 + Polster 3
 // + Textzeile 19,5 + Polster 3 + Rahmen 1 der Textarea. Alles darin
@@ -343,6 +353,25 @@ export default function EditorModule({ id, onExit }: {
   const turnBeiZeitRef = useRef(turnBeiZeit);
   turnBeiZeitRef.current = turnBeiZeit;
 
+  /** Startzeit von Hand (Klick auf den Timecode, User 2026-09-17):
+      Ende bleibt, rutscht aber mit, wenn es vor dem neuen Start läge;
+      die Liste bleibt chronologisch (stabil sortiert). */
+  const zeitSetzen = useCallback((sid: string, start: number) => {
+    const s0 = Math.round(Math.max(0, start) * 1000) / 1000;
+    setSegmente((s) => {
+      const i = s.findIndex((x) => x.id === sid);
+      if (i < 0 || s[i].start === s0) return s;
+      const seg = { ...s[i], id: neueId(), start: s0,
+                    end: Math.max(s[i].end, s0 + 0.1) };
+      fokusZiel.current = { id: seg.id, pos: "ende" };
+      const neu = [...s.slice(0, i), seg, ...s.slice(i + 1)];
+      return neu.map((x, k) => [x, k] as const)
+        .sort((a, b) => a[0].start - b[0].start || a[1] - b[1])
+        .map(([x]) => x);
+    });
+    dirty();
+  }, [dirty]);
+
   const verbinden = useCallback((sid: string) => {
     const idZ = neueId();
     setSegmente((s) => {
@@ -503,6 +532,7 @@ export default function EditorModule({ id, onExit }: {
     a.currentTime = Math.max(0, t);
     if (abspielen) void a.play();
   }, []);
+  const pause = useCallback(() => { audioRef.current?.pause(); }, []);
 
   useEffect(() => {
     const a = audioRef.current;
@@ -756,6 +786,9 @@ export default function EditorModule({ id, onExit }: {
               farbe={sprecherFarbe(sprecher, seg.sprecher)}
               hatAudio={hatAudio}
               laufzeit={i === aktiv ? zeit : undefined}
+              spielt={i === aktiv && laeuft}
+              onPause={pause}
+              onZeit={zeitSetzen}
               onSpringe={springe}
               onText={textAendern} onMenue={menueOeffnen}
               onTeilen={teilen} onNeu={neuerTurn} onVerbinden={verbinden}
@@ -1140,9 +1173,15 @@ function planeWachsen(el: HTMLTextAreaElement) {
 }
 
 const SegmentZeile = memo(function SegmentZeile({
-  seg, index, aktiv, treffer, name, farbe, hatAudio, laufzeit, onSpringe,
-  onText, onMenue, onTeilen, onNeu, onVerbinden, onEntfernen,
+  seg, index, aktiv, treffer, name, farbe, hatAudio, laufzeit, spielt,
+  onPause, onZeit, onSpringe, onText, onMenue, onTeilen, onNeu,
+  onVerbinden, onEntfernen,
 }: {
+  /** diese Zeile spielt gerade — der Play-Knopf wird zum Pause-Knopf */
+  spielt: boolean;
+  onPause: () => void;
+  /** Startzeit von Hand gesetzt (Timecode angeklickt und bearbeitet) */
+  onZeit: (id: string, start: number) => void;
   seg: Segment; index: number; aktiv: boolean;
   /** laufender Playhead, nur in der aktiven Zeile (User 2026-09-17:
       «der Timecode könnte bis zum nächsten mitlaufen»); sonst der
@@ -1164,6 +1203,8 @@ const SegmentZeile = memo(function SegmentZeile({
 }) {
   const tr = useT();
   const taRef = useRef<HTMLTextAreaElement | null>(null);
+  // Timecode bearbeiten (Klick): hh:mm:ss, Enter übernimmt, Esc bricht ab
+  const [zeitEdit, setZeitEdit] = useState<string | null>(null);
 
   const wachsen = (el: HTMLTextAreaElement) => {
     el.style.height = "auto";
@@ -1185,20 +1226,38 @@ const SegmentZeile = memo(function SegmentZeile({
            outlineOffset: -2,
          }}>
       <div style={{ ...SEG_SLOT, justifyContent: "center" }}>
-        <IconButton title={tr("ed.abhier")}
-                    onClick={() => onSpringe(seg.start, true)}>
+        <IconButton title={spielt ? tr("ed.pause") : tr("ed.abhier")}
+                    onClick={() => spielt ? onPause() : onSpringe(seg.start, true)}>
           {/* display:flex nimmt dem Icon den Inline-Kontext — sonst
               zieht sein verticalAlign(-2px) den Glyph aus der Zeile */}
           <span style={{ display: "flex",
                          opacity: hatAudio ? 1 : 0.25 }}>
-            <Icon name="play" size={14} /></span>
+            <Icon name={spielt ? "pause" : "play"} size={14} /></span>
         </IconButton>
       </div>
       <div style={SEG_SLOT}>
-        <Text size="1" color="gray" style={{
-          cursor: hatAudio ? "pointer" : undefined,
-          fontVariantNumeric: "tabular-nums" }}
-              onClick={() => onSpringe(seg.start)}>{hms(laufzeit ?? seg.start)}</Text>
+        {zeitEdit !== null ? (
+          <input value={zeitEdit} autoFocus size={9}
+                 style={{ font: "inherit", fontSize: "var(--font-size-1)",
+                          fontVariantNumeric: "tabular-nums", width: 84,
+                          padding: "1px 4px", borderRadius: 4,
+                          border: "1px solid var(--accent-8)" }}
+                 onChange={(e) => setZeitEdit(e.target.value)}
+                 onKeyDown={(e) => {
+                   e.stopPropagation();
+                   if (e.key === "Enter") {
+                     const t = parseHms(zeitEdit);
+                     setZeitEdit(null);
+                     if (t !== null) onZeit(seg.id, t);
+                   } else if (e.key === "Escape") setZeitEdit(null);
+                 }}
+                 onBlur={() => setZeitEdit(null)} />
+        ) : (
+          <Text size="1" color="gray" title={tr("ed.zeit.bearbeiten")} style={{
+            cursor: "text", fontVariantNumeric: "tabular-nums" }}
+                onClick={() => setZeitEdit(hms(seg.start))}>
+            {hms(laufzeit ?? seg.start)}</Text>
+        )}
       </div>
       {/* leichter Knopf statt Radix-Select je Zeile (PERF: ~6 ms ×
           557 Zeilen je Render) — EIN geteiltes Menü im Parent */}
@@ -1267,7 +1326,7 @@ const SegmentZeile = memo(function SegmentZeile({
     </div>
   );
 }, (a, b) => a.seg === b.seg && a.aktiv === b.aktiv
-  && a.laufzeit === b.laufzeit
+  && a.laufzeit === b.laufzeit && a.spielt === b.spielt
   && a.treffer === b.treffer
   && a.index === b.index && a.name === b.name && a.farbe === b.farbe
   && a.hatAudio === b.hatAudio);
