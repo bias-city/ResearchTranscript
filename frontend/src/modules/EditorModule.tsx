@@ -526,7 +526,11 @@ export default function EditorModule({ id, onExit }: {
     const a = audioRef.current;
     if (!a) return;
     const sek = Math.floor(a.currentTime);
-    setZeit((z) => (z === sek ? z : sek));
+    setZeit((z) => {
+      if (z === sek) return z;
+      window.dispatchEvent(new CustomEvent("rt-zeit", { detail: sek }));
+      return sek;
+    });
     if (loop && aktiv >= 0 && segmente[aktiv]
         && a.currentTime > segmente[aktiv].end - 0.04) {
       a.currentTime = segmente[aktiv].start;

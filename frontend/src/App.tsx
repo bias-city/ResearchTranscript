@@ -7,7 +7,7 @@ import { useCallback, useEffect, useState } from "react";
 import { Badge, Busy, Button, ErrorNote, Flex, Heading, ModalDialog,
   SegTabs, Text } from "./components/ui";
 import { Icon } from "./components/icons";
-import { apiGet, apiSend, errMsg, type Settings } from "./lib/api";
+import { apiGet, apiSend, errMsg, hms, type Settings } from "./lib/api";
 import { setSprache, useT, type Sprache } from "./lib/i18n";
 import { KEYS, lget, lset } from "./lib/storage";
 import { geoeffneteDateien, isTauri, neustart, onBlockiert, onDateien,
@@ -149,7 +149,9 @@ export default function App() {
       <Flex align="center" gap="3" px="4" py="2"
             style={{ borderBottom: "1px solid var(--gray-a5)",
                      background: "var(--gray-a3)" }}>
-        <Heading size="4">{tr("app.titel")}</Heading>
+        {/* Der Name steht in der Menüleiste — hier läuft im Editor der
+            Timecode, sonst bleibt der Platz leer (User 2026-09-17) */}
+        <KopfZeit aktiv={!!editorId} />
         <Busy />
         <div style={{ flex: 1 }} />
         {/* im Editor-Drilldown ist KEIN Tab aktiv — so feuert der
@@ -241,6 +243,24 @@ function UeberDialog({ open, onClose }: {
         </Flex>
       </Flex>
     </ModalDialog>
+  );
+}
+
+/** Laufender Timecode im Kopf: der Editor meldet die Sekunde als
+    Ereignis «rt-zeit» (nur bei Änderung), der Kopf zeigt sie in
+    Tabellenziffern; ohne Editor eine leere Zeile gleicher Höhe. */
+function KopfZeit({ aktiv }: { aktiv: boolean }) {
+  const [zeit, setZeit] = useState(0);
+  useEffect(() => {
+    const h = (e: Event) => setZeit((e as CustomEvent<number>).detail);
+    window.addEventListener("rt-zeit", h);
+    return () => window.removeEventListener("rt-zeit", h);
+  }, []);
+  return (
+    <Heading size="4" style={{ fontVariantNumeric: "tabular-nums",
+                               minWidth: 96 }}>
+      {aktiv ? hms(zeit) : "\u00a0"}
+    </Heading>
   );
 }
 
