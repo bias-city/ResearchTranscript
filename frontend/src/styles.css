@@ -673,3 +673,9 @@ body { margin: 0; background: var(--gray-1); }
 .rt-SelectTrigger.rt-variant-soft .rt-SelectTriggerInner,
 .rt-SelectTrigger.rt-variant-soft[data-placeholder] .rt-SelectTriggerInner,
 .rt-SelectTrigger.rt-variant-soft svg { color: var(--gray-12); }
+/* Radix färbt den Platzhalter im Select-Auslöser grau (--gray-a10, höhere
+   Spezifität) — beim Export-Auslöser soll er wie die Knöpfe schwarz sein */
+.rt-SelectTrigger.rt-variant-soft,
+.rt-SelectTrigger.rt-variant-soft *,
+.rt-SelectTrigger.rt-variant-soft:where([data-placeholder]) .rt-SelectTriggerInner {
+  color: var(--gray-12) !important; opacity: 1 !important; }
