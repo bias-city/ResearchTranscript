@@ -618,9 +618,16 @@ body { margin: 0; background: var(--gray-1); }
 .ui-segtabs-fit .rt-SegmentedControlIndicator,
 .ui-segtabs-fit .rt-SegmentedControlSeparator { display: none; }
 .ui-segtabs-fit .rt-SegmentedControlItem { flex: 0 0 auto; }
+/* Auch UNGEWÄHLTE Einträge als Knöpfe erkennbar (User 2026-09-17): leichte
+   Fläche, beim Überfahren dunkler; der gewählte bleibt die weisse Karte. */
+.ui-segtabs-fit .rt-SegmentedControlItemLabel {
+  background: var(--gray-a3); border-radius: var(--radius-2);
+  box-shadow: 0 0 0 1px var(--gray-a4); }
+.ui-segtabs-fit .rt-SegmentedControlItem:hover .rt-SegmentedControlItemLabel {
+  background: var(--gray-a4); }
 .ui-segtabs-fit .rt-SegmentedControlItem[data-state='on'] .rt-SegmentedControlItemLabel {
-  background: var(--color-panel-solid); border-radius: var(--radius-2);
-  box-shadow: 0 0 0 1px var(--gray-a4), 0 1px 2px var(--black-a3); }
+  background: var(--color-panel-solid);
+  box-shadow: 0 0 0 1px var(--gray-a6), 0 1px 2px var(--black-a3); }
 
 /* ---------- Einstellungen: Masonry-Spalten (User 2026-09-17) ---------- */
 .st-masonry {
