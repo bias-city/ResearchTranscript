@@ -72,7 +72,7 @@ export default function HumanEditorModule({ onOpen }: {
     <Flex direction="column" gap="3" p="4"
           style={{ height: "100%", overflowY: "auto" }}>
       <Flex gap="3" align="center" wrap="wrap">
-        <Button variant="soft" onClick={() => void importiere()}>
+        <Button size="1" variant="soft" onClick={() => void importiere()}>
           <Icon name="text" /> {tr("bib.import")}</Button>
         <input ref={importRef} type="file" hidden accept=".vtt,.csv,.enrich,.zip"
                onChange={(e) => {
@@ -131,7 +131,7 @@ function EintragZeile({ e, onOpen, onChanged }: {
                    onOpenChange={(o) => !o && setFrage(null)}
                    title={tr("bib.umbenennen")}
                    footer={
-                     <Button variant="soft" onClick={() => {
+                     <Button size="1" variant="soft" onClick={() => {
                        void apiSend(`/api/transcripts/${e.id}/rename`,
                                     { name })
                          .then(() => { setFrage(null); onChanged(); })
@@ -146,7 +146,7 @@ function EintragZeile({ e, onOpen, onChanged }: {
                    onOpenChange={(o) => !o && setFrage(null)}
                    title={tr("bib.loeschen")}
                    footer={
-                     <Button variant="soft" color="red" onClick={() => {
+                     <Button size="1" variant="soft" color="red" onClick={() => {
                        void apiSend(`/api/transcripts/${e.id}/delete`,
                                     { confirm: e.id })
                          .then(() => { setFrage(null); onChanged(); })

@@ -827,7 +827,7 @@ export function SegTabs({ value, onChange, options, fit }: {
              title?: string }[];
 }) {
   return (
-    <SegmentedControl.Root value={value} onValueChange={onChange} size="2"
+    <SegmentedControl.Root value={value} onValueChange={onChange} size="1"
                            className={fit ? "ui-segtabs-fit" : undefined}>
       {options.map((o) => (
         <SegmentedControl.Item key={o.value} value={o.value}

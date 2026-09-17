@@ -801,7 +801,7 @@ export default function EditorModule({ id, onExit }: {
             style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
         <Flex align="center" gap="2" px="4" py="2"
               style={{ borderBottom: "1px solid var(--gray-a5)" }}>
-          <Button size="2" variant="soft" onClick={onExit}>
+          <Button size="1" variant="soft" onClick={onExit}>
             <Icon name="back" /> {tr("ed.zurueck")}</Button>
           <Text size="2" weight="medium" truncate
                 style={{ flex: 1, minWidth: 0 }}>{kuerze(name, 80)}</Text>
@@ -885,7 +885,7 @@ export default function EditorModule({ id, onExit }: {
                 if (audioRef.current)
                   audioRef.current.currentTime += 5;
               }}><Icon name="forward" size={16} /></IconButton>
-              <Button size="2" variant="soft"
+              <Button size="1" variant="soft"
                       title={tr("ed.speed")} onClick={() => {
                 const i = SPEEDS.indexOf(speed);
                 setSpeed(SPEEDS[(i + 1) % SPEEDS.length]);
@@ -1087,14 +1087,14 @@ function MetadatenPanel({ id, name, zotero, onChange }: {
           {/* Nur ein Zotero-Select-Link geht an `open` — der Wert kann
               aus einem fremden Dossier stammen (Review 2026-09-11) */}
           {zotero.select_link?.startsWith("zotero://select/") && (
-            <Button size="2" variant="soft"
+            <Button size="1" variant="soft"
                     onClick={() => void ordnerOeffnen(zotero.select_link!)}>
               {tr("ed.meta.zotero.oeffnen")}</Button>
           )}
-          <Button size="2" variant="soft" disabled={laeuft}
+          <Button size="1" variant="soft" disabled={laeuft}
                   onClick={() => void verknuepfe(zotero.item_key, rollenJetzt)}>
             {tr("ed.meta.neuladen")}</Button>
-          <Button size="2" variant="soft" color="red" disabled={laeuft}
+          <Button size="1" variant="soft" color="red" disabled={laeuft}
                   onClick={() => void loese()}>
             {tr("ed.meta.loesen")}</Button>
         </Flex>
@@ -1110,7 +1110,7 @@ function MetadatenPanel({ id, name, zotero, onChange }: {
           placeholder={tr("ed.meta.suchen.platz")}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") void suche(); }} />
-        <Button variant="soft" size="2" onClick={() => void suche()}
+        <Button variant="soft" size="1" onClick={() => void suche()}
                 disabled={laeuft || !status?.found}>
           {tr("ed.meta.suchen")}</Button>
       </Flex>
@@ -1158,7 +1158,7 @@ function MetadatenPanel({ id, name, zotero, onChange }: {
               </Flex>
             ))}
           <Text size="1" color="gray">{tr("ed.meta.rollen.hinweis")}</Text>
-          <Button variant="soft" size="2" disabled={laeuft}
+          <Button variant="soft" size="1" disabled={laeuft}
                   onClick={() => void verknuepfe(wahl.item_key,
                                                  Array.from(rollen))}>
             {tr("ed.meta.verknuepfen")}</Button>
@@ -1608,14 +1608,14 @@ function SprecherPanel({ id, sprecher, segmente, hatAudio, onRename,
               </div>
             )}
             {ohne > 0 && (
-              <Button size="2" variant="soft"
+              <Button size="1" variant="soft"
                       onClick={() => onLeere(s.id)}>
                 {tr("ed.sprecher.leere")} ({ohne})</Button>
             )}
           </Flex>
         );
       })}
-      <Button size="2" variant="soft" onClick={onNeu}>
+      <Button size="1" variant="soft" onClick={onNeu}>
         <Icon name="plus" size={14} /> {tr("ed.sprecher.neu")}</Button>
     </Flex>
     {video && (
@@ -1869,13 +1869,13 @@ function SuchPanel({ segmente, onZeige, onErsetze, onAlleErsetzen }: {
           zurücknehmen kann (rückholbar nur über history/). */}
       <Flex direction="column" gap="2" align="start">
         <Flex gap="2" align="center">
-          <Button size="2" variant="soft" disabled={!cur}
+          <Button size="1" variant="soft" disabled={!cur}
                   onClick={ersetzen}>{tr("ed.suche.ersetzen")}</Button>
-          <Button size="2" variant="soft" disabled={treffer.length < 2}
+          <Button size="1" variant="soft" disabled={treffer.length < 2}
                   onClick={() => springe(stelle + 1)}>
             {tr("ed.suche.skip")}</Button>
         </Flex>
-        <Button size="2" variant="soft" disabled={!treffer.length}
+        <Button size="1" variant="soft" disabled={!treffer.length}
                 onClick={alle}>{tr("ed.suche.alle")}</Button>
       </Flex>
     </Flex>
