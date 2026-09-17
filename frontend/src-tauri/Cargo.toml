@@ -14,12 +14,15 @@ tauri-build = { version = "2", features = [] }
 # resolve-config: liest PYO3_CONFIG_FILE (die gebündelte Laufzeit,
 # pyo3-config.txt) — nie das Dev-venv, nie Homebrew-Python.
 pyo3-build-config = { version = "0.29", features = ["resolve-config"] }
+# Swift-Paket RTMotoren (AVFoundation, LAME, SpeakerKit-Shim) statisch
+# linken — nur mit Feature `motoren`
+swift-rs = { version = "1.0.8", features = ["build"], optional = true }
 
 [features]
 # Motoren im Prozess (AVFoundation + LAME, SpeakerKit-Shim) über das
 # Swift-Paket RTMotoren — ohne das Feature bleibt LT_MOTOR=kind der
 # einzige Weg (Plan §5, Standard bis zur belegten Parität, E3).
-motoren = []
+motoren = ["dep:swift-rs"]
 
 [dependencies]
 # protocol-asset: Medien über asset:// (Phase 0, F2) statt HTTP

@@ -11,5 +11,16 @@ fn main() {
             println!("cargo:rustc-link-arg=-Wl,-rpath,{dir}");
         }
     }
+    // Motoren im Prozess (Feature `motoren`): das SwiftPM-Paket RTMotoren
+    // als statische Bibliothek; libswift_Concurrency käme sonst aus der
+    // Xcode-Toolchain mit @rpath-Install-Name (dyld «no LC_RPATH's found»,
+    // Befund F3) — deshalb der System-rpath.
+    #[cfg(feature = "motoren")]
+    {
+        swift_rs::SwiftLinker::new("14.0")
+            .with_package("RTMotoren", "../../spike/motoren-swift/RTMotoren")
+            .link();
+        println!("cargo:rustc-link-arg=-Wl,-rpath,/usr/lib/swift");
+    }
     tauri_build::build()
 }

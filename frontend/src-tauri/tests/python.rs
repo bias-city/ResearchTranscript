@@ -38,3 +38,22 @@ fn fassade_im_prozess() {
     assert!(p.iter().all(|x| x.contains("argmax") || x.contains("fehlt in den Ressourcen")), "{p:?}");
     let _ = std::fs::remove_dir_all(&scratch);
 }
+
+/// Mit Feature `motoren`: das Rust-Modul ist importierbar, und die
+/// Sondierung liest die Demo-Aufnahme (mp3, kein Video).
+#[cfg(feature = "motoren")]
+#[test]
+fn motoren_modul_im_prozess() {
+    let res = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("resources");
+    if !res.join("python-runtime/lib/libpython3.13.dylib").is_file() { return; }
+    std::env::set_var("LT_CONFIG_DIR", std::env::temp_dir().join(format!("rt-test-m-{}", std::process::id())));
+    python::init_pfad(&res, None).expect("Interpreter startet");
+    let demo = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../docs/demo/housing-cooperatives-interview.mp3");
+    let aus = pyo3::Python::attach(|py| -> pyo3::PyResult<String> {
+        let m = py.import("researchtranscript_motoren")?;
+        let info = m.getattr("sondiere")?.call1((demo.to_string_lossy().as_ref(),))?;
+        Ok(info.str()?.to_string())
+    }).expect("sondiere");
+    assert!(aus.contains("'audio_codec': 'mp3'"), "{aus}");
+    assert!(aus.contains("'video_codec': None"), "{aus}");
+}

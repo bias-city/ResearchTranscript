@@ -2885,6 +2885,7 @@ dependencies = [
  "pyo3-build-config",
  "serde",
  "serde_json",
+ "swift-rs",
  "tauri",
  "tauri-build",
  "tauri-plugin-dialog",
