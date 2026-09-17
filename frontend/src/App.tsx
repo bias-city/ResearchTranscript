@@ -128,7 +128,7 @@ export default function App() {
               style={{ background: "var(--red-a3)",
                        borderBottom: "1px solid var(--red-a6)" }}>
           <Text size="2" style={{ flex: 1 }}>{tr("app.blockiert")}</Text>
-          <Button size="1" color="red" variant="soft"
+          <Button size="2" color="red" variant="soft"
                   onClick={() => void neustart()}>
             {tr("app.neustart")}</Button>
         </Flex>
@@ -212,7 +212,7 @@ function UeberDialog({ open, onClose }: {
     ? `${__APP_VERSION__} · Backend ${backend}`
     : __APP_VERSION__;
   const link = (label: string, url: string) => (
-    <Button size="1" variant="soft" onClick={() => void ordnerOeffnen(url)}>
+    <Button size="2" variant="soft" onClick={() => void ordnerOeffnen(url)}>
       {label}</Button>
   );
   return (

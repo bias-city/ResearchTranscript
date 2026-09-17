@@ -367,13 +367,13 @@ function JobZeile({ job, onEdit }: {
           {jobText(tr, job.status, job.message)}</Badge>
         <div style={{ flex: 1 }} />
         {job.status === "completed" && job.eintrag && (
-          <Button size="1" variant="soft"
+          <Button size="2" variant="soft"
                   onClick={() => onEdit(job.eintrag!)}>
             <Icon name="edit" size={14} /> {tr("allg.bearbeiten")}
           </Button>
         )}
         {!fertig && (
-          <Button size="1" variant="soft" color="red"
+          <Button size="2" variant="soft" color="red"
                   onClick={() => void apiSend(
                     `/api/jobs/${job.id}/cancel`)}>
             {tr("bib.abbrechen")}</Button>
