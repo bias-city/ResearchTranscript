@@ -639,22 +639,30 @@ body { margin: 0; background: var(--gray-1); }
 /* Standard neutral (User 2026-09-17): hellgraue Fläche, schwarze Schrift;
    nur der gewählte Tab trägt die Akzentfarbe */
 .rt-SegmentedControlRoot .rt-SegmentedControlItemLabel {
-  background: var(--gray-a3); color: var(--gray-12);
+  background: var(--color-panel-solid); color: var(--gray-12);
   border-radius: var(--radius-2); box-shadow: none; }
 .rt-SegmentedControlRoot .rt-SegmentedControlItem:hover .rt-SegmentedControlItemLabel {
-  background: var(--gray-a4); }
+  background: var(--gray-a2); }
 .rt-SegmentedControlRoot .rt-SegmentedControlItem[data-state='on'] .rt-SegmentedControlItemLabel {
-  background: var(--accent-a4); color: var(--accent-a11); font-weight: 600;
+  background: var(--gray-a5); color: var(--gray-12); font-weight: 600;
   box-shadow: none; }
 
 /* ---------- Pillenform (User 2026-09-17): Knöpfe und Tab-Einträge mit
    runden Enden und einer Haarlinie in der Schriftfarbe. ---------- */
+/* Schwarz auf Weiss statt grau (User 2026-09-17): Fläche = Panel,
+   Rand 1,5 px in Schriftfarbe; aktiv = graue Fläche */
 .rt-Button.rt-variant-soft,
 .rt-SelectTrigger.rt-variant-soft,
 .rt-SegmentedControlRoot .rt-SegmentedControlItemLabel {
   border-radius: 9999px;
-  box-shadow: inset 0 0 0 1px currentColor;
+  background: var(--color-panel-solid);
+  box-shadow: inset 0 0 0 1.5px currentColor;
 }
+.rt-Button.rt-variant-soft:hover,
+.rt-SelectTrigger.rt-variant-soft:hover { background: var(--gray-a3); }
+.rt-Button.rt-variant-soft:where([data-accent-color='red']) {
+  background: var(--red-a2); }
 .rt-SegmentedControlRoot .rt-SegmentedControlItem[data-state='on'] .rt-SegmentedControlItemLabel {
-  box-shadow: inset 0 0 0 1px currentColor;
+  background: var(--gray-a5);
+  box-shadow: inset 0 0 0 1.5px currentColor;
 }
