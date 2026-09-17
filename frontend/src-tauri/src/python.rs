@@ -233,11 +233,25 @@ import os, json
 ergebnis = {}
 try:
     ergebnis['eintraege'] = sorted(os.listdir(pfad))[:12]
+    db = os.path.join(pfad, 'zotero.sqlite')
+    if os.path.isfile(db):
+        # Zotero-Probe: nur lesen, wie enrich_core.zotero (immutable, keine Sperre)
+        import sqlite3, time
+        t0 = time.perf_counter()
+        con = sqlite3.connect(f'file:{db}?immutable=1', uri=True)
+        n = con.execute('select count(*) from items').fetchone()[0]
+        titel = con.execute(\"select v.value from items i join itemData d on d.itemID=i.itemID join fields f on f.fieldID=d.fieldID join itemDataValues v on v.valueID=d.valueID where f.fieldName='title' order by i.dateModified desc limit 1\").fetchone()
+        con.close()
+        ergebnis['zotero'] = {'items': n, 'juengster_titel': titel[0] if titel else None, 'ms': round((time.perf_counter()-t0)*1000, 1)}
+        ergebnis['schreiben'] = 'übersprungen (Zotero-Ordner)'
+        raise StopIteration
     probe = os.path.join(pfad, 'researchtranscript-spike.txt')
     with open(probe, 'w') as f: f.write('Python im Prozess der Hülle\\n')
     with open(probe) as f: ergebnis['gelesen'] = f.read().strip()
     os.remove(probe)
     ergebnis['schreiben'] = 'ok'
+except StopIteration:
+    pass
 except Exception as e:
     ergebnis['fehler'] = f'{type(e).__name__}: {e}'
 ergebnis_json = json.dumps(ergebnis)
