@@ -797,6 +797,11 @@ export default function EditorModule({ id, onExit }: {
           ))}
         </div>
 
+        {hatAudio && (
+          <Wellenform eid={id} segmente={segmente} sprecher={sprecher}
+                      zeit={zeit} spielt={laeuft}
+                      onSeek={(t) => springe(t)} />
+        )}
         {/* Drei Zonen (User 2026-09-09): der Transport steht MITTIG in
             der Spalte, die Laufzeit rechts — die beiden Randzonen sind
             gleich breit (flex 1), damit die Mitte echt die Mitte ist. */}
@@ -855,11 +860,6 @@ export default function EditorModule({ id, onExit }: {
             <Text size="1" color="gray">{tr("ed.keinaudio")}</Text>
           )}
         </Flex>
-        {hatAudio && (
-          <Wellenform eid={id} segmente={segmente} sprecher={sprecher}
-                      zeit={zeit} spielt={laeuft}
-                      onSeek={(t) => springe(t)} />
-        )}
       </Flex>
 
       {menue && (
