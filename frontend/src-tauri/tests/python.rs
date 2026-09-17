@@ -113,7 +113,11 @@ fn job_im_prozess_motor() {
     let Some(_) = start() else { return };
     let res = resources();
     if !res.join("bin/whisper-cli").is_file() || !res.join("models").is_dir() { return; }
-    let j = python::rufe("transcribe_path", &serde_json::json!({"args": {"path": demo().to_string_lossy(), "speaker_range": "2-2"}})).expect("start");
+    // RT_TEST_DATEI=<pfad> jagt eine beliebige Aufnahme durch (Live-Fälle);
+    // die Zahlen unten gelten nur für die Demo.
+    let eigene = std::env::var("RT_TEST_DATEI").ok().map(PathBuf::from);
+    let datei = eigene.clone().unwrap_or_else(demo);
+    let j = python::rufe("transcribe_path", &serde_json::json!({"args": {"path": datei.to_string_lossy(), "speaker_range": "2-2"}})).expect("start");
     let jid = j["job_id"].as_str().unwrap().to_string();
     let t0 = std::time::Instant::now();
     let mut job = serde_json::Value::Null;
@@ -127,9 +131,14 @@ fn job_im_prozess_motor() {
     let d = python::rufe("transcript_get", &serde_json::json!({"eid": eid})).unwrap();
     let n = d["segmente"].as_array().unwrap().len();
     let s = d["sprecher"].as_array().unwrap().len();
+    eprintln!("Prozess-Motor: {n} Segmente, {s} Sprecher in {:.0} s, audio={} video={}",
+              t0.elapsed().as_secs_f64(), d["audio"], d["video"]);
+    if eigene.is_some() {
+        eprintln!("Erster Text: {}", d["segmente"][0]["text"]);
+        return;
+    }
     // Kind-Motor an derselben Datei: 33 Segmente, 2 Sprecher (Dev-Server 17.9.)
     assert_eq!(s, 2, "{n} Segmente, {s} Sprecher");
     assert!((28..=38).contains(&n), "{n} Segmente");
     assert_eq!(d["audio"], "audio.mp3");
-    eprintln!("Prozess-Motor: {n} Segmente, {s} Sprecher in {:.0} s", t0.elapsed().as_secs_f64());
 }
