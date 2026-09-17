@@ -8,7 +8,7 @@ import {
 } from "../components/ui";
 import { Icon } from "../components/icons";
 import {
-  apiGet, apiSend, apiUpload, errMsg, kuerze, type Job,
+  apiGet, apiSend, apiUpload, errMsg, kuerze, onJobs, type Job,
   type ModellInfo, type Settings,
 } from "../lib/api";
 import { jobText, useT } from "../lib/i18n";
@@ -66,7 +66,19 @@ export default function AiTranscriptModule({ settings, onEdit }: {
 
   const aktiveJobs = jobs.some((j) =>
     !["completed", "failed", "cancelled"].includes(j.status));
+  // App: Job-Ereignisse aus der Hülle (gedrosselt), einmal beim Mount
+  // die Liste. Browser: Polling wie bisher.
   useEffect(() => {
+    if (isTauri()) {
+      let ab: (() => void) | undefined;
+      let weg = false;
+      void onJobs((j) => setJobs((alt) => {
+        const i = alt.findIndex((x) => x.id === j.id);
+        if (i < 0) return [...alt, j];
+        const neu = alt.slice(); neu[i] = j; return neu;
+      })).then((f) => { if (weg) f(); else ab = f; });
+      return () => { weg = true; ab?.(); };
+    }
     const t = window.setInterval(() => {
       void apiGet<{ jobs: Job[] }>("/api/jobs")
         .then((r) => setJobs(r.jobs)).catch(() => undefined);

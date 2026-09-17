@@ -4,9 +4,10 @@
 // alten LocalTranscript-v1-Checkout ÜBERNOMMEN, wenn er daneben liegt
 // (whisper-web/electron/resources — dort hat build-python-runtime.mjs
 // sie einst gebaut); sonst bricht das Skript mit Anleitung ab.
-// Das venv wird IMMER FRISCH gebaut (v2-Backend + enrich-core).
+// Die Python-Pakete werden IMMER FRISCH nach python/site-packages
+// installiert (v2-Backend + enrich-core), ohne venv.
 //
-// Aufruf: node scripts/bundle-resources.mjs [--force-venv]
+// Aufruf: node scripts/bundle-resources.mjs
 import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
@@ -19,7 +20,6 @@ const ALT = path.resolve(ROOT, "../whisper-web/electron/resources");
 // getestet wird (backend/pyproject.toml [tool.uv.sources]) — nie mehr
 // der Geschwister-Checkout, der auch die Analyse-Module trägt.
 const ENRICH_CORE = "enrich-core @ git+https://github.com/bias-city/enrich-core@v0.1.0";
-const forceVenv = process.argv.includes("--force-venv");
 
 function da(p) { try { return fs.statSync(p).isDirectory(); } catch { return false; } }
 function leer(p) { try { return fs.readdirSync(p).length === 0; } catch { return true; } }
@@ -86,52 +86,46 @@ for (const teil of ["python-runtime", "bin", "lib", "models"]) {
   console.log("✓ ffmpeg-Lizenz: redistributabel (GPL)");
 }
 
-// 2. venv frisch (Symlink-venv + relative Links, v1-Muster — Symlinks
-//    erhalten den @rpath auf libpython; --copies bräche ihn)
-const venv = path.join(RES, "venv");
+// 2. Python-Pakete DIREKT nach python/site-packages (Plan §4 1.13):
+//    kein venv mehr. Das venv war ein Symlink-Gebilde mit pyvenv.cfg,
+//    die auf einen absoluten Pfad zeigte — im Worktree installierte pip
+//    prompt in den falschen Checkout (Befund 17.9.2026), und Tauri
+//    dereferenzierte die Symlinks beim Bündeln. Jetzt: die gebündelte
+//    Laufzeit installiert mit --target in einen flachen Ordner, den
+//    python.rs als einzigen site-packages-Pfad setzt (site_import=0).
+//    Nur die Prozess-Abhängigkeiten (pydantic, enrich-core) — kein
+//    fastapi/uvicorn: der Server ist ein Extra für Browser-Dev.
+const SITE = path.join(RES, "python/site-packages");
 const py = path.join(RES, "python-runtime/bin/python3");
-if (forceVenv || leer(venv) || !fs.existsSync(path.join(venv, "bin/python3"))) {
-  fs.rmSync(venv, { recursive: true, force: true });
-  console.log("baue venv …");
-  execFileSync(py, ["-m", "venv", venv], { stdio: "inherit" });
-  // absolute Symlinks in venv/bin → relativ (Bundle ist relozierbar)
-  for (const name of fs.readdirSync(path.join(venv, "bin"))) {
-    const p = path.join(venv, "bin", name);
-    const st = fs.lstatSync(p);
-    if (!st.isSymbolicLink()) continue;
-    const ziel = fs.readlinkSync(p);
-    if (!path.isAbsolute(ziel)) continue;
-    const rel = path.relative(path.dirname(p), ziel);
-    fs.rmSync(p); fs.symlinkSync(rel, p);
-  }
-  const pip = path.join(venv, "bin/pip");
-  // enrich-core kommt seit 2.4.0 als Git-Abhängigkeit (öffentliches
-  // MIT-Paket) — pip holt es; ein Pfad-Check gilt nur für lokale Pfade.
-  if (!ENRICH_CORE.includes("git+") && !da(ENRICH_CORE)) {
-    console.error(`enrich-core fehlt (${ENRICH_CORE}) — der .enrich-Export braucht es.`);
+{
+  fs.rmSync(path.join(RES, "venv"), { recursive: true, force: true });
+  fs.rmSync(SITE, { recursive: true, force: true });
+  fs.mkdirSync(SITE, { recursive: true });
+  console.log("installiere researchtranscript + enrich-core …");
+  execFileSync(py, ["-m", "pip", "install", "--quiet", "--no-compile",
+                    "--target", SITE, ENRICH_CORE, path.join(ROOT, "backend")],
+               { stdio: "inherit" });
+  // pip legt unter --target ein bin/ mit Startskripten an — weg damit
+  fs.rmSync(path.join(SITE, "bin"), { recursive: true, force: true });
+  // Wächter: site_import=0 verarbeitet keine .pth-Dateien — eine
+  // Abhängigkeit, die darauf baut, würde im Bundle still fehlen.
+  const pth = fs.readdirSync(SITE).filter((n) => n.endsWith(".pth"));
+  if (pth.length) {
+    console.error(`ABBRUCH: .pth-Dateien in site-packages (${pth.join(", ")}) — python.rs lädt keine.`);
     process.exit(1);
   }
-  execFileSync(pip, ["install", "--upgrade", "pip"], { stdio: "inherit" });
-  execFileSync(pip, ["install", ENRICH_CORE, path.join(ROOT, "backend")],
-               { stdio: "inherit" });
-  // Tauris Resource-Bundler DEREFERENZIERT Symlinks: venv/bin/python3
-  // wird im .app eine echte Datei, deren @rpath libpython3.13.dylib in
-  // venv/lib/ sucht (Live-Befund 2026-08-30) — die dylib liegt deshalb
-  // zusätzlich dort.
-  fs.mkdirSync(path.join(venv, "lib"), { recursive: true });
-  fs.copyFileSync(path.join(RES, "python-runtime/lib/libpython3.13.dylib"),
-                  path.join(venv, "lib/libpython3.13.dylib"));
-  // Smoke-Test
-  execFileSync(path.join(venv, "bin/python3"),
-    ["-c", "import researchtranscript.main, enrich_core; print('venv ok')"],
+  // Wächter: nichts vom Server im Bundle, nichts mit fremdem Pfad
+  for (const verboten of ["fastapi", "uvicorn", "starlette"]) {
+    if (fs.existsSync(path.join(SITE, verboten))) {
+      console.error(`ABBRUCH: ${verboten} im Bundle — pyproject-Abhängigkeiten prüfen.`);
+      process.exit(1);
+    }
+  }
+  // Smoke-Test genau so, wie die Hülle startet: isoliert, nur dieser Pfad
+  execFileSync(py, ["-I", "-c",
+    `import sys; sys.path.insert(0, ${JSON.stringify(SITE)}); ` +
+    "import researchtranscript.api, enrich_core, pydantic_core; print('python/site-packages ok')"],
     { stdio: "inherit" });
-} else {
-  // venv steht — aber unser Backend-Code ändert sich laufend:
-  // researchtranscript + enrich-core IMMER frisch einspielen (billig)
-  console.log("✓ venv vorhanden — aktualisiere researchtranscript + enrich-core");
-  execFileSync(path.join(venv, "bin/pip"),
-    ["install", "--force-reinstall", "--no-deps", "-q",
-     ENRICH_CORE, path.join(ROOT, "backend")], { stdio: "inherit" });
 }
 
 // 3. Marker

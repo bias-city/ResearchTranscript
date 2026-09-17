@@ -1,18 +1,42 @@
-//! Phase-0-Spike F1 (docs/appstore-plan.md §3): CPython aus dem Bundle im
-//! Prozess der Hülle starten und die Messpunkte als Tauri-Befehle anbieten.
-//! Kein Teil der eigentlichen App — die Befehle heissen alle `spike_*`.
+//! PyO3-Brücke: CPython aus dem Bundle im Prozess der Hülle (Plan §4 1.8).
+//!
+//! REGELN (Plan R4, Risiko 3 — ein GIL-Hänger friert die ganze App):
+//! - `Python::attach` NIE auf dem Cocoa-Hauptthread. Jeder Tauri-Befehl
+//!   ist `async fn` und ruft `rufe` in `spawn_blocking`.
+//! - Lange Rechnungen (Motoren, Phase 2) laufen in `py.detach`.
+//! - Der Interpreter wird EINMAL gestartet und nie finalisiert
+//!   (`Py_FinalizeEx` mit laufenden Job-Threads hängt); beim Beenden
+//!   `alle_abbrechen()` und dann einfach Prozessende.
+//! - Kein `std::OnceLock` für Python-Objekte (Deadlock mit dem GIL) —
+//!   `pyo3::sync::PyOnceLock`.
+//!
+//! Befund Phase 0: `PyPreConfig.utf8_mode = 1` (sonst ASCII in `open()`),
+//! `LT_APP_ROOT`/`LT_BUNDLED` VOR dem Start (Python friert `os.environ`
+//! beim Import ein), `network.client` für WKWebView in der Sandbox.
 use pyo3::ffi;
 use pyo3::prelude::*;
-use pyo3::types::{PyCFunction, PyDict};
+use pyo3::sync::PyOnceLock;
+use pyo3::types::{PyBytes, PyCFunction, PyDict, PyModule, PyTuple};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::{Mutex, Once};
-use std::time::Instant;
-use tauri::Manager;
+use tauri::{Emitter, Manager};
+
+use crate::protokoll;
 
 static INIT: Once = Once::new();
-static INIT_MS: Mutex<f64> = Mutex::new(0.0);
-static TICKS: AtomicUsize = AtomicUsize::new(0);
+static INIT_FEHLER: Mutex<Option<String>> = Mutex::new(None);
+static API: PyOnceLock<Py<PyModule>> = PyOnceLock::new();
+
+/// Fehlerform der Fassade — `{status, detail}` wie die HTTP-Hülle.
+#[derive(Debug, Clone, serde::Serialize)]
+pub struct ApiFehler {
+    pub status: u16,
+    pub detail: String,
+}
+
+impl From<String> for ApiFehler {
+    fn from(s: String) -> Self { ApiFehler { status: 500, detail: s } }
+}
 
 #[allow(non_camel_case_types)]
 type WChar = i32; // wchar_t auf macOS
@@ -21,13 +45,37 @@ fn wide(s: &str) -> Vec<WChar> {
     s.chars().map(|c| c as WChar).chain(std::iter::once(0)).collect()
 }
 
+/// Wo liegen python-runtime, site-packages, bin, models? Im Bundle
+/// `Contents/Resources`; unter `tauri dev` kopiert tauri-build die
+/// Ressourcen neben die Binärdatei, sonst der Checkout.
+pub fn resources(app: &tauri::AppHandle) -> Result<PathBuf, String> {
+    let mut kandidaten: Vec<PathBuf> = Vec::new();
+    if let Ok(p) = app.path().resource_dir() { kandidaten.push(p); }
+    kandidaten.push(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("resources"));
+    for k in &kandidaten {
+        if k.join("python-runtime/lib/libpython3.13.dylib").is_file() {
+            return Ok(k.clone());
+        }
+    }
+    Err(format!("python-runtime fehlt (gesucht: {})",
+                kandidaten.iter().map(|p| p.display().to_string()).collect::<Vec<_>>().join(", ")))
+}
+
+/// site-packages: neues Layout `python/site-packages` (Plan 1.13), bis
+/// dahin das venv aus bundle-resources.mjs.
+fn site_packages(res: &Path) -> Result<PathBuf, String> {
+    for p in [res.join("python/site-packages"), res.join("venv/lib/python3.13/site-packages")] {
+        if p.join("researchtranscript").is_dir() { return Ok(p); }
+    }
+    Err("site-packages mit researchtranscript fehlt — scripts/bundle-resources.mjs laufen lassen".into())
+}
+
 /// Isolierte Konfiguration: home = python-runtime, sys.path nur Stdlib,
-/// lib-dynload und das site-packages des venv; kein site-Import, keine
-/// Umgebungsvariablen, keine .pyc-Schreibversuche (Bundle ist versiegelt).
+/// lib-dynload und site-packages; kein site-Import, keine Umgebungs-
+/// variablen, keine .pyc-Schreibversuche (Bundle ist versiegelt).
 unsafe fn interpreter_starten(runtime: &Path, site: &Path) -> Result<(), String> {
-    // Ohne Umgebung (isoliert) fiele Python auf die C-Locale zurück: Datei-
-    // system- und open()-Encoding ASCII — Umlaute in Pfaden und Texten
-    // brechen (Messung 4). UTF-8-Modus in der Vorkonfiguration erzwingen.
+    // UTF-8-Modus in der Vorkonfiguration (Befund 3): ohne Umgebung fiele
+    // Python in die C-Locale, open() schriebe ASCII.
     let mut pre: ffi::PyPreConfig = std::mem::zeroed();
     ffi::PyPreConfig_InitIsolatedConfig(&mut pre);
     pre.utf8_mode = 1;
@@ -38,6 +86,7 @@ unsafe fn interpreter_starten(runtime: &Path, site: &Path) -> Result<(), String>
     ffi::PyConfig_InitIsolatedConfig(&mut cfg);
     cfg.site_import = 0;
     cfg.write_bytecode = 0;
+    cfg.install_signal_handlers = 0;
     let home = wide(&runtime.to_string_lossy());
     if ffi::PyStatus_Exception(ffi::PyConfig_SetString(&mut cfg, &mut cfg.home, home.as_ptr())) != 0 {
         return Err("PyConfig home".into());
@@ -60,313 +109,172 @@ unsafe fn interpreter_starten(runtime: &Path, site: &Path) -> Result<(), String>
     Ok(())
 }
 
-fn resources(app: &tauri::AppHandle) -> Result<PathBuf, String> {
-    app.path().resource_dir().map_err(|e| e.to_string())
+fn py_text(e: &PyErr, py: Python<'_>) -> String {
+    let tb = e.traceback(py).and_then(|t| t.format().ok()).unwrap_or_default();
+    format!("{e}\n{tb}")
 }
 
-fn sicherstellen(app: &tauri::AppHandle) -> Result<(), String> {
+/// Python-stdout/stderr ins Protokoll (Plan R3): in einer Finder-App
+/// gingen sie ins Nichts — `threading.excepthook` wäre blind.
+fn stdio_umleiten(py: Python<'_>) -> PyResult<()> {
+    let cb = PyCFunction::new_closure(py, None, None, |args: &Bound<'_, PyTuple>, _k: Option<&Bound<'_, PyDict>>| -> PyResult<()> {
+        let kanal: String = args.get_item(0)?.extract()?;
+        let zeile: String = args.get_item(1)?.extract()?;
+        protokoll::schreibe(if kanal == "err" { "py!" } else { "py" }, &zeile);
+        Ok(())
+    })?;
+    let ns = PyDict::new(py);
+    ns.set_item("cb", cb)?;
+    py.run(c"
+import sys
+class _Aus:
+    encoding = 'utf-8'
+    def __init__(self, kanal): self.kanal = kanal; self._rest = ''
+    def write(self, s):
+        if not s: return 0
+        self._rest += str(s)
+        while '\\n' in self._rest:
+            zeile, self._rest = self._rest.split('\\n', 1)
+            if zeile.strip(): cb(self.kanal, zeile)
+        return len(s)
+    def flush(self):
+        if self._rest.strip(): cb(self.kanal, self._rest)
+        self._rest = ''
+    def isatty(self): return False
+    def fileno(self): raise OSError('kein fd')
+sys.stdout = _Aus('out'); sys.stderr = _Aus('err')
+", Some(&ns), None)
+}
+
+/// Job-Beobachter → Tauri-Ereignis `job` (gedrosselt in jobs.py).
+fn beobachter_setzen(py: Python<'_>, app: tauri::AppHandle) -> PyResult<()> {
+    let cb = PyCFunction::new_closure(py, None, None, move |args: &Bound<'_, PyTuple>, _k: Option<&Bound<'_, PyDict>>| -> PyResult<()> {
+        let py = args.py();
+        let sicht = args.get_item(0)?;
+        let text: String = py.import("json")?.getattr("dumps")?.call1((sicht,))?.extract()?;
+        if let Ok(v) = serde_json::from_str::<serde_json::Value>(&text) {
+            let _ = app.emit("job", v);
+        }
+        Ok(())
+    })?;
+    py.import("researchtranscript.jobs")?.getattr("setze_beobachter")?.call1((cb,))?;
+    Ok(())
+}
+
+/// Einmal je Prozess: Umgebung, Interpreter, Fassade importieren,
+/// stdio umleiten, Beobachter setzen. Liefert die Startzeit in ms.
+pub fn init(app: &tauri::AppHandle) -> Result<f64, String> {
     let res = resources(app)?;
-    let mut fehler: Option<String> = None;
-    // Das Backend leitet seine Wurzel aus __file__ ab (Repo-Layout); im
-    // Bundle liegt das Paket im venv — die Wurzel muss der Engine setzen.
-    std::env::set_var("LT_APP_ROOT", &res);
-    std::env::set_var("LT_BUNDLED", "1");
+    let site = site_packages(&res)?;
+    let t0 = std::time::Instant::now();
     INIT.call_once(|| {
-        let t0 = Instant::now();
-        let r = unsafe {
-            interpreter_starten(&res.join("python-runtime"), &res.join("venv/lib/python3.13/site-packages"))
-        };
-        match r {
-            Ok(()) => *INIT_MS.lock().unwrap() = t0.elapsed().as_secs_f64() * 1000.0,
-            Err(e) => fehler = Some(e),
+        // VOR dem Start (Python friert os.environ beim os-Import ein)
+        std::env::set_var("LT_APP_ROOT", &res);
+        std::env::set_var("LT_BUNDLED", "1");
+        std::env::set_var("LT_EMBEDDED", "1");
+        let r = unsafe { interpreter_starten(&res.join("python-runtime"), &site) };
+        if let Err(e) = r {
+            *INIT_FEHLER.lock().unwrap() = Some(e);
+            return;
+        }
+        let r = Python::attach(|py| -> PyResult<()> {
+            stdio_umleiten(py)?;
+            let m = py.import("researchtranscript.api")?;
+            let _ = API.set(py, m.unbind());
+            beobachter_setzen(py, app.clone())?;
+            Ok(())
+        });
+        if let Err(e) = r {
+            let text = Python::attach(|py| py_text(&e, py));
+            *INIT_FEHLER.lock().unwrap() = Some(format!("Fassade: {text}"));
         }
     });
-    match fehler { Some(e) => Err(e), None => Ok(()) }
+    if let Some(e) = INIT_FEHLER.lock().unwrap().clone() {
+        return Err(e);
+    }
+    Ok(t0.elapsed().as_secs_f64() * 1000.0)
 }
 
-fn py_err(e: PyErr) -> String { format!("Python: {e}") }
+fn api<'py>(py: Python<'py>) -> Result<&'py Bound<'py, PyModule>, ApiFehler> {
+    API.get(py).map(|m| m.bind(py)).ok_or_else(|| ApiFehler { status: 500, detail: "Python nicht gestartet".into() })
+}
 
-pub fn protokoll(_app: &tauri::AppHandle, zeile: &str) {
-    println!("[spike] {zeile}");
-    if let Ok(home) = std::env::var("HOME") {
-        use std::io::Write;
-        if let Ok(mut f) = std::fs::OpenOptions::new().create(true).append(true).open(format!("{home}/spike.log")) {
-            let _ = writeln!(f, "{zeile}");
+fn fehler_aus(py: Python<'_>, e: PyErr) -> ApiFehler {
+    let v = e.value(py);
+    let status = v.getattr("status").ok().and_then(|s| s.extract::<u16>().ok());
+    let detail = v.getattr("detail").ok().and_then(|d| d.extract::<String>().ok());
+    match (status, detail) {
+        (Some(status), Some(detail)) => ApiFehler { status, detail },
+        _ => {
+            let text = py_text(&e, py);
+            protokoll::schreibe("py!", &text);
+            ApiFehler { status: 500, detail: format!("{e}") }
         }
     }
 }
 
-#[tauri::command]
-pub fn spike_log(app: tauri::AppHandle, zeile: String) { protokoll(&app, &zeile); }
-
-#[tauri::command]
-pub fn spike_health(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
-    sicherstellen(&app)?;
-    let init_ms = *INIT_MS.lock().unwrap();
-    let res = resources(&app)?;
-    Python::attach(|py| -> PyResult<serde_json::Value> {
-        let sys = py.import("sys")?;
-        let cfg = py.import("researchtranscript.config")?;
-        Ok(serde_json::json!({
-            "init_ms": init_ms,
-            "version": cfg.getattr("APP_VERSION")?.extract::<String>()?,
-            "app": cfg.getattr("APP_NAME")?.extract::<String>()?,
-            "prefix": sys.getattr("prefix")?.extract::<String>()?,
-            "isolated": sys.getattr("flags")?.getattr("isolated")?.extract::<i64>()?,
-            "home": std::env::var("HOME").unwrap_or_default(),
-            "resources": res.to_string_lossy(),
-            "sandboxed": std::env::var("APP_SANDBOX_CONTAINER_ID").is_ok(),
-            "fs_encoding": sys.getattr("getfilesystemencoding")?.call0()?.extract::<String>()?,
-            "utf8_mode": sys.getattr("flags")?.getattr("utf8_mode")?.extract::<i64>()?,
-            // Umlaut-Schreibprobe im Container (Messung 4 scheiterte an ASCII)
-            "umlaut_probe": py.eval(c"(lambda p: (__import__('pathlib').Path(p).write_text('Hülle ü\\n'), __import__('pathlib').Path(p).read_text().strip(), __import__('os').remove(p))[1])(__import__('tempfile').gettempdir() + '/prüfung-ü.txt')", None, None)?.extract::<String>()?,
-        }))
-    }).map_err(py_err)
+/// Fassaden-Befehl: JSON rein, JSON raus. Immer aus `spawn_blocking`.
+pub fn rufe(name: &str, args: &serde_json::Value) -> Result<serde_json::Value, ApiFehler> {
+    let args_text = serde_json::to_string(args).map_err(|e| e.to_string())?;
+    Python::attach(|py| {
+        let m = api(py)?;
+        let aus = m.getattr("rufe_json").map_err(|e| fehler_aus(py, e))?
+            .call1((name, args_text)).map_err(|e| fehler_aus(py, e))?;
+        let text: String = aus.extract().map_err(|e| fehler_aus(py, e))?;
+        serde_json::from_str(&text).map_err(|e| ApiFehler { status: 500, detail: format!("Antwort kein JSON: {e}") })
+    })
 }
 
-#[tauri::command]
-pub fn spike_import(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
-    sicherstellen(&app)?;
-    let t0 = Instant::now();
-    Python::attach(|py| -> PyResult<serde_json::Value> {
-        let pc = py.import("pydantic_core")?;
-        py.import("enrich_core")?;
-        py.import("researchtranscript.bibliothek")?;
-        py.import("researchtranscript.exporte")?;
-        py.import("researchtranscript.format2")?;
-        py.import("researchtranscript.jobs")?;
-        Ok(serde_json::json!({
-            "import_ms": t0.elapsed().as_secs_f64() * 1000.0,
-            "pydantic_core": pc.getattr("__version__")?.extract::<String>()?,
-            "pydantic_core_datei": pc.getattr("__file__")?.extract::<String>()?,
-        }))
-    }).map_err(py_err)
+/// Hörprobe als WAV-Bytes (kein Temp-Leck, kein HTTP).
+pub fn sprecher_probe(eid: &str, sid: &str) -> Result<Vec<u8>, ApiFehler> {
+    Python::attach(|py| {
+        let m = api(py)?;
+        let aus = m.getattr("sprecher_probe_bytes").map_err(|e| fehler_aus(py, e))?
+            .call1((eid, sid)).map_err(|e| fehler_aus(py, e))?;
+        let b = aus.cast::<PyBytes>().map_err(|_| ApiFehler { status: 500, detail: "keine Bytes".into() })?;
+        Ok(b.as_bytes().to_vec())
+    })
 }
 
-/// Vier Fake-Jobs durch jobs.py (Threads in Python) mit Rust-Callback.
-#[tauri::command]
-pub fn spike_job_start(app: tauri::AppHandle, anzahl: u32) -> Result<Vec<String>, String> {
-    sicherstellen(&app)?;
-    Python::attach(|py| -> PyResult<Vec<String>> {
-        let home = std::env::var("HOME").unwrap_or_default();
-        let bib = format!("{home}/Documents/ResearchTranscript");
-        std::fs::create_dir_all(&bib).ok();
-        let config = py.import("researchtranscript.config")?;
-        let d = PyDict::new(py);
-        d.set_item("library_root", &bib)?;
-        d.set_item("max_parallel", anzahl)?;
-        config.getattr("write_config")?.call1((d,))?;
-        let jobs = py.import("researchtranscript.jobs")?;
-        let cb = PyCFunction::new_closure(py, None, None, move |_args, _kw| -> PyResult<()> {
-            TICKS.fetch_add(1, Ordering::SeqCst);
-            Ok(())
-        })?;
-        let ns = PyDict::new(py);
-        ns.set_item("jobs", &jobs)?;
-        ns.set_item("rust_cb", &cb)?;
-        py.run(c"
-import time
-def langsam(job, quelle, d):
-    for i in range(120):
-        jobs._pruefe_abbruch(job)
-        jobs._setze(job, progress=int(i / 1.2))
-        rust_cb(i)
-        time.sleep(0.05)
-    raise RuntimeError('Spike-Ende nach Konvertierung (gewollt)')
-jobs._konvertiere = langsam
-", Some(&ns), None)?;
-        let pathlib = py.import("pathlib")?;
-        let mut ids = Vec::new();
-        for i in 0..anzahl {
-            let quelle = format!("{home}/spike-{i}.mp3");
-            std::fs::write(&quelle, b"ID3fake").map_err(|e| PyErr::new::<pyo3::exceptions::PyOSError, _>(e.to_string()))?;
-            let params = PyDict::new(py);
-            for (k, v) in [("model", "x"), ("language", "de"), ("speaker_range", "auto")] { params.set_item(k, v)?; }
-            params.set_item("diarize", false)?;
-            params.set_item("min_speakers", 0)?; params.set_item("max_speakers", 0)?;
-            params.set_item("cluster_threshold", 0.5)?;
-            let p = pathlib.getattr("Path")?.call1((quelle,))?;
-            let job = jobs.getattr("starte")?.call1((p, format!("spike-{i}.mp3"), params))?;
-            ids.push(job.get_item("id")?.extract()?);
-        }
-        Ok(ids)
-    }).map_err(py_err)
-}
-
-#[tauri::command]
-pub fn spike_job_poll(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
-    sicherstellen(&app)?;
-    let t0 = Instant::now();
-    let v = Python::attach(|py| -> PyResult<Vec<(String, String, i64)>> {
-        let jobs = py.import("researchtranscript.jobs")?;
-        let mut aus = Vec::new();
-        for (_, j) in jobs.getattr("JOBS")?.cast::<PyDict>()?.iter() {
-            let fehler: String = j.get_item("error").ok().and_then(|e| e.extract().ok()).unwrap_or_default();
-            let meldung: String = j.get_item("message").ok().and_then(|e| e.extract().ok()).unwrap_or_default();
-            aus.push((j.get_item("id")?.extract()?, format!("{}:{}{}", j.get_item("status")?.extract::<String>()?, meldung,
-                      if fehler.is_empty() { String::new() } else { format!(" [{fehler}]") }),
-                      j.get_item("progress")?.extract::<i64>().unwrap_or(0)));
-        }
-        Ok(aus)
-    }).map_err(py_err)?;
-    Ok(serde_json::json!({ "poll_ms": t0.elapsed().as_secs_f64() * 1000.0, "ticks": TICKS.load(Ordering::SeqCst), "jobs": v }))
-}
-
-#[tauri::command]
-pub fn spike_job_abbruch(app: tauri::AppHandle, id: String) -> Result<bool, String> {
-    sicherstellen(&app)?;
-    Python::attach(|py| -> PyResult<bool> {
-        py.import("researchtranscript.jobs")?.getattr("abbrechen")?.call1((id,))?.extract()
-    }).map_err(py_err)
-}
-
-/// Kernfrage: gilt die Powerbox-Freigabe eines Ordners auch für Python im
-/// selben Prozess? Python (nicht Rust) listet, schreibt, liest, löscht.
-#[tauri::command]
-pub fn spike_ordner(app: tauri::AppHandle, pfad: String) -> Result<serde_json::Value, String> {
-    sicherstellen(&app)?;
-    Python::attach(|py| -> PyResult<serde_json::Value> {
-        let ns = PyDict::new(py);
-        ns.set_item("pfad", &pfad)?;
-        py.run(c"
-import os, json
-ergebnis = {}
-try:
-    ergebnis['eintraege'] = sorted(os.listdir(pfad))[:12]
-    db = os.path.join(pfad, 'zotero.sqlite')
-    if os.path.isfile(db):
-        # Zotero-Probe: nur lesen, wie enrich_core.zotero (immutable, keine Sperre)
-        import sqlite3, time
-        t0 = time.perf_counter()
-        con = sqlite3.connect(f'file:{db}?immutable=1', uri=True)
-        n = con.execute('select count(*) from items').fetchone()[0]
-        titel = con.execute(\"select v.value from items i join itemData d on d.itemID=i.itemID join fields f on f.fieldID=d.fieldID join itemDataValues v on v.valueID=d.valueID where f.fieldName='title' order by i.dateModified desc limit 1\").fetchone()
-        con.close()
-        ergebnis['zotero'] = {'items': n, 'juengster_titel': titel[0] if titel else None, 'ms': round((time.perf_counter()-t0)*1000, 1)}
-        ergebnis['schreiben'] = 'übersprungen (Zotero-Ordner)'
-        raise StopIteration
-    probe = os.path.join(pfad, 'researchtranscript-spike.txt')
-    with open(probe, 'w') as f: f.write('Python im Prozess der Hülle\\n')
-    with open(probe) as f: ergebnis['gelesen'] = f.read().strip()
-    os.remove(probe)
-    ergebnis['schreiben'] = 'ok'
-except StopIteration:
-    pass
-except Exception as e:
-    ergebnis['fehler'] = f'{type(e).__name__}: {e}'
-ergebnis_json = json.dumps(ergebnis)
-", Some(&ns), None)?;
-        let s: String = ns.get_item("ergebnis_json")?.unwrap().extract()?;
-        Ok(serde_json::from_str(&s).unwrap_or(serde_json::json!({"roh": s})))
-    }).map_err(py_err)
-}
-
-/// F3-Nebenfrage: läuft argmax-cli als Kindprozess (app-sandbox + inherit)
-/// auf ein WAV in $TMPDIR (liegt im Container)?
-#[tauri::command]
-pub fn spike_kind_argmax(app: tauri::AppHandle) -> Result<serde_json::Value, String> {
-    sicherstellen(&app)?;
-    let res = resources(&app)?;
-    let tmp = std::env::temp_dir();
-    let rttm = tmp.join("spike.rttm");
-    // Echtes Sprach-WAV bevorzugen, wenn es von aussen in den Container gelegt wurde
-    let wav = if tmp.join("spike-real.wav").is_file() { tmp.join("spike-real.wav") } else { tmp.join("spike.wav") };
-    let _ = std::fs::remove_file(&rttm);
-    if wav.ends_with("spike.wav") { Python::attach(|py| -> PyResult<()> {
-        let ns = PyDict::new(py);
-        ns.set_item("wav", wav.to_string_lossy())?;
-        py.run(c"
-import wave, math, struct
-with wave.open(wav, 'wb') as w:
-    w.setnchannels(1); w.setsampwidth(2); w.setframerate(16000)
-    frames = bytearray()
-    for i in range(16000 * 4):
-        # zwei Töne im Wechsel, damit die Trennung etwas zu tun hat
-        f = 220.0 if (i // 16000) % 2 == 0 else 440.0
-        frames += struct.pack('<h', int(12000 * math.sin(2 * math.pi * f * i / 16000)))
-    w.writeframes(bytes(frames))
-", Some(&ns), None)
-    }).map_err(py_err)?; }
-    let t0 = Instant::now();
-    let out = std::process::Command::new(res.join("bin/argmax-cli"))
-        .args(["diarize", "--audio-path"]).arg(&wav)
-        .args(["--model-path"]).arg(res.join("models/speakerkit"))
-        .args(["--rttm-path"]).arg(&rttm)
-        .args(["--num-speakers", "2", "--use-exclusive-reconciliation"])
-        .output().map_err(|e| format!("spawn: {e}"))?;
-    let text = format!("{}{}", String::from_utf8_lossy(&out.stdout), String::from_utf8_lossy(&out.stderr));
-    let rttm_zeilen = std::fs::read_to_string(&rttm).map(|s| s.lines().count()).unwrap_or(0);
-    Ok(serde_json::json!({
-        "exit": out.status.code(), "ms": t0.elapsed().as_millis(), "rttm_zeilen": rttm_zeilen,
-        "rttm_datei": rttm.is_file(), "wav": wav.to_string_lossy(),
-        "ausgabe_ende": text.lines().rev().take(4).collect::<Vec<_>>(), "tmpdir": tmp.to_string_lossy(),
-    }))
-}
-
-#[allow(dead_code)]
-pub fn ticks() -> usize { TICKS.load(Ordering::SeqCst) }
-
-/// Messungen 1–3 und 5 ohne Oberfläche: eigener Thread, Ergebnisse ins
-/// Protokoll ($HOME/spike.log im Container und stdout).
-pub fn selbstlauf(app: tauri::AppHandle) {
-    std::thread::spawn(move || {
-        std::thread::sleep(std::time::Duration::from_millis(1500));
-        let t = Instant::now();
-        let z = |s: String| protokoll(&app, &format!("{:6.0} ms  {s}", t.elapsed().as_secs_f64() * 1000.0));
-        z("selbstlauf: Start".into());
-        match spike_health(app.clone()) { Ok(v) => z(format!("1 health: {v}")), Err(e) => { z(format!("1 FEHLER health: {e}")); return; } }
-        match spike_import(app.clone()) { Ok(v) => z(format!("2 import: {v}")), Err(e) => z(format!("2 FEHLER import: {e}")) }
-        let ids = match spike_job_start(app.clone(), 4) { Ok(v) => { z(format!("3 jobs: {v:?}")); v } Err(e) => { z(format!("3 FEHLER jobs: {e}")); Vec::new() } };
-        let mut abgebrochen_um: Option<Instant> = None;
-        for n in 0..40u32 {
-            std::thread::sleep(std::time::Duration::from_millis(500));
-            let p = match spike_job_poll(app.clone()) { Ok(v) => v, Err(e) => { z(format!("3 FEHLER poll: {e}")); break; } };
-            let jobs = p["jobs"].as_array().cloned().unwrap_or_default();
-            let kurz: Vec<String> = jobs.iter().map(|j| format!("{}:{}:{}%", j[0], j[1], j[2])).collect();
-            z(format!("  poll {:.1} ms ticks {} {}", p["poll_ms"].as_f64().unwrap_or(0.0), p["ticks"], kurz.join(" ")));
-            if n == 3 && !ids.is_empty() {
-                let ok = spike_job_abbruch(app.clone(), ids[0].clone()).unwrap_or(false);
-                abgebrochen_um = Some(Instant::now());
-                z(format!("  abbrechen {} → {ok}", ids[0]));
-            }
-            if let Some(t0) = abgebrochen_um {
-                if jobs.iter().any(|j| j[0] == ids[0].as_str() && j[1] == "cancelled") {
-                    z(format!("  Abbruch wirksam nach {} ms", t0.elapsed().as_millis()));
-                    abgebrochen_um = None;
-                }
-            }
-            if !jobs.is_empty() && jobs.iter().all(|j| ["completed", "failed", "cancelled"].contains(&j[1].as_str().unwrap_or(""))) {
-                z("3 alle Jobs beendet".into()); break;
-            }
-        }
-        match spike_kind_argmax(app.clone()) { Ok(v) => z(format!("5 kind argmax: {v}")), Err(e) => z(format!("5 FEHLER kind: {e}")) }
-        z("selbstlauf: Ende — für Messung 4 bitte im Fenster einen Ordner wählen".into());
-        // Dauerlauf (Plan §9 Risiko 3): SPIKE_DAUER_S Sekunden lang Runden à
-        // vier Fake-Jobs, dazwischen Poll alle 500 ms; je Runde Speicher
-        // (max. RSS), Python-Threads und Zahl der Jobs.
-        let dauer: u64 = std::env::var("SPIKE_DAUER_S").ok().and_then(|v| v.parse().ok()).unwrap_or(0);
-        if dauer == 0 { return; }
-        let start = Instant::now();
-        let mut runde = 0u32;
-        while start.elapsed().as_secs() < dauer {
-            runde += 1;
-            let ids = match spike_job_start(app.clone(), 4) { Ok(v) => v, Err(e) => { z(format!("dauer FEHLER start: {e}")); break; } };
-            let mut polls = 0u32;
-            loop {
-                std::thread::sleep(std::time::Duration::from_millis(500));
-                polls += 1;
-                let p = match spike_job_poll(app.clone()) { Ok(v) => v, Err(e) => { z(format!("dauer FEHLER poll: {e}")); break; } };
-                let jobs = p["jobs"].as_array().cloned().unwrap_or_default();
-                if polls == 2 { let _ = spike_job_abbruch(app.clone(), ids[0].clone()); }
-                let fertig = jobs.iter().filter(|j| ids.contains(&j[0].as_str().unwrap_or("").to_string()))
-                    .all(|j| ["completed", "failed", "cancelled"].contains(&j[1].as_str().unwrap_or("")));
-                if fertig || polls > 60 { break; }
-            }
-            let mess = Python::attach(|py| -> PyResult<String> {
-                py.eval(c"(lambda r, t, j: f'rss_max={r.getrusage(r.RUSAGE_SELF).ru_maxrss // 1048576} MB threads={t.active_count()} jobs={len(j.JOBS)}')(__import__('resource'), __import__('threading'), __import__('researchtranscript.jobs').jobs)", None, None)?.extract::<String>()
-            }).unwrap_or_else(|e| format!("FEHLER {e}"));
-            z(format!("dauer Runde {runde} nach {} s, {polls} Polls: {mess}", start.elapsed().as_secs()));
-        }
-        z(format!("dauer: Ende nach {} Runden, {} s", runde, start.elapsed().as_secs()));
+/// Beim Beenden: Abbruch-Ereignisse setzen, Kinder töten, kurz warten.
+pub fn alle_abbrechen() {
+    if !INIT.is_completed() { return; }
+    let r = Python::attach(|py| -> PyResult<()> {
+        py.import("researchtranscript.jobs")?.getattr("alle_abbrechen")?.call1((2.0,))?;
+        Ok(())
     });
+    if let Err(e) = r {
+        protokoll::schreibe("exit", &format!("alle_abbrechen: {e}"));
+    }
+}
+
+/// Start-Selbstprüfung (Plan R5): was hier fehlt, meldet ein Dialog
+/// mit Klartext statt eines leeren Fensters.
+pub fn selbstpruefung(res: &Path) -> Vec<String> {
+    let mut probleme = Vec::new();
+    let r = Python::attach(|py| -> PyResult<(String, i64, String)> {
+        let sys = py.import("sys")?;
+        let version: String = sys.getattr("version")?.extract()?;
+        let utf8: i64 = sys.getattr("flags")?.getattr("utf8_mode")?.extract()?;
+        let cfg = py.import("researchtranscript.config")?;
+        let app_version: String = cfg.getattr("APP_VERSION")?.extract()?;
+        Ok((version, utf8, app_version))
+    });
+    match r {
+        Ok((version, utf8, app_version)) => {
+            if !version.starts_with("3.13") { probleme.push(format!("Python-Laufzeit {version}, erwartet 3.13")); }
+            if utf8 != 1 { probleme.push("UTF-8-Modus nicht aktiv".into()); }
+            if app_version != env!("CARGO_PKG_VERSION") {
+                probleme.push(format!("Backend {app_version} passt nicht zur App {}", env!("CARGO_PKG_VERSION")));
+            }
+        }
+        Err(e) => probleme.push(Python::attach(|py| py_text(&e, py))),
+    }
+    for (name, muss) in [("bin/whisper-cli", true), ("bin/ffmpeg", true), ("models", true), ("bin/argmax-cli", false)] {
+        if !res.join(name).exists() {
+            let text = format!("{name} fehlt in den Ressourcen");
+            if muss { probleme.push(text) } else { protokoll::schreibe("start", &text) }
+        }
+    }
+    probleme
 }

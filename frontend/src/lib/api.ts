@@ -1,29 +1,20 @@
-// API-Typen + Fetch-Helfer — EINE Stelle (enrich-Kit-Regel).
+// API-Typen + Transport — EINE Stelle (enrich-Kit-Regel).
+//
+// Zwei Transporte hinter denselben Signaturen (Plan §4 1.11):
+// - Tauri: `invoke("api", {name, args})` an die Python-Fassade IM
+//   Prozess (kein HTTP, kein Port). Die Pfade unten werden auf die
+//   Befehlsnamen von backend/src/researchtranscript/api.py abgebildet —
+//   dieselbe Tabelle wie main.py, nur rückwärts.
+// - Browser (Vite-Dev, Playwright, Screenshots): `fetch` gegen den
+//   Vite-Proxy → uvicorn auf 5628.
 import { beginne, ende } from "./busy";
 import { isTauri } from "./tauri";
 
-/** Backend-Adresse im Tauri-Fenster. Der Port lebt an EINER Stelle je
-    Sprache (config.py · lib.rs · hier): 5628 = „LOCT" auf der
-    Telefontastatur, enrich-Muster. Überschreibbar per localStorage
-    `researchtranscript.backend` — z. B. "http://127.0.0.1:5629", wenn
-    parallel ein Scratch-Backend läuft; die CSP erlaubt jeden Port auf
-    127.0.0.1. Im Browser bleibt es der Vite-Proxy (same-origin). */
+/** Dev-Server-Adresse (nur Browser-Betrieb; der Vite-Proxy leitet /api
+    weiter). Port 5628 = „LOCT" auf der Telefontastatur, enrich-Muster;
+    lebt an EINER Stelle je Sprache (config.py · vite.config.ts · hier). */
 export const BACKEND_PORT = 5628;
-export const DEFAULT_BACKEND = `http://127.0.0.1:${BACKEND_PORT}`;
-
-function backendBase(): string {
-  if (!isTauri()) return "";
-  try {
-    const eigen = window.localStorage.getItem("researchtranscript.backend");
-    if (eigen && /^https?:\/\/(127\.0\.0\.1|localhost):\d+$/
-          .test(eigen.trim())) {
-      return eigen.trim();
-    }
-  } catch { /* localStorage gesperrt — Standard nehmen */ }
-  return DEFAULT_BACKEND;
-}
-
-export const API_BASE = backendBase();
+export const API_BASE = "";
 
 export type Sprecher = { id: string; name: string };
 export type Segment = {
@@ -97,8 +88,66 @@ export type ModellListe = {
 
 export function errMsg(e: unknown): string {
   if (e instanceof Error) return e.message;
+  // Fehler der Fassade kommen aus Tauri als `{status, detail}`
+  if (e && typeof e === "object" && "detail" in e) {
+    return String((e as { detail: unknown }).detail);
+  }
   return String(e);
 }
+
+// ---------- Tauri: Pfad → Befehl ----------
+
+type Befehl = { name: string; args: Record<string, unknown> };
+
+/** Dieselbe Tabelle wie main.py (Route → Fassade), hier rückwärts.
+    Unbekannte Pfade sind ein Programmierfehler, keine Laufzeitfrage. */
+function befehl(method: string, pfad: string, body: unknown): Befehl {
+  const u = new URL(pfad, "http://x");
+  const p = u.pathname;
+  const q = u.searchParams;
+  const m = (re: RegExp) => p.match(re);
+  const args = (body ?? {}) as Record<string, unknown>;
+  let t: RegExpMatchArray | null;
+  if (p === "/api/health") return { name: "health", args: {} };
+  if (p === "/api/models") return { name: "models", args: {} };
+  if (p === "/api/settings") {
+    return method === "GET" ? { name: "settings_get", args: {} }
+                            : { name: "settings_post", args: { aend: args } };
+  }
+  if (p === "/api/transcribe-path") return { name: "transcribe_path", args: { args } };
+  if (p === "/api/import-path") return { name: "import_path", args: { args } };
+  if (p === "/api/jobs") return { name: "jobs_liste", args: {} };
+  if ((t = m(/^\/api\/jobs\/([^/]+)\/cancel$/))) return { name: "job_cancel", args: { job_id: t[1] } };
+  if ((t = m(/^\/api\/jobs\/([^/]+)$/))) return { name: "job_get", args: { job_id: t[1] } };
+  if (p === "/api/zotero/status") return { name: "zotero_status", args: {} };
+  if (p === "/api/zotero/candidates") return { name: "zotero_candidates", args: { q: q.get("q") ?? "" } };
+  if (p === "/api/transcripts") return { name: "transcripts", args: {} };
+  if ((t = m(/^\/api\/transcripts\/([^/]+)\/zotero$/))) {
+    return method === "DELETE" ? { name: "zotero_unlink", args: { eid: t[1] } }
+                               : { name: "zotero_link", args: { eid: t[1], args } };
+  }
+  if ((t = m(/^\/api\/transcripts\/([^/]+)\/rename$/))) return { name: "transcript_rename", args: { eid: t[1], args } };
+  if ((t = m(/^\/api\/transcripts\/([^/]+)\/delete$/))) return { name: "transcript_delete", args: { eid: t[1], args } };
+  if ((t = m(/^\/api\/transcripts\/([^/]+)\/export$/))) return { name: "export_datei", args: { eid: t[1], args } };
+  if ((t = m(/^\/api\/transcripts\/([^/]+)$/))) {
+    return method === "PUT" ? { name: "transcript_put", args: { eid: t[1], args } }
+                            : { name: "transcript_get", args: { eid: t[1] } };
+  }
+  throw new Error(`Kein Befehl für ${method} ${pfad}`);
+}
+
+async function invokeApi<T>(method: string, pfad: string,
+                            body?: unknown): Promise<T> {
+  const { invoke } = await import("@tauri-apps/api/core");
+  const b = befehl(method, pfad, body);
+  try {
+    return await invoke<T>("api", { name: b.name, args: b.args });
+  } catch (e) {
+    throw new Error(errMsg(e));
+  }
+}
+
+// ---------- Browser: fetch ----------
 
 async function _check(r: Response): Promise<Response> {
   if (!r.ok) {
@@ -115,6 +164,7 @@ async function _check(r: Response): Promise<Response> {
 export async function apiGet<T>(pfad: string): Promise<T> {
   beginne();
   try {
+    if (isTauri()) return await invokeApi<T>("GET", pfad);
     const r = await _check(await fetch(`${API_BASE}${pfad}`));
     return await (r.json() as Promise<T>);
   } finally { ende(); }
@@ -124,6 +174,7 @@ export async function apiSend<T>(pfad: string, body?: unknown,
                                  method = "POST"): Promise<T> {
   beginne();
   try {
+    if (isTauri()) return await invokeApi<T>(method, pfad, body);
     const r = await _check(await fetch(`${API_BASE}${pfad}`, {
       method,
       headers: body === undefined ? undefined
@@ -134,14 +185,58 @@ export async function apiSend<T>(pfad: string, body?: unknown,
   } finally { ende(); }
 }
 
+/** Multipart-Upload — NUR Browser: in der App laufen Dateien als Pfade
+    (Drop, Dialog), nie durch einen Upload. */
 export async function apiUpload<T>(pfad: string,
                                    form: FormData): Promise<T> {
+  if (isTauri()) throw new Error("Upload nur im Browser-Betrieb");
   beginne();
   try {
     const r = await _check(await fetch(`${API_BASE}${pfad}`,
                                        { method: "POST", body: form }));
     return await (r.json() as Promise<T>);
   } finally { ende(); }
+}
+
+// ---------- Medien ----------
+
+/** Adresse für <audio>/<video>: in der App eine asset://-URL auf die
+    Bibliotheksdatei (Range durch Tauri, Phase-0-Befund F2), im Browser
+    die Streaming-Route. */
+export async function medienUrl(eid: string,
+                                art: "audio" | "video"): Promise<string> {
+  if (!isTauri()) return `${API_BASE}/api/transcripts/${eid}/${art}`;
+  const { convertFileSrc, invoke } = await import("@tauri-apps/api/core");
+  const r = await invoke<{ path: string }>("medien_pfad", { eid, art });
+  return convertFileSrc(r.path);
+}
+
+/** Hörprobe eines Sprechers: in der App kommen die WAV-Bytes über den
+    IPC und werden zur Blob-URL (revoke() beim Stopp — kein Leck), im
+    Browser die Route. */
+export async function sprecherProbe(eid: string, sid: string):
+    Promise<{ url: string; revoke: () => void }> {
+  if (!isTauri()) {
+    return { url: `${API_BASE}/api/transcripts/${eid}/sprecher/${sid}/sample`,
+             revoke: () => undefined };
+  }
+  const { invoke } = await import("@tauri-apps/api/core");
+  let bytes: ArrayBuffer;
+  try {
+    bytes = await invoke<ArrayBuffer>("sprecher_probe", { eid, sid });
+  } catch (e) { throw new Error(errMsg(e)); }
+  const url = URL.createObjectURL(new Blob([bytes], { type: "audio/wav" }));
+  return { url, revoke: () => URL.revokeObjectURL(url) };
+}
+
+/** Job-Änderungen als Ereignis (App: `job` aus jobs.py, gedrosselt auf
+    10 Hz je Job). Im Browser gibt es kein Ereignis — der Aufrufer
+    pollt dort weiter. Liefert die Abmeldefunktion. */
+export async function onJobs(cb: (job: Job) => void):
+    Promise<() => void> {
+  if (!isTauri()) return () => undefined;
+  const { listen } = await import("@tauri-apps/api/event");
+  return listen<Job>("job", (e) => cb(e.payload));
 }
 
 /** Farbpalette für Sprecher-Chips (Radix-Badge-Farben, Index = stabil

@@ -1,7 +1,7 @@
 [package]
 name = "researchtranscript-app"
 version = "0.4.0"
-description = "ResearchTranscript — Tauri-Shell (spawnt das Python-Backend)"
+description = "ResearchTranscript — Tauri-Hülle mit eingebettetem Python (PyO3)"
 authors = ["Ben Pohl / BIAS.City"]
 edition = "2021"
 
@@ -11,12 +11,18 @@ crate-type = ["staticlib", "cdylib", "rlib"]
 
 [build-dependencies]
 tauri-build = { version = "2", features = [] }
+# resolve-config: liest PYO3_CONFIG_FILE (die gebündelte Laufzeit,
+# pyo3-config.txt) — nie das Dev-venv, nie Homebrew-Python.
 pyo3-build-config = { version = "0.29", features = ["resolve-config"] }
 
 [dependencies]
+# protocol-asset: Medien über asset:// (Phase 0, F2) statt HTTP
 tauri = { version = "2", features = ["devtools", "protocol-asset"] }
 tauri-plugin-dialog = "2"
+tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-# Phase-0-Spike: Python im Prozess (docs/appstore-plan.md §3, F1)
+# Python im Prozess (docs/appstore-plan.md §4 1.7/1.8). Kein
+# `auto-initialize`: ein früher Python::attach würde mit der
+# Standard-Pfadsuche initialisieren, nicht mit unserer PyConfig.
 pyo3 = { version = "0.29", features = [] }

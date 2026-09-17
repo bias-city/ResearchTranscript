@@ -1,16 +1,31 @@
-// Tauri-Brücke: Feature-Detection + die wenigen nativen Wege (Backend
-// starten, Save-/Open-Dialoge, Ordner öffnen). Die Shell ist dumm —
-// alle Daten besitzt das Backend.
+// Tauri-Brücke: Feature-Detection + die wenigen nativen Wege (Save-/
+// Open-Dialoge, Ordner öffnen, Protokoll, Neustart). Python läuft im
+// Prozess der Hülle — es gibt nichts mehr zu starten.
 export function isTauri(): boolean {
   return typeof window !== "undefined" && "__TAURI_INTERNALS__" in window;
 }
 
-/** Backend über das Rust-Kommando starten; liefert erst zurück, wenn
-    /api/health antwortet (oder wirft mit Fehlertext). */
-export async function backendStarten(): Promise<void> {
-  if (!isTauri()) return;
+/** Pfad des Protokolls der Hülle (Python-Ausgaben, Fehler, Herzschlag). */
+export async function protokollPfad(): Promise<string | null> {
+  if (!isTauri()) return null;
   const { invoke } = await import("@tauri-apps/api/core");
-  await invoke("backend_starten");
+  return invoke<string | null>("protokoll_pfad");
+}
+
+/** Hülle neu starten (nach «Verarbeitung blockiert»). */
+export async function neustart(): Promise<void> {
+  if (!isTauri()) { window.location.reload(); return; }
+  const { invoke } = await import("@tauri-apps/api/core");
+  await invoke("neustart");
+}
+
+/** Herzschlag der Hülle: true, wenn Python 10 s nicht antwortet,
+    false, sobald es wieder antwortet. */
+export async function onBlockiert(cb: (blockiert: boolean) => void):
+    Promise<() => void> {
+  if (!isTauri()) return () => {};
+  const { listen } = await import("@tauri-apps/api/event");
+  return listen<boolean>("blockiert", (e) => cb(e.payload));
 }
 
 export async function savePath(defaultName: string,

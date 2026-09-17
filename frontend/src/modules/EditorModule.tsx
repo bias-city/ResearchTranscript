@@ -10,9 +10,9 @@ import {
 } from "../components/ui";
 import { Icon } from "../components/icons";
 import {
-  API_BASE, apiGet, apiSend, errMsg, hms, kuerze, sprecherFarbe,
-  type Segment, type Sprecher, type Transkript, type ZoteroKandidat,
-  type ZoteroMeta, type ZoteroStatus,
+  apiGet, apiSend, errMsg, hms, kuerze, medienUrl, sprecherFarbe,
+  sprecherProbe, type Segment, type Sprecher, type Transkript,
+  type ZoteroKandidat, type ZoteroMeta, type ZoteroStatus,
 } from "../lib/api";
 import { beginne, ende } from "../lib/busy";
 import { useT } from "../lib/i18n";
@@ -54,9 +54,27 @@ export default function EditorModule({ id, onExit }: {
   const [sprecher, setSprecher] = useState<Sprecher[]>([]);
   const [segmente, setSegmente] = useState<Segment[]>([]);
   const [hatAudio, setHatAudio] = useState(false);
+  // Medien-Adressen: in der App asset://-URLs (die Hülle gibt die Datei
+  // frei), im Browser die Streaming-Routen — beides asynchron
+  const [audioUrl, setAudioUrl] = useState("");
+  const [videoUrl, setVideoUrl] = useState("");
+  useEffect(() => {
+    if (!hatAudio) { setAudioUrl(""); return; }
+    let weg = false;
+    void medienUrl(id, "audio").then((u) => { if (!weg) setAudioUrl(u); })
+      .catch((e) => setFehler(errMsg(e)));
+    return () => { weg = true; };
+  }, [id, hatAudio]);
   // Video (BACKLOG 8): stumm, fest unter den Sprechern, ohne Knöpfe —
   // Ton führt, Bild folgt; ab 2× oder bei Sprüngen eingefroren
   const [hatVideo, setHatVideo] = useState(false);
+  useEffect(() => {
+    if (!hatVideo) { setVideoUrl(""); return; }
+    let weg = false;
+    void medienUrl(id, "video").then((u) => { if (!weg) setVideoUrl(u); })
+      .catch((e) => setFehler(errMsg(e)));
+    return () => { weg = true; };
+  }, [id, hatVideo]);
   const [eingefroren, setEingefroren] = useState(false);
   // Das Element als STATE, nicht als Ref: das Sprecher-Panel wird beim
   // Wechsel auf «Suchen»/«Metadaten» ausgehängt, das Video mit ihm —
@@ -516,8 +534,7 @@ export default function EditorModule({ id, onExit }: {
                       { format, path: p });
         setExportNote(tr("ed.exportiert", { p }));
       } else {
-        window.open(`${API_BASE}/api/transcripts/${id}/export/${format}`,
-                    "_blank");
+        window.open(`/api/transcripts/${id}/export/${format}`, "_blank");
       }
     } catch (e) {
       setExportNote(tr("ed.exportfehler", { e: errMsg(e) }));
@@ -585,7 +602,7 @@ export default function EditorModule({ id, onExit }: {
             <>
               <div style={{ flex: 1 }} />
               <audio ref={audioRef}
-                     src={`${API_BASE}/api/transcripts/${id}/audio`}
+                     src={audioUrl || undefined}
                      onTimeUpdate={onTime}
                      onPlay={(e) => { setLaeuft(true);
                        e.currentTarget.playbackRate = speed; }}
@@ -674,6 +691,7 @@ export default function EditorModule({ id, onExit }: {
         {seitenTab === "sprecher"
           ? <SprecherPanel id={id} sprecher={sprecher}
                            segmente={segmente} hatAudio={hatAudio}
+                           videoUrl={videoUrl}
                            onRename={umbenennen} onNeu={sprecherNeu}
                            onMerge={zusammenfuehren}
                            onLeere={leereZuweisen}
@@ -1091,9 +1109,11 @@ function NameFeld({ id, name, onRename }: {
 }
 
 function SprecherPanel({ id, sprecher, segmente, hatAudio, onRename,
-                         onNeu, onMerge, onLeere, video }: {
+                         onNeu, onMerge, onLeere, video, videoUrl }: {
   id: string; sprecher: Sprecher[]; segmente: Segment[];
   hatAudio: boolean;
+  /** asset://- oder Streaming-Adresse des Videos (leer = noch nicht da) */
+  videoUrl?: string;
   /** Video fest unter den Sprechern, ohne Knöpfe (BACKLOG 8) */
   video?: { setEl: (el: HTMLVideoElement | null) => void;
             eingefroren: boolean } | null;
@@ -1120,14 +1140,20 @@ function SprecherPanel({ id, sprecher, segmente, hatAudio, onRename,
     const lief = laeuft;
     stopp();
     if (lief === sid) return;              // zweiter Klick = Stopp
-    const a = new Audio(
-      `${API_BASE}/api/transcripts/${id}/sprecher/${sid}/sample`);
-    a.onended = () => { if (klang.current === a) stopp(); };
-    a.onerror = () => { if (klang.current === a) stopp(); };
-    klang.current = a;
     setLaeuft(sid);
-    void a.play().catch(() => { if (klang.current === a) stopp(); });
+    void sprecherProbe(id, sid).then(({ url, revoke }) => {
+      if (klang.current !== null || laeuftRef.current !== sid) {
+        revoke(); return;                  // inzwischen gestoppt
+      }
+      const a = new Audio(url);
+      const ende = () => { revoke(); if (klang.current === a) stopp(); };
+      a.onended = ende; a.onerror = ende;
+      klang.current = a;
+      void a.play().catch(ende);
+    }).catch(() => stopp());
   };
+  const laeuftRef = useRef<string | null>(null);
+  laeuftRef.current = laeuft;
   // Zusammenführen als Icon-Knopf mit Klappmenü (Layout-Befund
   // 2026-09-09): der breite Select-Platzhalter „Zusammenführen in …"
   // sprengte die schmale Sidebar — die Segment-Zahl brach um. Jetzt
@@ -1232,7 +1258,7 @@ function SprecherPanel({ id, sprecher, segmente, hatAudio, onRename,
       <div style={{ padding: "8px 16px 12px",
                     borderTop: "1px solid var(--gray-a4)" }}>
         <video ref={video.setEl} muted playsInline preload="auto"
-               src={`${API_BASE}/api/transcripts/${id}/video`}
+               src={videoUrl || undefined}
                // Hochformat (9:16) würde bei Panelbreite fast die ganze
                // Spalte füllen — deshalb eine Höhengrenze; das Bild wird
                // dann auf schwarzem Grund eingepasst (User-Frage 2026-09-11)

@@ -1,357 +1,21 @@
-// ResearchTranscript-Shell (enrich-Muster): die Shell ist dumm — sie spawnt
-// das Python-Backend auf 127.0.0.1:5628, wartet auf /api/health und
-// beendet beim Quit NUR, was sie selbst gestartet hat. Ein fremd
-// gestartetes gesundes Backend (Terminal-Dev) wird benutzt, nie angefasst.
+// ResearchTranscript-Hülle (Variante A, Plan §4): Python läuft IM Prozess
+// (python.rs), die Oberfläche ruft `api(name, args)` statt HTTP. Kein
+// Port, keine Merkdatei, kein Kindprozess `python3` — die ganze
+// Prozessverwaltung von 0.4.0 (uvicorn, lsof, ps, kill, venv_fixen) ist
+// weg. Kindprozesse bleiben nur die Motoren (whisper-cli, ffmpeg,
+// argmax-cli), und die verwaltet jobs.py.
 //
-// MERKDATEI (aus enrich nachgezogen, 2026-09-09): app+pid+port landen in
-// ~/Library/Application Support/ResearchTranscript/app-backend.json. Stürzt
-// die App ab, findet der nächste Start sein verwaistes Backend wieder und
-// übernimmt es — vorher prüft die ps-Kommandozeile, ob die PID überhaupt
-// noch zu einem ResearchTranscript-Backend gehört (PIDs werden vom System
-// WIEDERVERWENDET; ohne die Probe könnte die App einen wildfremden
-// Prozess „übernehmen" und beim Quit beenden).
-//
-// Die Datei merkt sich AUCH die PID der App, der das Backend gehört.
-// Ohne sie hätte eine ZWEITE Instanz das Backend der ersten als eigene
-// Waise übernommen und beim Beenden mitgerissen (live aufgetreten
-// 2026-09-09: Dev-Build neben installierter App). Übernommen wird nur,
-// was einem TOTEN Lauf gehört — läuft die Besitzerin noch, ist das
-// Backend fremd und die Merkdatei ihres.
-use std::io::{Read, Write};
-use std::net::TcpStream;
-use std::path::{Path, PathBuf};
+// Was die Hülle noch tut: Fenster, Menü, Dialoge, Dateien vom Finder,
+// Medien-Freigabe für `asset://`, Herzschlag (R4), Protokoll (R3),
+// Start-Selbstprüfung (R5).
+use std::path::Path;
 use std::sync::Mutex;
-use std::time::{Duration, Instant};
+use std::time::Duration;
 
-use tauri::{Manager, RunEvent};
+use tauri::{Emitter, Manager, RunEvent};
 
-// Phase-0-Spike F1 (docs/appstore-plan.md §3): Python im Prozess
+mod protokoll;
 mod python;
-mod medien;
-
-/// DER ResearchTranscript-Port: 5628 = „LOCT" auf der Telefontastatur
-/// (enrich 36742 = „ENRIC", Zotero-Tradition). Vier Buchstaben, nicht
-/// fünf: „LOCTR" wäre 56287 und läge damit im EPHEMEREN Bereich
-/// (macOS verteilt 49152–65535 selbst) — als fester Dienst-Port
-/// untauglich. 5628 liegt im User-Bereich 1024–49151, IANA-unvergeben.
-/// Override: LT_SERVE_PORT (eine Quelle je Sprache, s. config.py).
-const PORT_STANDARD: u16 = 5628;
-
-fn port() -> u16 {
-    static P: std::sync::OnceLock<u16> = std::sync::OnceLock::new();
-    *P.get_or_init(|| {
-        std::env::var("LT_SERVE_PORT")
-            .ok()
-            .and_then(|v| v.parse().ok())
-            .filter(|p| *p >= 1024)
-            .unwrap_or(PORT_STANDARD)
-    })
-}
-
-struct EigenesBackend(Mutex<Option<u32>>);
-
-// ---------- Merkdatei ----------
-
-fn merkdatei() -> PathBuf {
-    let home = std::env::var_os("HOME")
-        .map(PathBuf::from)
-        .unwrap_or_else(|| PathBuf::from("/"));
-    home.join("Library/Application Support/ResearchTranscript/app-backend.json")
-}
-
-fn merk_schreiben(pid: u32) {
-    let f = merkdatei();
-    if let Some(d) = f.parent() {
-        let _ = std::fs::create_dir_all(d);
-    }
-    let _ = std::fs::write(
-        &f,
-        format!(
-            "{{\"app\": {}, \"pid\": {pid}, \"port\": {}}}\n",
-            std::process::id(),
-            port()
-        ),
-    );
-}
-
-fn merk_loeschen() {
-    let _ = std::fs::remove_file(merkdatei());
-}
-
-fn pid_lebt(pid: u32) -> bool {
-    std::process::Command::new("/bin/kill")
-        .args(["-0", &pid.to_string()])
-        .status()
-        .map(|s| s.success())
-        .unwrap_or(false)
-}
-
-/// app+pid+port aus der Merkdatei — bewusst von Hand geparst, die Shell
-/// zieht für drei Zahlen keine JSON-Abhängigkeit.
-fn merk_lesen() -> Option<(u32, u32, u16)> {
-    let roh = std::fs::read_to_string(merkdatei()).ok()?;
-    let zahl = |feld: &str| -> Option<u64> {
-        let ab = roh.find(feld)? + feld.len();
-        roh[ab..]
-            .trim_start_matches(|c: char| c == '"' || c == ':' || c.is_whitespace())
-            .chars()
-            .take_while(|c| c.is_ascii_digit())
-            .collect::<String>()
-            .parse()
-            .ok()
-    };
-    Some((
-        zahl("\"app\"")? as u32,
-        zahl("\"pid\"")? as u32,
-        zahl("\"port\"")? as u16,
-    ))
-}
-
-/// Gehört die Merkdatei DIESEM Lauf? Nur dann darf er sie räumen.
-fn merk_ist_meine() -> bool {
-    merk_lesen().map(|(app, _, _)| app == std::process::id()).unwrap_or(false)
-}
-
-fn health_antwortet(frist_s: u64) -> bool {
-    let frist = Instant::now() + Duration::from_secs(frist_s);
-    loop {
-        if let Ok(mut s) = TcpStream::connect_timeout(
-            &format!("127.0.0.1:{}", port()).parse().unwrap(),
-            Duration::from_millis(500),
-        ) {
-            let _ = s.set_read_timeout(Some(Duration::from_secs(2)));
-            let _ = s.write_all(
-                b"GET /api/health HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n",
-            );
-            let mut antwort = String::new();
-            let _ = s.read_to_string(&mut antwort);
-            if antwort.contains("ResearchTranscript") && antwort.contains("\"ok\"") {
-                return true;
-            }
-        }
-        if Instant::now() >= frist {
-            return false;
-        }
-        std::thread::sleep(Duration::from_millis(300));
-    }
-}
-
-fn port_halter() -> Option<u32> {
-    let out = std::process::Command::new("/usr/sbin/lsof")
-        .args(["-ti", &format!("tcp:{}", port()), "-sTCP:LISTEN"])
-        .output()
-        .ok()?;
-    String::from_utf8_lossy(&out.stdout)
-        .lines()
-        .next()?
-        .trim()
-        .parse()
-        .ok()
-}
-
-fn ps_zeile(pid: u32) -> Option<(String, String)> {
-    let out = std::process::Command::new("/bin/ps")
-        .args(["-p", &pid.to_string(), "-o", "ppid=,command="])
-        .output()
-        .ok()?;
-    let zeile = String::from_utf8_lossy(&out.stdout).trim().to_string();
-    let (ppid, cmd) = zeile.split_once(char::is_whitespace)?;
-    Some((ppid.trim().to_string(), cmd.trim().to_string()))
-}
-
-fn ist_eigenes_backend(pid: u32) -> bool {
-    let Some((ppid, cmd)) = ps_zeile(pid) else {
-        return false;
-    };
-    if !cmd.contains("uvicorn") {
-        return false;
-    }
-    if cmd.contains("researchtranscript") {
-        return true;
-    }
-    // Vorgänger LocalTranscript (bis 2.5.0) und TurnScript (3.0.0): nur
-    // ein VERWAISTES Backend (Elternprozess launchd, PPID 1) gilt als
-    // unseres — es würde sonst alten Code ausliefern. Lebt die alte App
-    // noch, gehört das Backend ihr und bleibt unangetastet (Eiserne
-    // Regel: fremde Prozesse tabu). Diese Namen NIE pauschal ersetzen.
-    (cmd.contains("localtranscript") || cmd.contains("turnscript")) && ppid == "1"
-}
-
-fn vorgaenger_laeuft(pid: u32) -> bool {
-    ps_zeile(pid)
-        .map(|(ppid, cmd)| {
-            cmd.contains("uvicorn") && ppid != "1"
-                && (cmd.contains("localtranscript") || cmd.contains("turnscript"))
-        })
-        .unwrap_or(false)
-}
-
-fn beende_pid(pid: u32) {
-    let _ = std::process::Command::new("/bin/kill")
-        .args(["-TERM", &pid.to_string()])
-        .status();
-    for _ in 0..20 {
-        std::thread::sleep(Duration::from_millis(200));
-        let lebt = std::process::Command::new("/bin/kill")
-            .args(["-0", &pid.to_string()])
-            .status()
-            .map(|s| s.success())
-            .unwrap_or(false);
-        if !lebt {
-            return;
-        }
-    }
-    let _ = std::process::Command::new("/bin/kill")
-        .args(["-KILL", &pid.to_string()])
-        .status();
-}
-
-/// Bundle-venv relozierbar machen: pyvenv.cfg zeigt auf den
-/// python-runtime NEBEN dem venv — absolut, zur Laufzeit gesetzt
-/// (die App kann irgendwo installiert sein; v1-Electron-Muster).
-fn venv_fixen(resources: &Path) -> Result<(), String> {
-    let cfg = resources.join("venv/pyvenv.cfg");
-    let runtime = resources.join("python-runtime/bin");
-    let alt = std::fs::read_to_string(&cfg).unwrap_or_default();
-    let version = alt
-        .lines()
-        .find(|z| z.starts_with("version"))
-        .unwrap_or("version = 3.13.13")
-        .to_string();
-    let neu = format!(
-        "home = {}\ninclude-system-site-packages = false\n{}\nexecutable = {}\n",
-        runtime.display(),
-        version,
-        runtime.join("python3").display()
-    );
-    if alt.trim() == neu.trim() {
-        return Ok(());
-    }
-    std::fs::write(&cfg, &neu).map_err(|e| {
-        format!(
-            "pyvenv.cfg nicht schreibbar ({e}) — liegt die App auf einem \
-             read-only-Volume oder in der Gatekeeper-Translokation? \
-             Einmal nach /Applications kopieren und dort öffnen."
-        )
-    })
-}
-
-struct Backend {
-    python: PathBuf,
-    cwd: PathBuf,
-    bundled: Option<PathBuf>, // Resources-Wurzel im Bundle
-}
-
-fn backend_finden(app: &tauri::AppHandle) -> Result<Backend, String> {
-    // Bundle: Resources/venv (+ python-runtime, bin, lib, models)
-    if let Ok(res) = app.path().resource_dir() {
-        let py = res.join("venv/bin/python3");
-        if py.is_file() {
-            venv_fixen(&res)?;
-            return Ok(Backend {
-                python: py,
-                cwd: res.clone(),
-                bundled: Some(res),
-            });
-        }
-    }
-    // Dev: Repo-Checkout (Pfad zur Bauzeit eingebrannt, enrich-Muster)
-    let repo = PathBuf::from(env!("CARGO_MANIFEST_DIR"))
-        .parent()
-        .and_then(|p| p.parent())
-        .map(|p| p.to_path_buf())
-        .ok_or("Repo-Wurzel nicht bestimmbar")?;
-    let py = repo.join("backend/.venv/bin/python");
-    if py.is_file() {
-        return Ok(Backend {
-            python: py,
-            cwd: repo.join("backend"),
-            bundled: None,
-        });
-    }
-    Err(format!(
-        "Kein Python-Backend gefunden (weder Bundle-venv noch {})",
-        py.display()
-    ))
-}
-
-#[tauri::command]
-async fn backend_starten(
-    app: tauri::AppHandle,
-    eigen: tauri::State<'_, EigenesBackend>,
-) -> Result<(), String> {
-    // Läuft schon etwas Gesundes? Benutzen — und prüfen, ob es das
-    // eigene Waisenkind aus einem abgestürzten Lauf ist: dann geht es
-    // beim Quit mit, sonst bleibt es unangetastet (Terminal-Dev).
-    if health_antwortet(0) {
-        if let Some((app_pid, b_pid, p)) = merk_lesen() {
-            if pid_lebt(app_pid) && app_pid != std::process::id() {
-                // Eine ANDERE Instanz dieser App lebt und besitzt das
-                // Backend: fremd. Nicht übernehmen, Merkdatei ist ihre.
-            } else if p == port()
-                && Some(b_pid) == port_halter()
-                && ist_eigenes_backend(b_pid)
-            {
-                // Waise eines abgestürzten Laufs — übernehmen und den
-                // Besitz auf UNS umschreiben.
-                if let Ok(mut g) = eigen.0.lock() {
-                    *g = Some(b_pid);
-                }
-                merk_schreiben(b_pid);
-            } else {
-                // Eintrag zeigt ins Leere (PID neu vergeben, Port
-                // gewechselt) — weg damit, bevor er jemanden verwirrt.
-                merk_loeschen();
-            }
-        }
-        return Ok(());
-    }
-    // Zombie auf dem Port? Nur ps-identifizierte eigene beenden.
-    if let Some(pid) = port_halter() {
-        if ist_eigenes_backend(pid) {
-            beende_pid(pid);
-        } else if vorgaenger_laeuft(pid) {
-            return Err(format!(
-                "Eine frühere Fassung (LocalTranscript oder TurnScript) läuft noch und belegt Port {} — bitte beenden und ResearchTranscript neu öffnen.",
-                port()
-            ));
-        } else {
-            return Err(format!(
-                "Port {} ist von einem fremden Prozess belegt (PID {pid})", port()
-            ));
-        }
-    }
-    let b = backend_finden(&app)?;
-    let mut cmd = std::process::Command::new(&b.python);
-    cmd.args([
-        "-m",
-        "uvicorn",
-        "researchtranscript.main:app",
-        "--host",
-        "127.0.0.1",
-        "--port",
-        &port().to_string(),
-    ])
-    .current_dir(&b.cwd)
-    .env("PYTHONUNBUFFERED", "1")
-    .stdout(std::process::Stdio::null())
-    .stderr(std::process::Stdio::null());
-    if let Some(res) = &b.bundled {
-        cmd.env("LT_BUNDLED", "1").env("LT_APP_ROOT", res);
-    }
-    let kind = cmd.spawn().map_err(|e| format!("Spawn: {e}"))?;
-    let pid = kind.id();
-    if let Ok(mut g) = eigen.0.lock() {
-        *g = Some(pid);
-    }
-    merk_schreiben(pid);
-    // Erstes Laden im Bundle importiert torch — großzügige Frist.
-    if health_antwortet(90) {
-        Ok(())
-    } else {
-        Err("Backend antwortet nicht (90 s) — Log: Konsole.app".into())
-    }
-}
 
 /// Pfade, die macOS zum Öffnen gab (Info.plist: .enrich) — gesammelt,
 /// bis das Frontend sie abholt; beim Start per Doppelklick kommt das
@@ -363,13 +27,102 @@ fn geoeffnete_dateien(state: tauri::State<'_, Geoeffnet>) -> Vec<String> {
     state.0.lock().map(|mut g| std::mem::take(&mut *g)).unwrap_or_default()
 }
 
+/// Ordner im Finder zeigen oder eine Web-Adresse öffnen — über den
+/// Opener (Sandbox-tauglich; `/usr/bin/open` als Kind wäre es nicht).
 #[tauri::command]
 fn ordner_oeffnen(pfad: String) -> Result<(), String> {
-    std::process::Command::new("/usr/bin/open")
-        .arg(&pfad)
-        .spawn()
-        .map_err(|e| e.to_string())?;
-    Ok(())
+    if pfad.starts_with("http://") || pfad.starts_with("https://") {
+        tauri_plugin_opener::open_url(&pfad, None::<&str>).map_err(|e| e.to_string())
+    } else {
+        tauri_plugin_opener::open_path(&pfad, None::<&str>).map_err(|e| e.to_string())
+    }
+}
+
+/// DER Befehl: Name + Argumente an die Python-Fassade. Immer async →
+/// spawn_blocking, nie auf dem Hauptthread (python.rs-Kopf).
+#[tauri::command]
+async fn api(name: String, args: Option<serde_json::Value>) -> Result<serde_json::Value, python::ApiFehler> {
+    let args = args.unwrap_or(serde_json::Value::Object(Default::default()));
+    let t0 = std::time::Instant::now();
+    let r = tauri::async_runtime::spawn_blocking({ let name = name.clone(); move || python::rufe(&name, &args) })
+        .await
+        .map_err(|e| python::ApiFehler { status: 500, detail: format!("Befehl abgebrochen: {e}") })?;
+    // Eine Zeile je Befehl (R3): was die Oberfläche wollte, was sie bekam
+    let ms = t0.elapsed().as_secs_f64() * 1000.0;
+    match &r {
+        Ok(_) => protokoll::schreibe("api", &format!("{name} ok {ms:.1} ms")),
+        Err(e) => protokoll::schreibe("api", &format!("{name} {} «{}» {ms:.1} ms", e.status, e.detail)),
+    }
+    r
+}
+
+/// Hörprobe: rohe WAV-Bytes über den IPC (Frontend macht eine Blob-URL).
+#[tauri::command]
+async fn sprecher_probe(eid: String, sid: String) -> Result<tauri::ipc::Response, python::ApiFehler> {
+    let bytes = tauri::async_runtime::spawn_blocking(move || python::sprecher_probe(&eid, &sid))
+        .await
+        .map_err(|e| python::ApiFehler { status: 500, detail: format!("Befehl abgebrochen: {e}") })??;
+    Ok(tauri::ipc::Response::new(bytes))
+}
+
+/// Medien für `asset://` freigeben — je Datei, erst wenn die Oberfläche
+/// sie braucht (kein Pauschal-Scope über die Platte). Liefert den Pfad,
+/// das Frontend macht `convertFileSrc` daraus.
+#[tauri::command]
+async fn medien_pfad(app: tauri::AppHandle, eid: String, art: String) -> Result<serde_json::Value, python::ApiFehler> {
+    let befehl = if art == "video" { "video_pfad" } else { "audio_pfad" };
+    let v = api(befehl.to_string(), Some(serde_json::json!({ "eid": eid }))).await?;
+    if let Some(p) = v.get("path").and_then(|p| p.as_str()) {
+        app.asset_protocol_scope().allow_file(Path::new(p))
+            .map_err(|e| python::ApiFehler { status: 500, detail: format!("Freigabe: {e}") })?;
+    }
+    Ok(v)
+}
+
+#[tauri::command]
+fn protokoll_pfad() -> Option<String> {
+    protokoll::pfad().map(|p| p.to_string_lossy().into_owned())
+}
+
+#[tauri::command]
+fn neustart(app: tauri::AppHandle) {
+    protokoll::schreibe("hülle", "Neustart auf Wunsch der Oberfläche");
+    python::alle_abbrechen();
+    app.restart();
+}
+
+/// Herzschlag (Plan R4): alle 5 s ein `ping` an die Fassade auf einem
+/// eigenen Thread; bleibt die Antwort 10 s aus, hält jemand den GIL —
+/// heilen kann das niemand, aber die Oberfläche zeigt es und bietet
+/// den Neustart an.
+fn herzschlag(app: tauri::AppHandle) {
+    std::thread::Builder::new().name("herzschlag".into()).spawn(move || {
+        let mut gemeldet = false;
+        loop {
+            std::thread::sleep(Duration::from_secs(5));
+            let (tx, rx) = std::sync::mpsc::channel();
+            std::thread::spawn(move || {
+                let _ = tx.send(python::rufe("ping", &serde_json::json!({})).is_ok());
+            });
+            match rx.recv_timeout(Duration::from_secs(10)) {
+                Ok(true) => {
+                    if gemeldet {
+                        protokoll::schreibe("herz", "Python antwortet wieder");
+                        let _ = app.emit("blockiert", false);
+                        gemeldet = false;
+                    }
+                }
+                Ok(false) => protokoll::schreibe("herz", "ping mit Fehler"),
+                Err(_) => {
+                    if !gemeldet {
+                        protokoll::schreibe("herz", "Python antwortet seit 10 s nicht (GIL blockiert?)");
+                        let _ = app.emit("blockiert", true);
+                        gemeldet = true;
+                    }
+                }
+            }
+        }
+    }).ok();
 }
 
 /// Nur das Nötige (User 2026-09-09): das Standardmenü schleppte File,
@@ -430,38 +183,58 @@ fn menue(handle: &tauri::AppHandle) -> tauri::Result<tauri::menu::Menu<tauri::Wr
     Menu::with_items(handle, &[&app, &text, &fenster])
 }
 
+/// Startfehler: Klartext-Dialog mit Protokollpfad, dann Ende — nie ein
+/// leeres Fenster (Plan R5; im Spike zweimal Stunden gekostet).
+fn startfehler(app: &tauri::AppHandle, text: &str) -> ! {
+    use tauri_plugin_dialog::{DialogExt, MessageDialogKind};
+    protokoll::schreibe("start", text);
+    let pfad = protokoll::pfad().map(|p| p.to_string_lossy().into_owned()).unwrap_or_default();
+    app.dialog()
+        .message(format!("{text}\n\nProtokoll: {pfad}"))
+        .title("ResearchTranscript kann nicht starten")
+        .kind(MessageDialogKind::Error)
+        .blocking_show();
+    std::process::exit(1)
+}
+
 pub fn run() {
     let app = tauri::Builder::default()
         .menu(menue)
         .on_menu_event(|handle, ereignis| {
             if ereignis.id() == "ueber" {
-                use tauri::Emitter;
                 let _ = handle.emit("ueber", ());
             }
         })
         .plugin(tauri_plugin_dialog::init())
-        .on_page_load(|w, p| { python::protokoll(&w.app_handle().clone(), &format!("seite {:?} {}", p.event(), p.url())); })
+        .plugin(tauri_plugin_opener::init())
         .setup(|app| {
-            // Phase-0-Spike: Messungen 1–3 und 5 laufen ohne Zutun der
-            // Oberfläche, damit das Protokoll auch ohne Fenster entsteht.
-            python::selbstlauf(app.handle().clone());
+            let handle = app.handle().clone();
+            let ordner = handle.path().app_log_dir().unwrap_or_else(|_| std::env::temp_dir());
+            protokoll::einrichten(ordner);
+            protokoll::panics_fangen();
+            // Interpreter + Fassade: ~150 ms, VOR dem ersten Befehl der
+            // Oberfläche — auf einem Arbeits-Thread, nie auf dem
+            // Hauptthread (python.rs-Kopf).
+            let h = handle.clone();
+            let r = std::thread::spawn(move || -> Result<(f64, Vec<String>), String> {
+                let ms = python::init(&h)?;
+                let res = python::resources(&h)?;
+                Ok((ms, python::selbstpruefung(&res)))
+            }).join().unwrap_or_else(|_| Err("Start-Thread abgestürzt".into()));
+            match r {
+                Ok((ms, probleme)) if probleme.is_empty() => {
+                    protokoll::schreibe("start", &format!("Python bereit in {ms:.0} ms"));
+                }
+                Ok((_, probleme)) => startfehler(&handle, &probleme.join("\n")),
+                Err(e) => startfehler(&handle, &e),
+            }
+            herzschlag(handle);
             Ok(())
         })
-        .manage(medien::Medien(Mutex::new(std::collections::HashMap::new())))
-        .register_asynchronous_uri_scheme_protocol("rtmedia", |ctx, req, responder| {
-            // Phase-0-Spike F2: eigener Thread je Anfrage, kein Python darin
-            let app = ctx.app_handle().clone();
-            std::thread::spawn(move || responder.respond(medien::bedienen(&app, req)));
-        })
-        .manage(EigenesBackend(Mutex::new(None)))
         .manage(Geoeffnet(Mutex::new(Vec::new())))
-        .invoke_handler(tauri::generate_handler![backend_starten, ordner_oeffnen,
-                                                 geoeffnete_dateien,
-                                                 python::spike_log, python::spike_health,
-                                                 python::spike_import, python::spike_job_start,
-                                                 python::spike_job_poll, python::spike_job_abbruch,
-                                                 python::spike_ordner, python::spike_kind_argmax,
-                                                 medien::spike_medien_registrieren])
+        .invoke_handler(tauri::generate_handler![api, sprecher_probe, medien_pfad,
+                                                 ordner_oeffnen, geoeffnete_dateien,
+                                                 protokoll_pfad, neustart])
         .build(tauri::generate_context!())
         .expect("ResearchTranscript konnte nicht starten");
 
@@ -470,7 +243,6 @@ pub fn run() {
         // Frontend ein Signal geben (Review 2026-09-11 — vorher wurde
         // das Ereignis verworfen, die App ging nur nach vorn).
         if let RunEvent::Opened { urls } = &event {
-            use tauri::Emitter;
             let pfade: Vec<String> = urls
                 .iter()
                 .filter_map(|u| u.to_file_path().ok())
@@ -482,24 +254,10 @@ pub fn run() {
             let _ = handle.emit("dateien", ());
         }
         if let RunEvent::Exit = event {
-            // NUR das selbst gestartete Backend beenden (eiserne Regel);
-            // zusätzlich ps-identifizierte eigene Waisen auf dem Port.
-            let eigen = handle
-                .state::<EigenesBackend>()
-                .0
-                .lock()
-                .ok()
-                .and_then(|g| *g);
-            // NUR Selbstgestartetes (eiserne Regel): ein im Terminal
-            // gestartetes Dev-Backend gehört dem User, nie der App.
-            if let Some(pid) = eigen {
-                beende_pid(pid);
-            }
-            // Nur die eigene Merkdatei räumen — gehört sie einer
-            // anderen laufenden Instanz, bleibt sie stehen.
-            if merk_ist_meine() {
-                merk_loeschen();
-            }
+            // Laufende Jobs abbrechen (Kinder töten), dann Prozessende —
+            // kein Py_FinalizeEx (python.rs-Kopf).
+            python::alle_abbrechen();
+            protokoll::schreibe("exit", "Ende");
         }
     });
 }

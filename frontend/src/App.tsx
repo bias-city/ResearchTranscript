@@ -1,14 +1,16 @@
-// App-Rahmen: Boot-Gate (Tauri startet das Backend), First-Run
-// (Speicherort), dann Bibliothek ⇄ Editor (Drilldown, enrich-
-// Werkstatt-Muster) + Einstellungen.
+// App-Rahmen: Boot-Gate (Einstellungen laden), First-Run (Speicherort),
+// dann Bibliothek ⇄ Editor (Drilldown, enrich-Werkstatt-Muster) +
+// Einstellungen. Python läuft im Prozess der Hülle (Variante A) — es
+// gibt kein Backend mehr zu starten; der Herzschlag der Hülle meldet,
+// wenn die Verarbeitung hängt (Plan R4).
 import { useCallback, useEffect, useState } from "react";
 import { Badge, Busy, Button, ErrorNote, Flex, Heading, ModalDialog,
   SegTabs, Text } from "./components/ui";
 import { Icon } from "./components/icons";
 import { apiGet, apiSend, errMsg, type Settings } from "./lib/api";
 import { setSprache, useT, type Sprache } from "./lib/i18n";
-import { backendStarten, geoeffneteDateien, isTauri, onDateien, onUeber,
-  ordnerOeffnen, pickOrdner } from "./lib/tauri";
+import { geoeffneteDateien, isTauri, neustart, onBlockiert, onDateien,
+  onUeber, ordnerOeffnen, pickOrdner } from "./lib/tauri";
 import AiTranscriptModule from "./modules/AiTranscriptModule";
 import EditorModule from "./modules/EditorModule";
 import EinstellungenModule from "./modules/EinstellungenModule";
@@ -29,6 +31,7 @@ export default function App() {
   const [editorId, setEditorId] = useState<string | null>(null);
   const [ueber, setUeber] = useState(false);
   const [importFehler, setImportFehler] = useState("");
+  const [blockiert, setBlockiert] = useState(false);
 
   // Dateien aus dem Finder (Doppelklick, «Öffnen mit»): importieren und
   // das zuletzt importierte Transkript im Editor öffnen
@@ -49,7 +52,6 @@ export default function App() {
   const starte = useCallback(async () => {
     setBoot("lade");
     try {
-      if (isTauri()) await backendStarten();
       const s = await apiGet<Settings>("/api/settings");
       setSettings(s);
       if (s.ui_language) setSprache(s.ui_language as Sprache);
@@ -69,6 +71,14 @@ export default function App() {
       .then((f) => { if (weg) f(); else ab = f; });
     return () => { weg = true; ab?.(); };
   }, [boot, oeffneDateien]);
+  // Herzschlag der Hülle: Python antwortet nicht mehr → Banner
+  useEffect(() => {
+    let ab: (() => void) | undefined;
+    let weg = false;
+    void onBlockiert(setBlockiert)
+      .then((f) => { if (weg) f(); else ab = f; });
+    return () => { weg = true; ab?.(); };
+  }, []);
   // „About ResearchTranscript" aus dem Menü
   useEffect(() => {
     let ab: (() => void) | undefined;
@@ -104,6 +114,16 @@ export default function App() {
 
   return (
     <Flex direction="column" style={{ height: "100vh" }}>
+      {blockiert && (
+        <Flex align="center" gap="3" px="4" py="2"
+              style={{ background: "var(--red-a3)",
+                       borderBottom: "1px solid var(--red-a6)" }}>
+          <Text size="2" style={{ flex: 1 }}>{tr("app.blockiert")}</Text>
+          <Button size="1" color="red" variant="soft"
+                  onClick={() => void neustart()}>
+            {tr("app.neustart")}</Button>
+        </Flex>
+      )}
       {/* Der Name stand doppelt (native Leiste + App-Kopf). Behoben
           über hiddenTitle: die NATIVE Fensterleiste bleibt — sie ist
           die Greiffläche, an der man das Fenster zieht —, nur ihr

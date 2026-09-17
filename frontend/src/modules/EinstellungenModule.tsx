@@ -9,7 +9,7 @@ import {
   type Settings, type ZoteroStatus,
 } from "../lib/api";
 import { setSprache, useT, type Sprache } from "../lib/i18n";
-import { isTauri, ordnerOeffnen, pickOrdner } from "../lib/tauri";
+import { isTauri, ordnerOeffnen, pickOrdner, protokollPfad } from "../lib/tauri";
 
 const BIAS_URL = "https://bias.city/researchtranscript/";
 
@@ -236,6 +236,16 @@ export default function EinstellungenModule({ settings, onChange }: {
                 "https://github.com/bias-city/ResearchTranscript")}>
               GitHub</Button>
           </Flex>
+          {isTauri() && (
+            <>
+              <Text size="1" color="gray">{tr("st.protokoll.text")}</Text>
+              <Flex gap="2">
+                <Button size="1" variant="soft" onClick={() =>
+                  void protokollPfad().then((p) => { if (p) void ordnerOeffnen(p); })}>
+                  {tr("st.protokoll")}</Button>
+              </Flex>
+            </>
+          )}
         </Flex>
       </Karte>
 

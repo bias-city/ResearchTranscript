@@ -2,20 +2,30 @@
 name = "researchtranscript"
 version = "0.4.0"
 description = "ResearchTranscript — offline Transkription (whisper.cpp) mit Sprecher-Diarisierung, Editor und enrich-Export"
-requires-python = ">=3.12"
+# 3.13 wie die gebündelte Laufzeit (Plan 1.3): das Dev-venv soll dieselbe
+# Sprache sprechen wie die App — vorher 3.12 hier, 3.13 im Bundle.
+requires-python = ">=3.13"
 license = "AGPL-3.0-or-later"
+# Nur, was die App IM PROZESS braucht (api.py + Logik). Der HTTP-Server
+# ist ein Extra für Browser-Dev, Playwright und pytest (`serve`) und
+# kommt nicht mehr ins Bundle.
 dependencies = [
-    "fastapi>=0.111",
-    "uvicorn[standard]>=0.30",
-    "python-multipart>=0.0.9",
     "pydantic>=2.7",
     "enrich-core",
     # Die Sprechertrennung läuft seit 2.5.0 über die mitgelieferte
     # SpeakerKit-Kommandozeile (Core ML) — kein torch, kein SpeechBrain.
 ]
 
+[project.optional-dependencies]
+serve = [
+    "fastapi>=0.111",
+    "uvicorn>=0.30",
+    "python-multipart>=0.0.9",
+]
+
 [dependency-groups]
-dev = ["pytest>=8", "httpx>=0.27", "ruff>=0.5"]
+dev = ["pytest>=8", "httpx>=0.27", "ruff>=0.5",
+       "fastapi>=0.111", "uvicorn>=0.30", "python-multipart>=0.0.9"]
 
 [tool.uv.sources]
 # enrich-core ist seit 2026-09-11 ein eigenes, öffentliches Paket (MIT):
