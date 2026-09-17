@@ -7,6 +7,11 @@ export const KEYS = {
   editorSpeed: "lt.editor.speed",
   sidebarSprecher: "lt.editor.sprecher-panel",
   editorSeitenTab: "lt.editor.seitentab",
+  // Die App startet dort, wo sie beendet wurde (User 2026-09-17): Tab,
+  // offenes Transkript, aktives Segment je Transkript (Präfix + ID)
+  tab: "lt.ui.tab",
+  editorOffen: "lt.ui.editor",
+  editorAktiv: "lt.editor.aktiv.",
 } as const;
 
 export function sget(key: string): string | null {

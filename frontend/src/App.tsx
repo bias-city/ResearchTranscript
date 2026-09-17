@@ -9,6 +9,7 @@ import { Badge, Busy, Button, ErrorNote, Flex, Heading, ModalDialog,
 import { Icon } from "./components/icons";
 import { apiGet, apiSend, errMsg, type Settings } from "./lib/api";
 import { setSprache, useT, type Sprache } from "./lib/i18n";
+import { KEYS, lget, lset } from "./lib/storage";
 import { geoeffneteDateien, isTauri, neustart, onBlockiert, onDateien,
   onUeber, ordnerMerken, ordnerOeffnen, pickOrdner, standardOrdner } from "./lib/tauri";
 import AiTranscriptModule from "./modules/AiTranscriptModule";
@@ -26,9 +27,17 @@ export default function App() {
   // Drei Tabs (User 2026-08-30): AI-Transcript (Default) |
   // Human-Editor (Bibliotheks-Spiegel + Import, Editor-Drilldown) |
   // Einstellungen
-  const [tab, setTab] = useState<"ai" | "editor" | "einstellungen">(
-    "ai");
-  const [editorId, setEditorId] = useState<string | null>(null);
+  // Wiederaufnahme: Tab und offenes Transkript wie beim Beenden; ein
+  // Transkript, das es nicht mehr gibt, fällt beim Laden auf die
+  // Bibliothek zurück (EditorModule meldet den Fehler, onExit räumt)
+  const [tab, setTab] = useState<"ai" | "editor" | "einstellungen">(() => {
+    const g = lget(KEYS.tab);
+    return g === "editor" || g === "einstellungen" ? g : "ai";
+  });
+  const [editorId, setEditorId] = useState<string | null>(
+    () => lget(KEYS.editorOffen) || null);
+  useEffect(() => { lset(KEYS.tab, tab); }, [tab]);
+  useEffect(() => { lset(KEYS.editorOffen, editorId ?? ""); }, [editorId]);
   const [ueber, setUeber] = useState(false);
   const [importFehler, setImportFehler] = useState("");
   const [blockiert, setBlockiert] = useState(false);

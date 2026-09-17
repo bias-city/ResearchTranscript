@@ -16,7 +16,7 @@ import {
 } from "../lib/api";
 import { beginne, ende } from "../lib/busy";
 import { useT } from "../lib/i18n";
-import { KEYS, lget, lset, sget, sset } from "../lib/storage";
+import { KEYS, lget, lset } from "../lib/storage";
 import { isTauri, ordnerOeffnen, savePath } from "../lib/tauri";
 
 const SPEEDS = [1, 1.25, 1.5, 1.75, 2];
@@ -95,7 +95,7 @@ export default function EditorModule({ id, onExit }: {
   // Seitenleiste: Sprecher | Suchen | Metadaten (User 2026-09-11:
   // «neben Suche ein Subtab»)
   const [seitenTab, setSeitenTab] = useState<SeitenTab>(() => {
-    const g = sget(KEYS.editorSeitenTab);
+    const g = lget(KEYS.editorSeitenTab);
     return g === "suchen" || g === "metadaten" ? g : "sprecher";
   });
   const [zotero, setZotero] = useState<ZoteroMeta | null>(null);
@@ -143,10 +143,32 @@ export default function EditorModule({ id, onExit }: {
         setSegmente(t.segmente.map((s) => ({ ...s,
           id: s.id || neueId() })));
         setLadeN(0);
+        // Wiederaufnahme (User 2026-09-17): das zuletzt aktive Segment
+        // dieses Transkripts — Zeile aktiv, hinscrollen, Audio dorthin
+        const gemerkt = Number(lget(KEYS.editorAktiv + id));
+        if (Number.isInteger(gemerkt) && gemerkt >= 0
+            && gemerkt < t.segmente.length) {
+          setAktiv(gemerkt);
+          requestAnimationFrame(() => {
+            listRef.current?.querySelector(`[data-seg="${gemerkt}"]`)
+              ?.scrollIntoView({ block: "center" });
+            if (audioRef.current) {
+              audioRef.current.currentTime = t.segmente[gemerkt].start;
+            }
+          });
+        }
       });
-    }).catch((e) => { setFehler(errMsg(e)); setLadeN(0); });
+    }).catch((e) => {
+      const text = errMsg(e);
+      setFehler(text); setLadeN(0);
+      // Gemerktes Transkript gibt es nicht mehr → zurück zur Bibliothek
+      if (/nicht gefunden|not found/i.test(text)) onExit();
+    });
     return () => { offen = false; };
-  }, [id]);
+  }, [id, onExit]);
+  useEffect(() => {
+    if (aktiv >= 0) lset(KEYS.editorAktiv + id, String(aktiv));
+  }, [id, aktiv]);
   useEffect(() => { if (ladeN === 0) ende(); }, [ladeN]);
 
   const speichere = useCallback(async () => {
@@ -712,7 +734,7 @@ export default function EditorModule({ id, onExit }: {
                  title={
                    <SegTabs value={seitenTab} fit
                      onChange={(v) => {
-                       sset(KEYS.editorSeitenTab, v);
+                       lset(KEYS.editorSeitenTab, v);
                        setSeitenTab(v as SeitenTab);
                        if (v !== "suchen") setSuchZeile(-1);
                      }}
