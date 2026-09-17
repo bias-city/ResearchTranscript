@@ -28,6 +28,7 @@ import subprocess
 import threading
 from collections.abc import Callable
 from pathlib import Path
+from typing import ClassVar
 
 from .config import get_ffmpeg_cli
 
@@ -183,9 +184,10 @@ class ProzessMotor(KindMotor):
 
     #: AVFoundation nennt Vierbuchstaben-Tags, video.CODECS_OK erwartet
     #: die ffmpeg-Namen (Live-Befund 17.9.2026: «hvc1 in .mov» abgewiesen)
-    CODEC_NAMEN = {"avc1": "h264", "avc3": "h264", "hvc1": "hevc",
-                   "hev1": "hevc", "jpeg": "mjpeg", "png": "png",
-                   "mp4a": "aac", ".mp3": "mp3", "lpcm": "pcm_s16le"}
+    CODEC_NAMEN: ClassVar[dict[str, str]] = {
+        "avc1": "h264", "avc3": "h264", "hvc1": "hevc", "hev1": "hevc",
+        "jpeg": "mjpeg", "png": "png", "mp4a": "aac", ".mp3": "mp3",
+        "lpcm": "pcm_s16le"}
 
     def sondiere(self, pfad: Path) -> dict:
         info = self._pruefe(self._m.sondiere(str(pfad)))
