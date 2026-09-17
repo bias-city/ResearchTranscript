@@ -120,27 +120,34 @@ export default function Wellenform({ eid, segmente, sprecher, zeit, spielt,
     if (!s.spp) return;
     const x = (t: number) => (t - s.t0) / s.spp;
     const t1 = s.t0 + s.spp * breite;
-    // Sprecherbänder: durchgehend, volle Höhe, blass (User 2026-09-17:
-    // «die Aufteilung der Hintergründe war vorher besser» — keine
-    // Rundungen, keine Lücken); Zwischenrufe legen sich darüber
+    // Sprecherstreifen: kräftige Farbe, volle Höhe, durchgehend — keine
+    // Rundungen, keine Lücken (User 2026-09-17); die Welle weiss darüber,
+    // ausserhalb der Turns grau. Je Pixel merken, ob ein Turn darunter liegt.
+    const belegt = new Uint8Array(breite);
     for (const seg of segmente) {
       if (seg.end < s.t0 || seg.start > t1) continue;
       const farbe = sprecherFarbe(sprecher, seg.sprecher);
-      ctx.fillStyle = cssFarbe(farbe === "gray" ? "gray" : farbe, 4);
       const a = Math.max(0, x(seg.start)), b = Math.min(breite, x(seg.end));
-      if (b > a) ctx.fillRect(a, 0, Math.max(1, b - a), HOEHE);
+      if (b <= a) continue;
+      ctx.globalAlpha = farbe === "gray" ? 0.35 : 0.9;
+      ctx.fillStyle = cssFarbe(farbe === "gray" ? "gray" : farbe, 9);
+      ctx.fillRect(Math.floor(a), 0, Math.max(1, Math.ceil(b) - Math.floor(a)), HOEHE);
+      belegt.fill(1, Math.floor(a), Math.ceil(b));
     }
+    ctx.globalAlpha = 1;
     // Welle (drawWave-Muster aus PrepareMedia: ein Balken je Pixel)
     const pk = peaks.current;
     if (pk && pk.daten.length && pk.t1 > pk.t0) {
-      ctx.fillStyle = cssFarbe("gray", 10);
       const mid = HOEHE / 2, n = pk.daten.length;
+      const frei = cssFarbe("gray", 9);
       for (let px = 0; px < breite; px += 1) {
         const t = s.t0 + (px + 0.5) * s.spp;
         const i = Math.floor(((t - pk.t0) / (pk.t1 - pk.t0)) * n);
         if (i < 0 || i >= n) continue;
         const amp = (pk.daten[i] / 255) * (HOEHE / 2 - 3);
-        if (amp > 0.3) ctx.fillRect(px, mid - amp, 1, amp * 2);
+        if (amp <= 0.3) continue;
+        ctx.fillStyle = belegt[px] ? "rgba(255,255,255,0.7)" : frei;
+        ctx.fillRect(px, mid - amp, 1, amp * 2);
       }
     }
     // Playhead
