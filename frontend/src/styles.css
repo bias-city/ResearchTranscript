@@ -666,3 +666,10 @@ body { margin: 0; background: var(--gray-1); }
   background: var(--gray-a5);
   box-shadow: inset 0 0 0 1.5px currentColor;
 }
+/* Schrift der Pillen immer schwarz (User 2026-09-17) — auch der Export-
+   Auslöser (Select-Platzhalter ist bei Radix grau) */
+.rt-Button.rt-variant-soft:where([data-accent-color='gray']),
+.rt-SelectTrigger.rt-variant-soft,
+.rt-SelectTrigger.rt-variant-soft .rt-SelectTriggerInner,
+.rt-SelectTrigger.rt-variant-soft[data-placeholder] .rt-SelectTriggerInner,
+.rt-SelectTrigger.rt-variant-soft svg { color: var(--gray-12); }
