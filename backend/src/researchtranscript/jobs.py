@@ -16,7 +16,6 @@ DELETE ließ whisper einfach weiterrechnen).
 """
 from __future__ import annotations
 
-import subprocess
 import threading
 import time
 import uuid
@@ -25,11 +24,8 @@ from datetime import UTC, datetime
 from pathlib import Path
 
 from . import bibliothek, config
-from .config import get_ffmpeg_cli, read_config
-from .transcribe import (
-    transcribe_classic,
-    transcribe_segment,
-)
+from .config import read_config
+from .motor import MotorAbbruch, MotorFehler, motor
 
 JOBS: dict[str, dict] = {}
 _LOCK = threading.Lock()
@@ -166,7 +162,6 @@ def _gib_slot(job: dict) -> None:
         if job["id"] in _WARTEND:
             _WARTEND.remove(job["id"])
         _SLOT.notify_all()
-_PROC: dict[str, subprocess.Popen | None] = {}
 
 
 def _pruefe_abbruch(job: dict) -> None:
@@ -175,20 +170,14 @@ def _pruefe_abbruch(job: dict) -> None:
         raise Abbruch()
 
 
-def _register_fuer(job_id: str):
-    def reg(proc: subprocess.Popen | None) -> None:
-        _PROC[job_id] = proc
-    return reg
-
-
 def abbrechen(job_id: str) -> bool:
+    """Das Ereignis setzen — die Motoren töten daraufhin ihre Kinder
+    bzw. brechen im Prozess ab (motor.py); der Job-Thread sieht es
+    zwischen den Schritten über _pruefe_abbruch."""
     ev = _CANCEL.get(job_id)
     if ev is None:
         return False
     ev.set()
-    proc = _PROC.get(job_id)
-    if proc is not None and proc.poll() is None:
-        proc.kill()
     return True
 
 
@@ -248,30 +237,16 @@ def _konvertiere(job: dict, quelle: Path, arbeits_dir: Path) -> Path:
     _nimm_slot(job)
     _setze(job, started_at=datetime.now(UTC).isoformat(
         timespec="seconds"), progress=5, message="konvertiere")
-    proc = subprocess.Popen(
-        [get_ffmpeg_cli(), "-y", "-i", str(quelle), "-vn", "-ar", "16000",
-         "-ac", "1", "-c:a", "pcm_s16le", str(ziel)],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    _PROC[job["id"]] = proc
-    proc.wait()
-    _PROC[job["id"]] = None
+    motor().wav16k(quelle, ziel, abbruch=_CANCEL.get(job["id"]))
     _pruefe_abbruch(job)
-    if proc.returncode != 0 or not ziel.is_file():
-        raise RuntimeError("Audio-Konvertierung fehlgeschlagen (ffmpeg)")
     return ziel
 
 
 def _clip(job: dict, wav: Path, start: float, end: float,
           i: int) -> Path:
     ziel = wav.parent / f"{job['id']}_seg{i}.wav"
-    proc = subprocess.Popen(
-        [get_ffmpeg_cli(), "-y", "-i", str(wav), "-ss", f"{start:.3f}",
-         "-to", f"{end:.3f}", "-ar", "16000", "-ac", "1", "-c:a",
-         "pcm_s16le", str(ziel)],
-        stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
-    _PROC[job["id"]] = proc
-    proc.wait()
-    _PROC[job["id"]] = None
+    motor().wav16k(wav, ziel, start=start, dauer=max(end - start, 0.05),
+                   abbruch=_CANCEL.get(job["id"]))
     _pruefe_abbruch(job)
     return ziel
 
@@ -303,15 +278,8 @@ def _lauf(job: dict, quelle: Path, name: str) -> None:
             # «Abbrechen» auch hier greift (Review 2026-09-11)
             _setze(job, message="tonspur")
             mp3 = tmp / "audio.mp3"
-            proc = subprocess.Popen(_video.ton_befehl(quelle, mp3),
-                                    stdout=subprocess.DEVNULL,
-                                    stderr=subprocess.DEVNULL)
-            _PROC[job["id"]] = proc
-            proc.wait()
-            _PROC[job["id"]] = None
+            motor().nach_mp3(quelle, mp3, abbruch=_CANCEL.get(job["id"]))
             _pruefe_abbruch(job)
-            if proc.returncode != 0 or not mp3.is_file():
-                raise RuntimeError("Tonspur konnte nicht gelesen werden (ffmpeg)")
             audio_fuer_bibliothek = mp3
         segmente: list[dict] = []
         sprecher: list[dict] = []
@@ -323,16 +291,15 @@ def _lauf(job: dict, quelle: Path, name: str) -> None:
             # 10 → 25 % füllen, sonst steht der Balken die ganze
             # Diarisierung still; nebenbei greift der Abbruch dann
             # SOFORT und nicht erst nach dem ganzen Lauf.
-            def _diar_fortschritt(i: int, n: int) -> None:
-                _pruefe_abbruch(job)
-                _setze(job, progress=10 + int(i / max(n, 1) * 15))
+            def _diar_fortschritt(anteil: float) -> None:
+                _setze(job, progress=10 + int(max(0.0, min(1.0, anteil)) * 15))
 
             try:
                 diar = diarize_audio(str(wav), p["min_speakers"],
                                      p["max_speakers"],
                                      p["cluster_threshold"],
                                      fortschritt=_diar_fortschritt,
-                                     register=_register_fuer(job["id"]))
+                                     abbruch=_CANCEL.get(job["id"]))
             except DiarisierungAbgebrochen as e:
                 # Der Prozess wurde getötet: erst prüfen, ob WIR das
                 # waren (dann fliegt Abbruch), sonst als Fehler melden.
@@ -354,7 +321,6 @@ def _lauf(job: dict, quelle: Path, name: str) -> None:
                                  "name": _sprecher_label(n)})
             _setze(job, status="transcribing",
                    message=f"transkribiere:0/{len(bloecke)}")
-            reg = _register_fuer(job["id"])
             texte: list[str] = []
             for i, b in enumerate(bloecke):
                 _pruefe_abbruch(job)
@@ -363,9 +329,9 @@ def _lauf(job: dict, quelle: Path, name: str) -> None:
                        message=f"transkribiere:{i + 1}/{len(bloecke)}")
                 clip = _clip(job, wav, b.start, b.end, i)
                 try:
-                    teile = transcribe_segment(
-                        clip, p["model"], p["language"],
-                        time_offset=b.start, register=reg)
+                    teile = motor().transkribiere_clip(
+                        clip, p["model"], p["language"], b.start,
+                        abbruch=_CANCEL.get(job["id"]))
                 finally:
                     clip.unlink(missing_ok=True)
                 _pruefe_abbruch(job)
@@ -386,9 +352,9 @@ def _lauf(job: dict, quelle: Path, name: str) -> None:
                     _setze(job, progress=15 + int(pct * 0.7))
                 _setze(job, partial_text=text[-4000:])
 
-            teile = transcribe_classic(wav, p["model"], p["language"],
-                                       progress_cb=cb,
-                                       register=_register_fuer(job["id"]))
+            teile = motor().transkribiere(wav, p["model"], p["language"],
+                                          abbruch=_CANCEL.get(job["id"]),
+                                          fortschritt=cb)
             _pruefe_abbruch(job)
             segmente = [{"start": round(t.start, 3),
                          "end": round(t.end, 3), "sprecher": None,
@@ -410,8 +376,10 @@ def _lauf(job: dict, quelle: Path, name: str) -> None:
                    if p["diarize"] else {})})
         _setze(job, status="completed", progress=100, message="fertig",
                eintrag=eintrag["id"])
-    except Abbruch:
+    except (Abbruch, MotorAbbruch):
         _setze(job, status="cancelled", message="abgebrochen")
+    except MotorFehler as e:
+        _setze(job, status="failed", error=str(e), message="fehler")
     except Exception as e:  # noqa: BLE001 — Job-Fehler gehören in den
         # Job-Status, nie als toter Thread verschluckt
         _setze(job, status="failed", error=str(e), message="fehler")
@@ -422,7 +390,6 @@ def _lauf(job: dict, quelle: Path, name: str) -> None:
             Path(quelle_tmp).unlink(missing_ok=True)
         _gib_slot(job)
         _CANCEL.pop(job["id"], None)
-        _PROC.pop(job["id"], None)
 
 
 def starte(quelle: Path, filename: str, params: dict,

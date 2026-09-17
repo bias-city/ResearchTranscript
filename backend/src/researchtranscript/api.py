@@ -627,9 +627,7 @@ def sprecher_probe_bytes(eid: str, sid: str) -> bytes:
     Bibliotheks-Audio geschnitten (v2: braucht keine Diarisierungs-
     Rohdaten mehr — funktioniert auch für Importe und nach Neustarts).
     Liefert WAV-Bytes; keine Temp-Datei überlebt den Aufruf."""
-    import subprocess
-
-    from .config import get_ffmpeg_cli
+    from .motor import MotorFehler, motor
     try:
         d = bibliothek.lese(eid)
         audio = bibliothek.audio_pfad(eid)
@@ -644,13 +642,10 @@ def sprecher_probe_bytes(eid: str, sid: str) -> bytes:
     dauer = min(8.0, max(seg["end"] - seg["start"], 1.0))
     tmp = tmpdatei(".wav", "lt-sample-")
     try:
-        r = subprocess.run(
-            [get_ffmpeg_cli(), "-y", "-ss", f"{seg['start']:.3f}",
-             "-t", f"{dauer:.3f}", "-i", str(audio), "-ar", "16000",
-             "-ac", "1", "-c:a", "pcm_s16le", str(tmp)],
-            capture_output=True)
-        if r.returncode != 0:
-            raise ApiFehler(500, "Probe fehlgeschlagen (ffmpeg)")
+        try:
+            motor().wav16k(audio, tmp, start=float(seg["start"]), dauer=dauer)
+        except MotorFehler as e:
+            raise ApiFehler(500, f"Probe fehlgeschlagen ({e})") from e
         return tmp.read_bytes()
     finally:
         tmp.unlink(missing_ok=True)

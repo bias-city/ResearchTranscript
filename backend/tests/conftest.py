@@ -13,6 +13,11 @@ def _eigener_config_ordner(tmp_path, monkeypatch):
     Client. Befund 2026-09-15: ein Test ohne diese Regel legte
     ~/Library/Application Support/ResearchTranscript auf dem echten Rechner an."""
     monkeypatch.setenv("LT_CONFIG_DIR", str(tmp_path / "cfg-auto"))
+    # Motor je Test neu wählen (LT_MOTOR darf nicht aus einem Test in
+    # den nächsten lecken); Standard bleibt der KindMotor
+    from researchtranscript import motor
+    monkeypatch.delenv("LT_MOTOR", raising=False)
+    motor.setze_motor(None)
 
 
 @pytest.fixture()

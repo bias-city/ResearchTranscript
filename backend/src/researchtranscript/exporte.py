@@ -87,16 +87,12 @@ def _enrich_paket(eid: str, daten: dict, seg: list[dict],
         # (nie wav — enrich-Dossiers sollen nicht aufgebläht sein);
         # schlägt ffmpeg fehl, geht das Original ehrlich mit.
         if audio is not None and audio.suffix.lower() != ".mp3":
-            import subprocess
-
-            from .config import get_ffmpeg_cli
+            from .motor import MotorFehler, motor
             mp3 = Path(td) / "audio.mp3"
-            r = subprocess.run(
-                [get_ffmpeg_cli(), "-y", "-i", str(audio),
-                 "-c:a", "libmp3lame", "-q:a", "2", str(mp3)],
-                capture_output=True)
-            if r.returncode == 0 and mp3.is_file():
-                audio = mp3
+            try:
+                audio = motor().nach_mp3(audio, mp3)
+            except MotorFehler:
+                pass                      # Original geht ehrlich mit
         dp = Path(td) / f"{stamm}.enrich"
         # Wer steht im Journal des Dossiers: die E-Mail aus den
         # Einstellungen, wenn eine hinterlegt ist — sonst die App. Die

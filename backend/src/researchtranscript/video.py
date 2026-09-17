@@ -40,7 +40,14 @@ class VideoFehler(Exception):
 
 
 def sondiere(pfad: Path) -> dict:
-    """Was steckt in der Datei? `ffmpeg -i` ohne Ausgabe — es gibt keinen
+    """Was steckt in der Datei? Über den Motor (Plan 1.4): Kind = ffmpeg,
+    Prozess = AVFoundation — gleiche Felder."""
+    from .motor import motor
+    return motor().sondiere(pfad)
+
+
+def sondiere_ffmpeg(pfad: Path) -> dict:
+    """Kind-Umsetzung: `ffmpeg -i` ohne Ausgabe — es gibt keinen
     gebündelten ffprobe; die Stream-Zeilen im stderr reichen."""
     r = subprocess.run([get_ffmpeg_cli(), "-hide_banner", "-i", str(pfad)],
                        capture_output=True, text=True, errors="replace")
@@ -81,17 +88,12 @@ def pruefe(pfad: Path) -> dict | None:
     return info
 
 
-def ton_befehl(quelle: Path, ziel: Path) -> list[str]:
-    """ffmpeg-Aufruf: die Tonspur als mp3 (q2, wie der enrich-Export) —
-    Arbeitskopie für Whisper, Editor und Exporte. Das Video selbst bleibt
-    unangetastet. Als Befehl, damit ein Job ihn selbst starten und beim
-    Abbruch killen kann."""
-    return [get_ffmpeg_cli(), "-y", "-i", str(quelle), "-vn",
-            "-c:a", "libmp3lame", "-q:a", "2", str(ziel)]
-
-
-def ton_extrahieren(quelle: Path, ziel: Path) -> Path:
-    r = subprocess.run(ton_befehl(quelle, ziel), capture_output=True)
-    if r.returncode != 0 or not ziel.is_file():
-        raise RuntimeError("Tonspur konnte nicht gelesen werden (ffmpeg)")
-    return ziel
+def ton_extrahieren(quelle: Path, ziel: Path, abbruch=None) -> Path:
+    """Die Tonspur als mp3 (q2, wie der enrich-Export) — Arbeitskopie für
+    Whisper, Editor und Exporte. Das Video selbst bleibt unangetastet.
+    `abbruch` (threading.Event) lässt einen Job den Lauf beenden."""
+    from .motor import MotorFehler, motor
+    try:
+        return motor().nach_mp3(quelle, ziel, abbruch=abbruch)
+    except MotorFehler as e:
+        raise RuntimeError(str(e)) from e

@@ -37,17 +37,19 @@ def test_diarize_pipeline_landet_in_bibliothek(client, tmp_path,
     # `fortschritt` spiegelt die echte Signatur — der Job meldet damit
     # den Diarisierungs-Fortschritt (10 → 25 %); der Doppelgänger ruft
     # ihn einmal, damit der Meldeweg mitgeprüft ist.
-    def fake_diarize(pfad, mi, ma, th, fortschritt=None, register=None):
+    def fake_diarize(pfad, mi, ma, th, fortschritt=None, abbruch=None):
         if fortschritt is not None:
-            fortschritt(0, 2)
+            fortschritt(0.0)
         return [SpeakerSegment(0.0, 5.0, "SPEAKER_01"),
                 SpeakerSegment(5.0, 20.0, "SPEAKER_00")]
     monkeypatch.setattr(dia, "diarize_audio", fake_diarize)
 
-    def fake_seg(clip, model, lang, time_offset=0.0, register=None):
+    from researchtranscript import motor as _motor
+
+    def fake_seg(self, clip, model, lang, time_offset=0.0, *, abbruch=None):
         return [TranscriptSegment(time_offset, time_offset + 2.0,
                                   f"Text ab {time_offset:.0f}.")]
-    monkeypatch.setattr(jobs, "transcribe_segment", fake_seg)
+    monkeypatch.setattr(_motor.KindMotor, "transkribiere_clip", fake_seg)
 
     r = client.post("/api/transcribe-path",
                     json={"path": str(audio), "language": "de"})

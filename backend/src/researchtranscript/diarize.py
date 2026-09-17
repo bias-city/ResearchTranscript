@@ -78,7 +78,13 @@ def rttm_lesen(text: str) -> list[SpeakerSegment]:
         if dauer <= 0:
             continue
         roh.append(SpeakerSegment(start, start + dauer, f[-3]))
-    roh.sort(key=lambda s: (s.start, s.end))
+    return ueberlappungsfrei(roh)
+
+
+def ueberlappungsfrei(roh: list[SpeakerSegment]) -> list[SpeakerSegment]:
+    """Zeitlich sortieren, Überlappungen wegschneiden — gilt für RTTM der
+    CLI wie für die Segmente des Prozess-Motors."""
+    roh = sorted(roh, key=lambda s: (s.start, s.end))
     aus: list[SpeakerSegment] = []
     for s in roh:
         if aus and s.start < aus[-1].end:
@@ -95,18 +101,36 @@ def diarize_audio(
     max_speakers: int = 0,
     threshold: float = 0.5,
     fortschritt=None,
-    register=None,
+    abbruch=None,
 ) -> list[SpeakerSegment]:
-    """Eine Audiodatei diarisieren.
+    """Eine Audiodatei diarisieren — über den Motor (Plan 1.4).
 
-    `min_speakers == max_speakers > 0` heisst «genau so viele» und wird
-    an `--num-speakers` durchgereicht; sonst entscheidet das Clustering.
-    `register` bekommt den Prozess, damit «Abbrechen» ihn killen kann.
+    `min_speakers == max_speakers > 0` heisst «genau so viele»; sonst
+    entscheidet das Clustering. `fortschritt(anteil)` mit 0..1,
+    `abbruch` ist das Ereignis des Jobs.
     """
+    from .motor import motor
+    return motor().trenne(Path(audio_path), min_speakers, max_speakers,
+                          threshold, abbruch=abbruch, fortschritt=fortschritt)
+
+
+def trenne_cli(
+    wav: Path,
+    min_speakers: int = 0,
+    max_speakers: int = 0,
+    threshold: float = 0.5,
+    *,
+    abbruch=None,
+    fortschritt=None,
+) -> list[SpeakerSegment]:
+    """Kind-Umsetzung: `argmax-cli diarize`. Wird `abbruch` gesetzt, wird
+    die CLI getötet und MotorAbbruch geworfen."""
+    from .motor import MotorAbbruch, MotorFehler
+    audio_path = str(wav)
     cli = get_argmax_cli()
     modelle = get_speakerkit_dir()
     if fortschritt is not None:
-        fortschritt(0, 1)
+        fortschritt(0.0)
     with tempfile.TemporaryDirectory(prefix="lt-diar-") as td:
         rttm = Path(td) / "aus.rttm"
         # Die CLI schreibt den Dateinamen ins RTTM; über einen Link mit
@@ -127,27 +151,27 @@ def diarize_audio(
         with log.open("w") as aus:
             proc = subprocess.Popen(cmd, stdout=aus,
                                     stderr=subprocess.STDOUT, text=True)
-            if register:
-                register(proc)
-            # Warten, aber regelmässig Bescheid geben: nur so kommt der
-            # Job zum Abbrechen, solange die CLI läuft.
+            # Warten, aber regelmässig Bescheid geben und den Abbruch
+            # prüfen: nur so endet der Lauf, solange die CLI rechnet.
             t0 = time.monotonic()
             while proc.poll() is None:
                 time.sleep(0.25)
+                if abbruch is not None and abbruch.is_set():
+                    proc.kill()
+                    proc.wait()
+                    raise MotorAbbruch()
                 if fortschritt is not None:
-                    fortschritt(min(9, int((time.monotonic() - t0) / 2)), 10)
-        if register:
-            register(None)
+                    fortschritt(min(0.9, (time.monotonic() - t0) / 20))
         if proc.returncode != 0 or not rttm.is_file():
             if proc.returncode is not None and proc.returncode < 0:
                 # Von aussen getötet — das ist ein Abbruch, kein Fehler.
                 raise DiarisierungAbgebrochen()
             letzte = log.read_text("utf-8", "replace").strip().splitlines()[-3:]
-            raise RuntimeError("Sprechertrennung fehlgeschlagen: "
-                               + (" / ".join(letzte) or "kein Hinweis"))
+            raise MotorFehler("Sprechertrennung fehlgeschlagen: "
+                              + (" / ".join(letzte) or "kein Hinweis"))
         segmente = rttm_lesen(rttm.read_text("utf-8"))
     if fortschritt is not None:
-        fortschritt(1, 1)
+        fortschritt(1.0)
     return segmente
 
 
