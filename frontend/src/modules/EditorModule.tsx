@@ -171,6 +171,41 @@ export default function EditorModule({ id, onExit }: {
   }, [id, aktiv]);
   useEffect(() => { if (ladeN === 0) ende(); }, [ladeN]);
 
+  // Höhen der Textfelder gelten nur für die Breite, bei der sie gemessen
+  // wurden (User 2026-09-17: «merkwürdig hohe Zeilenabstände» nach dem
+  // Öffnen der Seitenleiste). Bei jeder Breitenänderung der Liste und
+  // einmal nach dem Aufbau: alle Felder in EINEM Zug neu messen — erst
+  // alle lesen, dann alle schreiben, sonst rechnet der Browser je Zeile
+  // ein Layout (1148 Zeilen).
+  const alleMessen = useCallback(() => {
+    const el = listRef.current;
+    if (!el) return;
+    const felder = Array.from(el.querySelectorAll<HTMLTextAreaElement>("textarea.seg-text"));
+    for (const f of felder) f.style.height = "auto";
+    const hoehen = felder.map((f) => f.scrollHeight + 2);
+    felder.forEach((f, i) => { f.style.height = `${hoehen[i]}px`; });
+  }, []);
+  useEffect(() => {
+    const el = listRef.current;
+    if (!el || typeof ResizeObserver === "undefined") return;
+    let breite = el.clientWidth;
+    let geplant = false;
+    const ro = new ResizeObserver(() => {
+      if (el.clientWidth === breite || geplant) return;
+      breite = el.clientWidth; geplant = true;
+      requestAnimationFrame(() => { geplant = false; alleMessen(); });
+    });
+    ro.observe(el);
+    return () => ro.disconnect();
+  }, [alleMessen]);
+  useEffect(() => {
+    if (ladeN === 0 && segmente.length) {
+      // nach dem Einbau noch einmal, wenn Schrift und Layout stehen
+      const t = window.setTimeout(alleMessen, 250);
+      return () => window.clearTimeout(t);
+    }
+  }, [ladeN, segmente.length, alleMessen]);
+
   const speichere = useCallback(async () => {
     setSpeichert(true);
     try {
