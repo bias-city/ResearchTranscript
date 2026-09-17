@@ -130,9 +130,9 @@ export default function Wellenform({ eid, segmente, sprecher, zeit, spielt,
       const a = Math.max(0, x(seg.start)), b = Math.min(breite, x(seg.end));
       if (b <= a) continue;
       // Pastell wie die Badges (Stufe 3–4), aber nicht ganz so blass:
-      // Stufe 7 der Radix-Skala (User 2026-09-17)
+      // Stufe 8 der Radix-Skala (User 2026-09-17: «doch gesättigter»)
       ctx.globalAlpha = farbe === "gray" ? 0.5 : 1;
-      ctx.fillStyle = cssFarbe(farbe === "gray" ? "gray" : farbe, 7);
+      ctx.fillStyle = cssFarbe(farbe === "gray" ? "gray" : farbe, 8);
       ctx.fillRect(Math.floor(a), 0, Math.max(1, Math.ceil(b) - Math.floor(a)), HOEHE);
       belegt.fill(1, Math.floor(a), Math.ceil(b));
     }
