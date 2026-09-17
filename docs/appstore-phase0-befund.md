@@ -20,7 +20,7 @@ App-Sandbox — also die Bedingungen des Stores, nur ohne Store-Zertifikat.
 
 Kein Abbruchkriterium aus §3 ist eingetreten.
 
-## Zwei Befunde, die den Plan ändern
+## Drei Befunde, die den Plan ändern
 
 1. **`com.apple.security.network.client` ist Pflicht.** Ohne dieses
    Entitlement lädt WKWebView in der Sandbox *gar keine* Seite — auch
@@ -36,6 +36,12 @@ Kein Abbruchkriterium aus §3 ist eingetreten.
    `bin/`, `models/`, `BUNDLED` sind unauffindbar. Die alte Hülle setzte
    die Variablen beim Kindstart; jetzt tut es `python::sicherstellen()`
    vor `Py_InitializeFromConfig`. Gehört in Phase 1 (1.2, `python.rs`).
+3. **UTF-8-Modus erzwingen.** Die isolierte Konfiguration liest keine
+   Umgebung, Python landet in der C-Locale: `open()` schrieb mit ASCII,
+   «Hülle» brach mit `UnicodeEncodeError` (erster Lauf von Messung 4).
+   `PyPreConfig_InitIsolatedConfig` + `utf8_mode = 1` + `Py_PreInitialize`
+   vor der `PyConfig` — danach `fs_encoding utf-8`, `utf8_mode 1`,
+   Umlaut-Schreibprobe grün. Ebenfalls Phase 1, 1.2.
 
 ## F1 im Einzelnen
 
@@ -51,7 +57,7 @@ damit die Messung nicht vom WebView abhängt.
 | 1 `health` | `sandboxed: true`, `HOME` = Container, `isolated: 1`, Init 6,4 ms |
 | 2 Import `researchtranscript.jobs`, `pydantic_core` | 125 ms, Module aus dem Bundle-venv |
 | 3 Vier Fake-Jobs (`jobs.starte`, Python-Threads, `_konvertiere` durch Schlaf-Fake ersetzt) | alle vier laufen parallel, Fortschritt steigt gleichmässig, Rust-Callback 395 Aufrufe in 20 s, Poll 0,0 ms je Aufruf, `abbruch` → `cancelled` nach < 500 ms bei 28 %, die anderen drei bis 99 % und in den gewollten Fehler |
-| 4 Ordner per Open-Panel, Python listet/schreibt/löscht darin | **offen** — braucht einen Klick im Spike-Fenster (Knopf «4 · Ordner wählen») |
+| 4 Ordner per Open-Panel (`~/Documents/ResearchTranscript`), Python listet/schreibt/löscht darin | ja — Liste, Schreiben «ok», Rücklesen, Löschen; die Powerbox-Freigabe vererbt sich in den eingebetteten Interpreter |
 | 5 Kind `argmax-cli` mit `app-sandbox` + `inherit` | exit 0, 16 RTTM-Zeilen auf der 5-min-Feldaufnahme, 5,7 s |
 | Sandbox-Verstösse (`log show`, sender Sandbox) | keine |
 | `codesign --verify --deep --strict` | ok (Hülle, `libpython3.13.dylib`, `argmax-cli` mit eigenen Entitlements) |
@@ -115,7 +121,8 @@ oder Patch. **E5: Variante (a)**, Kindprozess (b) belegt und bleibt Rückfall.
 
 - §3/§6 Entitlements: `network.client` **hinzufügen**.
 - §4 1.2 `python.rs`: `LT_APP_ROOT`/`LT_BUNDLED` setzen, bevor der
-  Interpreter startet (oder `get_app_root()` auf `sys.prefix` umstellen).
+  Interpreter startet (oder `get_app_root()` auf `sys.prefix` umstellen);
+  `PyPreConfig` mit `utf8_mode = 1`.
 - §4 1.10: `rtmedia` streichen, `asset://` mit Scope; CSP `media-src`,
   `img-src` anpassen; `medien.rs` entfällt.
 - §5 E5: Shim im Prozess; `spawn_blocking`; Fortschritt selbst skalieren.

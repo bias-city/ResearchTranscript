@@ -25,6 +25,15 @@ fn wide(s: &str) -> Vec<WChar> {
 /// lib-dynload und das site-packages des venv; kein site-Import, keine
 /// Umgebungsvariablen, keine .pyc-Schreibversuche (Bundle ist versiegelt).
 unsafe fn interpreter_starten(runtime: &Path, site: &Path) -> Result<(), String> {
+    // Ohne Umgebung (isoliert) fiele Python auf die C-Locale zurück: Datei-
+    // system- und open()-Encoding ASCII — Umlaute in Pfaden und Texten
+    // brechen (Messung 4). UTF-8-Modus in der Vorkonfiguration erzwingen.
+    let mut pre: ffi::PyPreConfig = std::mem::zeroed();
+    ffi::PyPreConfig_InitIsolatedConfig(&mut pre);
+    pre.utf8_mode = 1;
+    if ffi::PyStatus_Exception(ffi::Py_PreInitialize(&pre)) != 0 {
+        return Err("Py_PreInitialize fehlgeschlagen".into());
+    }
     let mut cfg: ffi::PyConfig = std::mem::zeroed();
     ffi::PyConfig_InitIsolatedConfig(&mut cfg);
     cfg.site_import = 0;
@@ -107,6 +116,10 @@ pub fn spike_health(app: tauri::AppHandle) -> Result<serde_json::Value, String> 
             "home": std::env::var("HOME").unwrap_or_default(),
             "resources": res.to_string_lossy(),
             "sandboxed": std::env::var("APP_SANDBOX_CONTAINER_ID").is_ok(),
+            "fs_encoding": sys.getattr("getfilesystemencoding")?.call0()?.extract::<String>()?,
+            "utf8_mode": sys.getattr("flags")?.getattr("utf8_mode")?.extract::<i64>()?,
+            // Umlaut-Schreibprobe im Container (Messung 4 scheiterte an ASCII)
+            "umlaut_probe": py.eval(c"(lambda p: (__import__('pathlib').Path(p).write_text('Hülle ü\\n'), __import__('pathlib').Path(p).read_text().strip(), __import__('os').remove(p))[1])(__import__('tempfile').gettempdir() + '/prüfung-ü.txt')", None, None)?.extract::<String>()?,
         }))
     }).map_err(py_err)
 }
