@@ -446,12 +446,44 @@ export default function EditorModule({ id, onExit }: {
       const toggle = () => {
         if (a.paused) void a.play(); else a.pause();
       };
+      // Turn wechseln: Audio auf den Segment-Anfang, Zeile aktiv, scrollen;
+      // beim Tippen wandert der Fokus mit ins Textfeld des Ziels (User
+      // 2026-09-17: «wie wechsle ich den Turn, ohne dass ↑/↓ nur im Text
+      // laufen?» → ⌥↑/⌥↓)
+      const turn = (richtung: 1 | -1, fokus: boolean) => {
+        const segs = zustand.current.segmente;
+        if (!segs.length) return;
+        const cur = aktivRef.current;
+        const i = richtung > 0
+          ? Math.min(cur < 0 ? 0 : cur + 1, segs.length - 1)
+          : Math.max(cur < 0 ? 0 : cur - 1, 0);
+        a.currentTime = segs[i].start;
+        setAktiv(i);
+        const zeile = listRef.current?.querySelector(`[data-seg="${i}"]`);
+        zeile?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        if (fokus) {
+          const ta = zeile?.querySelector("textarea");
+          if (ta instanceof HTMLTextAreaElement) {
+            ta.focus();
+            ta.setSelectionRange(ta.value.length, ta.value.length);
+          }
+        }
+      };
       if (e.altKey && !e.metaKey && !e.ctrlKey) {
         if (e.code === "KeyJ") { e.preventDefault(); a.currentTime -= 5; }
         else if (e.code === "KeyL") {
           e.preventDefault(); a.currentTime += 5;
         } else if (e.code === "KeyK") { e.preventDefault(); toggle(); }
+        else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
+          e.preventDefault(); turn(e.key === "ArrowDown" ? 1 : -1, tippt);
+        }
         return;
+      }
+      // Esc im Textfeld: Feld verlassen — danach gelten Leertaste und
+      // ↑/↓ wieder für Audio und Turns (User 2026-09-17: die Leertaste
+      // löscht sonst den markierten Text)
+      if (tippt && e.key === "Escape") {
+        e.preventDefault(); ziel?.blur(); return;
       }
       if (e.ctrlKey && !e.metaKey && !e.altKey) {
         if (e.code === "KeyL") { e.preventDefault(); setLoop((l) => !l); }
@@ -476,16 +508,7 @@ export default function EditorModule({ id, onExit }: {
         // Absatz-Schritt (User 2026-08-30): ↑/↓ laufen die Segmente
         // entlang — Audio auf den Segment-Anfang, Zeile aktiv+scrollen
         e.preventDefault();
-        const segs = zustand.current.segmente;
-        if (!segs.length) return;
-        const cur = aktivRef.current;
-        const i = e.key === "ArrowDown"
-          ? Math.min(cur < 0 ? 0 : cur + 1, segs.length - 1)
-          : Math.max(cur < 0 ? 0 : cur - 1, 0);
-        a.currentTime = segs[i].start;
-        setAktiv(i);
-        listRef.current?.querySelector(`[data-seg="${i}"]`)
-          ?.scrollIntoView({ block: "nearest", behavior: "smooth" });
+        turn(e.key === "ArrowDown" ? 1 : -1, false);
       }
     };
     document.addEventListener("keydown", h);
