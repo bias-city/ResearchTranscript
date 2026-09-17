@@ -130,6 +130,10 @@ function befehl(method: string, pfad: string, body: unknown): Befehl {
     return method === "DELETE" ? { name: "zotero_unlink", args: { eid: t[1] } }
                                : { name: "zotero_link", args: { eid: t[1], args } };
   }
+  if ((t = m(/^\/api\/transcripts\/([^/]+)\/wellenform$/))) {
+    return { name: "wellenform", args: { eid: t[1], t0: Number(q.get("t0") ?? 0),
+             t1: Number(q.get("t1") ?? 0), buckets: Number(q.get("buckets") ?? 1) } };
+  }
   if ((t = m(/^\/api\/transcripts\/([^/]+)\/rename$/))) return { name: "transcript_rename", args: { eid: t[1], args } };
   if ((t = m(/^\/api\/transcripts\/([^/]+)\/delete$/))) return { name: "transcript_delete", args: { eid: t[1], args } };
   if ((t = m(/^\/api\/transcripts\/([^/]+)\/export$/))) return { name: "export_datei", args: { eid: t[1], args } };

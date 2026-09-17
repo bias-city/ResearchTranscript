@@ -9,6 +9,7 @@ import {
   SearchField, SegTabs, Select, SidePanel, Spinner, Text, TextField,
 } from "../components/ui";
 import { Icon } from "../components/icons";
+import Wellenform from "../components/Wellenform";
 import {
   apiGet, apiSend, errMsg, hms, kuerze, medienUrl, sprecherFarbe,
   sprecherProbe, type Segment, type Sprecher, type Transkript,
@@ -854,6 +855,11 @@ export default function EditorModule({ id, onExit }: {
             <Text size="1" color="gray">{tr("ed.keinaudio")}</Text>
           )}
         </Flex>
+        {hatAudio && (
+          <Wellenform eid={id} segmente={segmente} sprecher={sprecher}
+                      zeit={zeit} spielt={laeuft}
+                      onSeek={(t) => springe(t)} />
+        )}
       </Flex>
 
       {menue && (

@@ -230,6 +230,12 @@ def transcript_audio(eid: str):
     return FileResponse(a["path"], media_type=a["media"])
 
 
+@app.get("/api/transcripts/{eid}/wellenform")
+def wellenform(eid: str, t0: float = 0.0, t1: float = 0.0,
+               buckets: int = 1) -> dict:
+    return api.wellenform(eid, t0, t1, buckets)
+
+
 @app.get("/api/transcripts/{eid}/sprecher/{sid}/sample")
 def sprecher_sample(eid: str, sid: str):
     return Response(api.sprecher_probe_bytes(eid, sid),

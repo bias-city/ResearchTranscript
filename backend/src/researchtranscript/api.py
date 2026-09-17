@@ -26,6 +26,7 @@ from pydantic import BaseModel, ConfigDict, ValidationError
 
 from . import bibliothek, config, exporte, jobs
 from .bibliothek import BibliothekFehler
+from .motor import MotorFehler
 
 VIDEO_MEDIA = {".mp4": "video/mp4", ".m4v": "video/mp4",
                ".mov": "video/quicktime"}
@@ -620,6 +621,24 @@ def audio_pfad(eid: str) -> dict:
         raise ApiFehler(404, "Kein Audio")
     return {"path": str(p), "media": AUDIO_MEDIA.get(
         p.suffix.lower(), "application/octet-stream")}
+
+
+@befehl
+def wellenform(eid: str, t0: float = 0.0, t1: float = 0.0,
+               buckets: int = 1) -> dict:
+    """Peaks für die Wellenform im Editor: `buckets` Werte 0–255 zwischen
+    t0 und t1 (t1 ≤ t0 = nur die Dauer). Erster Aufruf je Eintrag baut
+    die Pyramide (3,4 h ≈ 10 s) und cacht sie neben dem Audio."""
+    from . import wellenform as _w
+    try:
+        d = _w.fuer(eid)
+    except BibliothekFehler as e:
+        raise _err(e) from e
+    except MotorFehler as e:
+        raise ApiFehler(500, f"Wellenform: {e}") from e
+    peaks = _w.ausschnitt(d["dauer"], d["stufen"], float(t0), float(t1),
+                          int(buckets)) if t1 > t0 else []
+    return {"dauer_s": round(d["dauer"], 3), "peaks": peaks}
 
 
 def sprecher_probe_bytes(eid: str, sid: str) -> bytes:
