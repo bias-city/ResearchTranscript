@@ -636,13 +636,15 @@ body { margin: 0; background: var(--gray-1); }
   background: transparent; box-shadow: none; padding: 0; gap: 4px; }
 .rt-SegmentedControlRoot .rt-SegmentedControlIndicator,
 .rt-SegmentedControlRoot .rt-SegmentedControlSeparator { display: none; }
+/* Standard neutral (User 2026-09-17): hellgraue Fläche, schwarze Schrift;
+   nur der gewählte Tab trägt die Akzentfarbe */
 .rt-SegmentedControlRoot .rt-SegmentedControlItemLabel {
-  background: var(--accent-a3); color: var(--accent-a11);
+  background: var(--gray-a3); color: var(--gray-12);
   border-radius: var(--radius-2); box-shadow: none; }
 .rt-SegmentedControlRoot .rt-SegmentedControlItem:hover .rt-SegmentedControlItemLabel {
-  background: var(--accent-a4); }
+  background: var(--gray-a4); }
 .rt-SegmentedControlRoot .rt-SegmentedControlItem[data-state='on'] .rt-SegmentedControlItemLabel {
-  background: var(--accent-a5); color: var(--accent-a12); font-weight: 600;
+  background: var(--accent-a4); color: var(--accent-a11); font-weight: 600;
   box-shadow: none; }
 
 /* ---------- Pillenform (User 2026-09-17): Knöpfe und Tab-Einträge mit

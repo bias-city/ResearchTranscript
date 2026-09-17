@@ -65,14 +65,14 @@ export default function EinstellungenModule({ settings, onChange }: {
             {settings.library_root}</Text>
           {isTauri() && (
             <>
-              <Button size="1" variant="soft" onClick={() => {
+              <Button size="1" variant="soft" color="gray" highContrast onClick={() => {
                 void pickOrdner(settings.library_root).then(async (p) => {
                   if (!p) return;
                   await ordnerMerken(p);           // Freigabe überlebt den Neustart
                   setze({ library_root: p });
                 });
               }}>{tr("st.aendern")}</Button>
-              <Button size="1" variant="soft" onClick={() =>
+              <Button size="1" variant="soft" color="gray" highContrast onClick={() =>
                 void ordnerOeffnen(settings.library_root)}>
                 {tr("bib.ordner")}</Button>
             </>
@@ -132,11 +132,11 @@ export default function EinstellungenModule({ settings, onChange }: {
               <Text size="1" style={{ fontFamily: "monospace",
                                       wordBreak: "break-all" }}>{eigeneDir}</Text>
               {isTauri() && (
-                <Button size="1" variant="soft"
+                <Button size="1" variant="soft" color="gray" highContrast
                         onClick={() => void ordnerOeffnen(eigeneDir)}>
                   {tr("bib.ordner")}</Button>
               )}
-              <Button size="1" variant="soft" onClick={modelleLaden}>
+              <Button size="1" variant="soft" color="gray" highContrast onClick={modelleLaden}>
                 {tr("st.modell.neu")}</Button>
             </Flex>
             {ungueltig.map((u) => (
@@ -166,7 +166,7 @@ export default function EinstellungenModule({ settings, onChange }: {
             <Flex gap="2" align="center" wrap="wrap">
               <Text size="1" style={{ fontFamily: "monospace" }}>
                 {settings.install_id}</Text>
-              <Button size="1" variant="soft"
+              <Button size="1" variant="soft" color="gray" highContrast
                       onClick={() => setze({ install_id: "neu" })}>
                 {tr("st.install.neu")}</Button>
             </Flex>
@@ -196,7 +196,7 @@ export default function EinstellungenModule({ settings, onChange }: {
               {isTauri() && (
                 // In der Sandbox zählt nur ein per Dialog freigegebener
                 // Ordner (Bookmark); ein getippter Pfad bleibt unsichtbar.
-                <Button size="1" variant="soft" onClick={() => {
+                <Button size="1" variant="soft" color="gray" highContrast onClick={() => {
                   void standardOrdner().then((d) => pickOrdner(
                     d ? d.replace(/\/Documents$/, "/Zotero") : undefined))
                     .then(async (p) => {
@@ -227,18 +227,18 @@ export default function EinstellungenModule({ settings, onChange }: {
           <Text size="1" color="gray">{tr("st.lizenzen.text")}</Text>
           <Text size="1" color="gray">{tr("st.agpl")}</Text>
           <Flex gap="2" wrap="wrap">
-            <Button size="1" variant="soft" onClick={() =>
+            <Button size="1" variant="soft" color="gray" highContrast onClick={() =>
               void ordnerOeffnen(
                 "https://github.com/bias-city/ResearchTranscript")}>
               {tr("st.link.repo")}</Button>
-            <Button size="1" variant="soft" onClick={() =>
+            <Button size="1" variant="soft" color="gray" highContrast onClick={() =>
               void ordnerOeffnen("https://github.com/bias-city/"
                 + "ResearchTranscript/releases")}>
               {tr("st.link.releases")}</Button>
-            <Button size="1" variant="soft" onClick={() =>
+            <Button size="1" variant="soft" color="gray" highContrast onClick={() =>
               void ordnerOeffnen("https://lame.sourceforge.io/")}>
               {tr("st.link.lamesrc")}</Button>
-            <Button size="1" variant="soft" onClick={() =>
+            <Button size="1" variant="soft" color="gray" highContrast onClick={() =>
               void ordnerOeffnen("https://bias.city/researchtranscript/quellen/lame-4.0.tar.gz")}>
               {tr("st.link.lamekopie")}</Button>
           </Flex>
@@ -250,7 +250,7 @@ export default function EinstellungenModule({ settings, onChange }: {
         <Flex direction="column" gap="2">
           <Text size="1" color="gray">{tr("st.app.text")}</Text>
           <Flex gap="2">
-            <Button size="1" variant="soft" onClick={() =>
+            <Button size="1" variant="soft" color="gray" highContrast onClick={() =>
               void ordnerOeffnen(
                 "https://github.com/bias-city/ResearchTranscript")}>
               GitHub</Button>
@@ -259,7 +259,7 @@ export default function EinstellungenModule({ settings, onChange }: {
             <>
               <Text size="1" color="gray">{tr("st.protokoll.text")}</Text>
               <Flex gap="2">
-                <Button size="1" variant="soft" onClick={() =>
+                <Button size="1" variant="soft" color="gray" highContrast onClick={() =>
                   void protokollPfad().then((p) => { if (p) void ordnerOeffnen(p); })}>
                   {tr("st.protokoll")}</Button>
               </Flex>
@@ -277,7 +277,7 @@ export default function EinstellungenModule({ settings, onChange }: {
           <Text size="1" color="gray">{tr("st.formate.enrich")}</Text>
           <Text size="1" color="gray">{tr("st.formate.xsd")}</Text>
           <Flex gap="2" wrap="wrap">
-            <Button size="1" variant="soft" onClick={() =>
+            <Button size="1" variant="soft" color="gray" highContrast onClick={() =>
               void ordnerOeffnen("https://www.qdasoftware.org/")}>
               {tr("st.link.refi")}</Button>
           </Flex>
@@ -288,7 +288,7 @@ export default function EinstellungenModule({ settings, onChange }: {
         <Flex direction="column" gap="2">
           <Text size="1" color="gray">{tr("st.bias.text")}</Text>
           <Flex gap="2">
-            <Button size="1" variant="soft" onClick={() =>
+            <Button size="1" variant="soft" color="gray" highContrast onClick={() =>
               void ordnerOeffnen(BIAS_URL)}>
               {tr("st.bias.link")}</Button>
           </Flex>

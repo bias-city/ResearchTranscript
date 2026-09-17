@@ -292,7 +292,7 @@ export default function AiTranscriptModule({ settings, onEdit }: {
           <Flex align="center" gap="3" wrap="wrap" pt="3">
             <Text size="1" color="gray">{tr("ai.zahl.hinweis")}</Text>
             <div style={{ flex: 1 }} />
-            <Button size="1" variant="soft" disabled={offen || schickt}
+            <Button size="1" variant="soft" color="gray" highContrast disabled={offen || schickt}
                     onClick={() => void starte()}>
               {tr("ai.starten", { n: wartend.length })}</Button>
           </Flex>
@@ -367,7 +367,7 @@ function JobZeile({ job, onEdit }: {
           {jobText(tr, job.status, job.message)}</Badge>
         <div style={{ flex: 1 }} />
         {job.status === "completed" && job.eintrag && (
-          <Button size="1" variant="soft"
+          <Button size="1" variant="soft" color="gray" highContrast
                   onClick={() => onEdit(job.eintrag!)}>
             <Icon name="edit" size={14} /> {tr("allg.bearbeiten")}
           </Button>

@@ -110,7 +110,7 @@ export default function App() {
               <Text size="1" color="gray"
                     style={{ maxWidth: 480, whiteSpace: "pre-wrap" }}>
                 {bootFehler}</Text>
-              <Button size="1" variant="soft" onClick={() => void starte()}>
+              <Button size="1" variant="soft" color="gray" highContrast onClick={() => void starte()}>
                 {tr("app.nochmal")}</Button>
             </>}
       </Flex>
@@ -212,13 +212,13 @@ function UeberDialog({ open, onClose }: {
     ? `${__APP_VERSION__} · Backend ${backend}`
     : __APP_VERSION__;
   const link = (label: string, url: string) => (
-    <Button size="1" variant="soft" onClick={() => void ordnerOeffnen(url)}>
+    <Button size="1" variant="soft" color="gray" highContrast onClick={() => void ordnerOeffnen(url)}>
       {label}</Button>
   );
   return (
     <ModalDialog open={open} onOpenChange={(o) => !o && onClose()}
                  title={tr("ueber.titel")} width={520}
-                 footer={<Button size="1" variant="soft" onClick={onClose}>
+                 footer={<Button size="1" variant="soft" color="gray" highContrast onClick={onClose}>
                    {tr("allg.schliessen")}</Button>}>
       <Flex direction="column" gap="3">
         <Flex direction="column" gap="1">
@@ -290,7 +290,7 @@ function FirstRun({ onDone }: { onDone: (s: Settings) => void }) {
             kann die Person «ResearchTranscript» anlegen oder wählen; die
             Freigabe wird als Bookmark gemerkt. Im Browser wie bisher. */}
         {isTauri() ? (
-          <Button size="1" variant="soft" onClick={() => {
+          <Button size="1" variant="soft" color="gray" highContrast onClick={() => {
             void standardOrdner().then((d) => pickOrdner(d)).then(async (p) => {
               if (!p) return;
               await ordnerMerken(p);
@@ -298,7 +298,7 @@ function FirstRun({ onDone }: { onDone: (s: Settings) => void }) {
             });
           }}>{tr("firstrun.waehlen")}</Button>
         ) : (
-          <Button size="1" variant="soft" onClick={() => void setze("default")}>
+          <Button size="1" variant="soft" color="gray" highContrast onClick={() => void setze("default")}>
             {tr("firstrun.standard")}</Button>
         )}
       </Flex>
