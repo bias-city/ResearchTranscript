@@ -16,7 +16,9 @@ import { isTauri } from "./tauri";
 export const BACKEND_PORT = 5628;
 export const API_BASE = "";
 
-export type Sprecher = { id: string; name: string };
+export type Sprecher = { id: string; name: string;
+  /** gewählte Farbe (Radix-Name aus FARB_AUSWAHL); ohne: nach Reihenfolge */
+  farbe?: string | null };
 export type Segment = {
   id: string; start: number; end: number;
   sprecher: string | null; text: string;
@@ -254,11 +256,27 @@ export const SPRECHER_FARBEN = [
   "cyan", "pink", "lime",
 ] as const;
 
+/** Farben, die sich per Klick auf die Farbmarke wählen lassen (User
+    2026-09-17): die Palette plus zehn weitere Radix-Farben. Kein
+    System-Farbdialog — Badges, Wellenform und QDPX kennen nur die
+    benannten Radix-Skalen, ein freies RGB hätte keine Hell/Dunkel-
+    Varianten. Gespeichert in transkript.json als `sprecher[].farbe`. */
+export const FARB_AUSWAHL = [
+  ...SPRECHER_FARBEN, "tomato", "ruby", "plum", "purple", "blue",
+  "sky", "mint", "grass", "brown", "gold",
+] as const;
+export type Farbe = (typeof FARB_AUSWAHL)[number];
+
 export function sprecherFarbe(sprecher: Sprecher[], sid: string | null):
-    (typeof SPRECHER_FARBEN)[number] | "gray" {
+    Farbe | "gray" {
   if (!sid) return "gray";
   const i = sprecher.findIndex((s) => s.id === sid);
-  return i < 0 ? "gray" : SPRECHER_FARBEN[i % SPRECHER_FARBEN.length];
+  if (i < 0) return "gray";
+  const eigene = sprecher[i].farbe;
+  if (eigene && (FARB_AUSWAHL as readonly string[]).includes(eigene)) {
+    return eigene as Farbe;
+  }
+  return SPRECHER_FARBEN[i % SPRECHER_FARBEN.length];
 }
 
 /** Lange Namen MITTIG kürzen — die Endung bleibt sichtbar

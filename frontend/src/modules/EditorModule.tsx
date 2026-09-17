@@ -11,9 +11,9 @@ import {
 import { Icon } from "../components/icons";
 import Wellenform from "../components/Wellenform";
 import {
-  apiGet, apiSend, errMsg, hms, kuerze, medienUrl, sprecherFarbe,
-  sprecherProbe, type Segment, type Sprecher, type Transkript,
-  type ZoteroKandidat, type ZoteroMeta, type ZoteroStatus,
+  FARB_AUSWAHL, apiGet, apiSend, errMsg, hms, kuerze, medienUrl,
+  sprecherFarbe, sprecherProbe, type Farbe, type Segment, type Sprecher,
+  type Transkript, type ZoteroKandidat, type ZoteroMeta, type ZoteroStatus,
 } from "../lib/api";
 import { beginne, ende } from "../lib/busy";
 import { useT } from "../lib/i18n";
@@ -432,6 +432,11 @@ export default function EditorModule({ id, onExit }: {
   const umbenennen = useCallback((wer: string, neuName: string) => {
     setSprecher((sp) => sp.map((x) => x.id === wer
       ? { ...x, name: neuName } : x));
+    dirty();
+  }, [dirty]);
+
+  const farbeSetzen = useCallback((wer: string, farbe: Farbe) => {
+    setSprecher((sp) => sp.map((x) => x.id === wer ? { ...x, farbe } : x));
     dirty();
   }, [dirty]);
 
@@ -957,7 +962,8 @@ export default function EditorModule({ id, onExit }: {
           ? <SprecherPanel id={id} sprecher={sprecher}
                            segmente={segmente} hatAudio={hatAudio}
                            videoUrl={videoUrl}
-                           onRename={umbenennen} onNeu={sprecherNeu}
+                           onRename={umbenennen} onFarbe={farbeSetzen}
+                           onNeu={sprecherNeu}
                            onMerge={zusammenfuehren}
                            onLeere={leereZuweisen}
                            video={hatVideo ? { setEl: setVideoEl,
@@ -1393,6 +1399,49 @@ const SegmentZeile = memo(function SegmentZeile({
   && a.index === b.index && a.name === b.name && a.farbe === b.farbe
   && a.hatAudio === b.hatAudio);
 
+/** Farbmarke als Kreis; Klick öffnet die Palette (User 2026-09-17). */
+function FarbMarke({ farbe, onWahl }: {
+  farbe: Farbe | "gray"; onWahl: (f: Farbe) => void;
+}) {
+  const tr = useT();
+  const [offen, setOffen] = useState(false);
+  useEffect(() => {
+    if (!offen) return;
+    const zu = (e: MouseEvent) => {
+      if (!(e.target as HTMLElement).closest("[data-farbwahl]")) setOffen(false);
+    };
+    document.addEventListener("mousedown", zu);
+    return () => document.removeEventListener("mousedown", zu);
+  }, [offen]);
+  const kreis = (f: Farbe | "gray", gross: boolean) => ({
+    width: gross ? 18 : 14, height: gross ? 18 : 14, borderRadius: "50%",
+    background: `var(--${f}-9)`, border: "1px solid var(--black-a3)",
+    cursor: "pointer", flex: "0 0 auto", padding: 0 } as const);
+  return (
+    <div data-farbwahl style={{ position: "relative", display: "flex" }}>
+      <button type="button" title={tr("ed.sprecher.farbe")}
+              style={kreis(farbe, false)}
+              onClick={() => setOffen((o) => !o)} />
+      {offen && (
+        <div style={{ position: "absolute", left: 0, top: "100%", zIndex: 60,
+                      marginTop: 4, padding: 6, display: "grid",
+                      gridTemplateColumns: "repeat(5, 18px)", gap: 6,
+                      background: "var(--color-panel-solid)",
+                      border: "1px solid var(--gray-a6)", borderRadius: 8,
+                      boxShadow: "var(--shadow-4)" }}>
+          {FARB_AUSWAHL.map((f) => (
+            <button key={f} type="button" title={f}
+                    style={{ ...kreis(f, true),
+                             outline: f === farbe ? "2px solid var(--gray-12)" : undefined,
+                             outlineOffset: 1 }}
+                    onClick={() => { onWahl(f); setOffen(false); }} />
+          ))}
+        </div>
+      )}
+    </div>
+  );
+}
+
 // Tippen bleibt LOKAL (nur dieses Feld rendert), der Commit in den
 // globalen State läuft debounced — sonst rendert jeder Buchstabe alle
 // Zeilen des Sprechers neu (Live-Befund: 2 s je Taste bei 557 Zeilen).
@@ -1426,7 +1475,8 @@ function NameFeld({ id, name, onRename }: {
 }
 
 function SprecherPanel({ id, sprecher, segmente, hatAudio, onRename,
-                         onNeu, onMerge, onLeere, video, videoUrl }: {
+                         onFarbe, onNeu, onMerge, onLeere, video, videoUrl }: {
+  onFarbe: (id: string, farbe: Farbe) => void;
   id: string; sprecher: Sprecher[]; segmente: Segment[];
   hatAudio: boolean;
   /** asset://- oder Streaming-Adresse des Videos (leer = noch nicht da) */
@@ -1513,8 +1563,8 @@ function SprecherPanel({ id, sprecher, segmente, hatAudio, onRename,
                          borderBottom: "1px solid var(--gray-a4)",
                          paddingBottom: 8 }}>
             <Flex align="center" gap="2">
-              <Badge color={sprecherFarbe(sprecher, s.id)}
-                     variant="solid" radius="full"> </Badge>
+              <FarbMarke farbe={sprecherFarbe(sprecher, s.id)}
+                         onWahl={(f) => onFarbe(s.id, f)} />
               <NameFeld id={s.id} name={s.name} onRename={onRename} />
             </Flex>
             <Flex align="center" gap="1">

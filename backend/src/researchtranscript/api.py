@@ -519,9 +519,20 @@ def transcript_get(eid: str) -> dict:
         raise _err(e) from e
 
 
+#: Sprecherfarben, die der Editor anbietet (Radix-Namen, lib/api.ts
+#: FARB_AUSWAHL) — nur diese werden gespeichert; ohne `farbe` gilt die
+#: Reihenfolge (SPRECHER_FARBEN), wie bis 0.6.0.
+FARBEN_ERLAUBT = frozenset({
+    "indigo", "amber", "green", "crimson", "teal", "violet", "orange",
+    "cyan", "pink", "lime", "tomato", "ruby", "plum", "purple", "blue",
+    "sky", "mint", "grass", "brown", "gold"})
+
+
 class SprecherReq(ApiModel):
     id: str
     name: str
+    #: gewählte Farbe (User 2026-09-17); None = nach Reihenfolge
+    farbe: str | None = None
     #: kommt vom GET zurück; beim Schreiben ignoriert — die Bibliothek
     #: entscheidet, was `human` wird (FORMAT.md §0.1: nie ableitbar)
     origin: str | None = None
@@ -549,6 +560,9 @@ def transcript_put(eid: str, args: dict) -> dict:
     except BibliothekFehler as e:
         raise _err(e) from e
     ids = {s.id for s in req.sprecher}
+    for sp in req.sprecher:
+        if sp.farbe is not None and sp.farbe not in FARBEN_ERLAUBT:
+            raise ApiFehler(422, f"Unbekannte Farbe: {sp.farbe}")
     for seg in req.segmente:
         if seg.sprecher and seg.sprecher not in ids:
             raise ApiFehler(422, f"Unbekannter Sprecher: {seg.sprecher}")

@@ -360,6 +360,8 @@ const W: Record<string, Eintrag> = {
     fr: "Supprimer le segment (⌫ dans un champ vide)",
     it: "Elimina segmento (⌫ nel campo vuoto)" },
   "ed.folgen": { de: "Folgen", en: "Follow", fr: "Suivre", it: "Segui" },
+  "ed.sprecher.farbe": { de: "Farbe wählen", en: "Choose colour",
+    fr: "Choisir la couleur", it: "Scegli il colore" },
   "ed.zeit.bearbeiten": { de: "Startzeit bearbeiten (hh:mm:ss, Enter)",
     en: "Edit start time (hh:mm:ss, Enter)",
     fr: "Modifier le début (hh:mm:ss, Entrée)",

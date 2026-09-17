@@ -60,6 +60,15 @@ _NS_USER = uuid.uuid5(uuid.NAMESPACE_URL, "localtranscript:refi-user")
 #: dieselben Farben wie die Sprecher im Editor.
 FARBEN = ("#3E63DD", "#FFB224", "#30A46C", "#E5484D", "#12A594",
           "#8E4EC6", "#F76B15", "#00A2C7", "#D6409F", "#99D52A")
+#: gewählte Farbe je Sprecher (Radix-Name, seit 0.6.0 in transkript.json)
+#: → Hex der Stufe 9, wie die Punkte im Sprecher-Panel
+FARBE_HEX = {"indigo": "#3E63DD", "amber": "#FFB224", "green": "#30A46C",
+             "crimson": "#E5484D", "teal": "#12A594", "violet": "#8E4EC6",
+             "orange": "#F76B15", "cyan": "#00A2C7", "pink": "#D6409F",
+             "lime": "#99D52A", "tomato": "#E54D2E", "ruby": "#E54666",
+             "plum": "#AB4ABA", "purple": "#8E4EC6", "blue": "#0090FF",
+             "sky": "#7CE2FE", "mint": "#86EAD4", "grass": "#46A758",
+             "brown": "#AD7F58", "gold": "#978365"}
 
 
 def _guid(ns: uuid.UUID, schluessel: str) -> str:
@@ -153,7 +162,8 @@ def baue_projekt(name: str, segmente: list[dict], sprecher: list[dict],
             code_guid[sp["name"]] = g
             ET.SubElement(liste, "Code", {
                 "guid": g, "name": sp["name"], "isCodable": "true",
-                "color": FARBEN[i % len(FARBEN)]})
+                "color": FARBE_HEX.get(sp.get("farbe") or "",
+                                       FARBEN[i % len(FARBEN)])})
 
     quellen = ET.SubElement(wurzel, "Sources")
 

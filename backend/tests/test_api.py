@@ -144,6 +144,21 @@ def test_alle_abbrechen_beendet_laufende_jobs(bibliothek, tmp_path,
     assert api.job_get(jid)["status"] == "cancelled"
 
 
+# ---------- Sprecherfarbe (User 2026-09-17) ----------
+
+def test_sprecherfarbe_wird_gespeichert_und_geprueft(client, eintrag):
+    from researchtranscript import api
+    d = api.transcript_get(eintrag)
+    sp = [dict(s) for s in d["sprecher"]]
+    sp[0]["farbe"] = "ruby"
+    api.transcript_put(eintrag, {"sprecher": sp, "segmente": d["segmente"]})
+    assert api.transcript_get(eintrag)["sprecher"][0]["farbe"] == "ruby"
+    sp[0]["farbe"] = "neonpink"
+    with pytest.raises(ApiFehler) as e:
+        api.transcript_put(eintrag, {"sprecher": sp, "segmente": d["segmente"]})
+    assert e.value.status == 422
+
+
 # ---------- Warteliste (R2) ----------
 
 def test_warteliste_ueberlebt_und_vergisst_verschwundene(tmp_path, monkeypatch):
