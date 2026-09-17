@@ -238,6 +238,12 @@ export default function EditorModule({ id, onExit }: {
     ro.observe(el);
     return () => ro.disconnect();
   }, [alleMessen]);
+  // Schriftgrösse geändert (Einstellungen) → alle Felder neu messen
+  useEffect(() => {
+    const h = () => requestAnimationFrame(alleMessen);
+    window.addEventListener("rt-schrift", h);
+    return () => window.removeEventListener("rt-schrift", h);
+  }, [alleMessen]);
   useEffect(() => {
     if (ladeN === 0 && segmente.length) {
       // nach dem Einbau noch einmal, wenn Schrift und Layout stehen

@@ -11,6 +11,7 @@ import {
 import { setSprache, useT, type Sprache } from "../lib/i18n";
 import { isTauri, ordnerMerken, ordnerOeffnen, pickOrdner, protokollPfad,
   standardOrdner } from "../lib/tauri";
+import { TURN_SCHRIFT_WAHL, turnSchrift, turnSchriftSetzen } from "../lib/storage";
 
 const BIAS_URL = "https://bias.city/researchtranscript/";
 
@@ -44,6 +45,9 @@ export default function EinstellungenModule({ settings, onChange }: {
   // Zotero: Verzeichnis ebenso; der Status (gefunden?) kommt vom
   // Backend und folgt jeder Änderung an Einwilligung oder Pfad
   const [zdir, setZdir] = useState(settings?.zotero_dir ?? "");
+  // Schriftgrösse des Turn-Texts (lokal im Browser-Speicher, nicht in
+  // der Backend-Config — eine Anzeige-Vorliebe dieses Rechners)
+  const [schrift, setSchrift] = useState(() => turnSchrift());
   useEffect(() => { setZdir(settings?.zotero_dir ?? ""); },
             [settings?.zotero_dir]);
   const [zstatus, setZstatus] = useState<ZoteroStatus | null>(null);
@@ -112,6 +116,11 @@ export default function EinstellungenModule({ settings, onChange }: {
             options={["de", "en", "fr", "it"]}
             optionLabels={{ de: "Deutsch", en: "English",
               fr: "Français", it: "Italiano" }} />
+          <LabeledSelect label={tr("st.turnschrift")}
+            value={String(schrift)}
+            onChange={(v) => { setSchrift(Number(v)); turnSchriftSetzen(Number(v)); }}
+            options={TURN_SCHRIFT_WAHL.map(String)}
+            optionLabels={Object.fromEntries(TURN_SCHRIFT_WAHL.map((n) => [String(n), `${n} px`]))} />
         </Flex>
         {modelle.length > 0 && !modelle.some((m) => m.name === settings.model) && (
           <Text size="1" color="red" mt="2" as="div">

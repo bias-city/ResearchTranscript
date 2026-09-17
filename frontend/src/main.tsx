@@ -4,6 +4,9 @@ import { Theme } from "@radix-ui/themes";
 import "@radix-ui/themes/styles.css";
 import App from "./App";
 import "./styles.css";
+import { turnSchrift, turnSchriftSetzen } from "./lib/storage";
+
+turnSchriftSetzen(turnSchrift(), false);
 
 /** Statt weißem Fenster: Fehlertext sichtbar (enrich-Lehre — im
     WKWebView gibt es keinen Inspector). */

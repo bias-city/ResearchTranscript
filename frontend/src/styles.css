@@ -592,7 +592,7 @@ body { margin: 0; background: var(--gray-1); }
   background: transparent;
   width: 100%;
   font: inherit;
-  font-size: 13px;
+  font-size: var(--rt-turn-schrift, 13px);   /* Einstellungen (User 2026-09-17) */
   line-height: 1.5;
   outline: none;
   padding: 3px 6px;

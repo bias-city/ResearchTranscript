@@ -12,7 +12,24 @@ export const KEYS = {
   tab: "lt.ui.tab",
   editorOffen: "lt.ui.editor",
   editorAktiv: "lt.editor.aktiv.",
+  // Schriftgrösse des Turn-Texts in px (User 2026-09-17), Standard 13
+  editorSchrift: "lt.editor.schrift",
 } as const;
+
+export const TURN_SCHRIFT_STANDARD = 13;
+export const TURN_SCHRIFT_WAHL = [12, 13, 14, 15, 16, 18, 20] as const;
+
+/** Schriftgrösse des Turn-Texts anwenden (CSS-Variable) und merken;
+    der Editor hört auf «rt-schrift» und misst seine Felder neu. */
+export function turnSchriftSetzen(px: number, merken = true): void {
+  document.documentElement.style.setProperty("--rt-turn-schrift", `${px}px`);
+  if (merken) lset(KEYS.editorSchrift, String(px));
+  window.dispatchEvent(new CustomEvent("rt-schrift", { detail: px }));
+}
+export function turnSchrift(): number {
+  const n = Number(lget(KEYS.editorSchrift));
+  return (TURN_SCHRIFT_WAHL as readonly number[]).includes(n) ? n : TURN_SCHRIFT_STANDARD;
+}
 
 export function sget(key: string): string | null {
   try { return sessionStorage.getItem(key); } catch { return null; }
