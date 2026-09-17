@@ -647,6 +647,7 @@ export default function EditorModule({ id, onExit }: {
               name={sprecherName.get(seg.sprecher ?? "") ?? ""}
               farbe={sprecherFarbe(sprecher, seg.sprecher)}
               hatAudio={hatAudio}
+              laufzeit={i === aktiv ? zeit : undefined}
               onSpringe={springe}
               onText={textAendern} onMenue={menueOeffnen}
               onTeilen={teilen} onVerbinden={verbinden}
@@ -1031,10 +1032,14 @@ function planeWachsen(el: HTMLTextAreaElement) {
 }
 
 const SegmentZeile = memo(function SegmentZeile({
-  seg, index, aktiv, treffer, name, farbe, hatAudio, onSpringe, onText,
-  onMenue, onTeilen, onVerbinden, onEntfernen,
+  seg, index, aktiv, treffer, name, farbe, hatAudio, laufzeit, onSpringe,
+  onText, onMenue, onTeilen, onVerbinden, onEntfernen,
 }: {
   seg: Segment; index: number; aktiv: boolean;
+  /** laufender Playhead, nur in der aktiven Zeile (User 2026-09-17:
+      «der Timecode könnte bis zum nächsten mitlaufen»); sonst der
+      Segment-Anfang */
+  laufzeit?: number;
   /** aktueller Suchtreffer — Ring statt Füllung, damit er
       von der Abspiel-Markierung unterscheidbar bleibt */
   treffer: boolean; name: string;
@@ -1083,7 +1088,7 @@ const SegmentZeile = memo(function SegmentZeile({
         <Text size="1" color="gray" style={{
           cursor: hatAudio ? "pointer" : undefined,
           fontVariantNumeric: "tabular-nums" }}
-              onClick={() => onSpringe(seg.start)}>{hms(seg.start)}</Text>
+              onClick={() => onSpringe(seg.start)}>{hms(laufzeit ?? seg.start)}</Text>
       </div>
       {/* leichter Knopf statt Radix-Select je Zeile (PERF: ~6 ms ×
           557 Zeilen je Render) — EIN geteiltes Menü im Parent */}
@@ -1133,6 +1138,7 @@ const SegmentZeile = memo(function SegmentZeile({
     </div>
   );
 }, (a, b) => a.seg === b.seg && a.aktiv === b.aktiv
+  && a.laufzeit === b.laufzeit
   && a.treffer === b.treffer
   && a.index === b.index && a.name === b.name && a.farbe === b.farbe
   && a.hatAudio === b.hatAudio);
