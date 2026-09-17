@@ -110,7 +110,7 @@ export default function App() {
               <Text size="1" color="gray"
                     style={{ maxWidth: 480, whiteSpace: "pre-wrap" }}>
                 {bootFehler}</Text>
-              <Button onClick={() => void starte()}>
+              <Button variant="soft" onClick={() => void starte()}>
                 {tr("app.nochmal")}</Button>
             </>}
       </Flex>
@@ -218,7 +218,7 @@ function UeberDialog({ open, onClose }: {
   return (
     <ModalDialog open={open} onOpenChange={(o) => !o && onClose()}
                  title={tr("ueber.titel")} width={520}
-                 footer={<Button onClick={onClose}>
+                 footer={<Button variant="soft" onClick={onClose}>
                    {tr("allg.schliessen")}</Button>}>
       <Flex direction="column" gap="3">
         <Flex direction="column" gap="1">
@@ -290,7 +290,7 @@ function FirstRun({ onDone }: { onDone: (s: Settings) => void }) {
             kann die Person «ResearchTranscript» anlegen oder wählen; die
             Freigabe wird als Bookmark gemerkt. Im Browser wie bisher. */}
         {isTauri() ? (
-          <Button onClick={() => {
+          <Button variant="soft" onClick={() => {
             void standardOrdner().then((d) => pickOrdner(d)).then(async (p) => {
               if (!p) return;
               await ordnerMerken(p);
@@ -298,7 +298,7 @@ function FirstRun({ onDone }: { onDone: (s: Settings) => void }) {
             });
           }}>{tr("firstrun.waehlen")}</Button>
         ) : (
-          <Button onClick={() => void setze("default")}>
+          <Button variant="soft" onClick={() => void setze("default")}>
             {tr("firstrun.standard")}</Button>
         )}
       </Flex>

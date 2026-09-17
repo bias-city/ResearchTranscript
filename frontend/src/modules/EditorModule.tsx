@@ -801,7 +801,7 @@ export default function EditorModule({ id, onExit }: {
             style={{ flex: 1, minWidth: 0, minHeight: 0 }}>
         <Flex align="center" gap="2" px="4" py="2"
               style={{ borderBottom: "1px solid var(--gray-a5)" }}>
-          <Button size="1" variant="ghost" onClick={onExit}>
+          <Button size="1" variant="soft" onClick={onExit}>
             <Icon name="back" /> {tr("ed.zurueck")}</Button>
           <Text size="2" weight="medium" truncate
                 style={{ flex: 1, minWidth: 0 }}>{kuerze(name, 80)}</Text>
@@ -885,7 +885,7 @@ export default function EditorModule({ id, onExit }: {
                 if (audioRef.current)
                   audioRef.current.currentTime += 5;
               }}><Icon name="forward" size={16} /></IconButton>
-              <Button size="1" variant="ghost"
+              <Button size="1" variant="soft"
                       title={tr("ed.speed")} onClick={() => {
                 const i = SPEEDS.indexOf(speed);
                 setSpeed(SPEEDS[(i + 1) % SPEEDS.length]);
@@ -1110,7 +1110,7 @@ function MetadatenPanel({ id, name, zotero, onChange }: {
           placeholder={tr("ed.meta.suchen.platz")}
           onChange={(e) => setQ(e.target.value)}
           onKeyDown={(e) => { if (e.key === "Enter") void suche(); }} />
-        <Button size="2" onClick={() => void suche()}
+        <Button variant="soft" size="2" onClick={() => void suche()}
                 disabled={laeuft || !status?.found}>
           {tr("ed.meta.suchen")}</Button>
       </Flex>
@@ -1158,7 +1158,7 @@ function MetadatenPanel({ id, name, zotero, onChange }: {
               </Flex>
             ))}
           <Text size="1" color="gray">{tr("ed.meta.rollen.hinweis")}</Text>
-          <Button size="1" disabled={laeuft}
+          <Button variant="soft" size="1" disabled={laeuft}
                   onClick={() => void verknuepfe(wahl.item_key,
                                                  Array.from(rollen))}>
             {tr("ed.meta.verknuepfen")}</Button>
@@ -1608,7 +1608,7 @@ function SprecherPanel({ id, sprecher, segmente, hatAudio, onRename,
               </div>
             )}
             {ohne > 0 && (
-              <Button size="1" variant="ghost"
+              <Button size="1" variant="soft"
                       onClick={() => onLeere(s.id)}>
                 {tr("ed.sprecher.leere")} ({ohne})</Button>
             )}
@@ -1871,11 +1871,11 @@ function SuchPanel({ segmente, onZeige, onErsetze, onAlleErsetzen }: {
         <Flex gap="2" align="center">
           <Button size="1" variant="soft" disabled={!cur}
                   onClick={ersetzen}>{tr("ed.suche.ersetzen")}</Button>
-          <Button size="1" variant="ghost" disabled={treffer.length < 2}
+          <Button size="1" variant="soft" disabled={treffer.length < 2}
                   onClick={() => springe(stelle + 1)}>
             {tr("ed.suche.skip")}</Button>
         </Flex>
-        <Button size="1" variant="ghost" disabled={!treffer.length}
+        <Button size="1" variant="soft" disabled={!treffer.length}
                 onClick={alle}>{tr("ed.suche.alle")}</Button>
       </Flex>
     </Flex>

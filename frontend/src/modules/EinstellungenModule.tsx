@@ -72,7 +72,7 @@ export default function EinstellungenModule({ settings, onChange }: {
                   setze({ library_root: p });
                 });
               }}>{tr("st.aendern")}</Button>
-              <Button size="1" variant="ghost" onClick={() =>
+              <Button size="1" variant="soft" onClick={() =>
                 void ordnerOeffnen(settings.library_root)}>
                 {tr("bib.ordner")}</Button>
             </>

@@ -620,17 +620,6 @@ body { margin: 0; background: var(--gray-1); }
 .ui-segtabs-fit .rt-SegmentedControlIndicator,
 .ui-segtabs-fit .rt-SegmentedControlSeparator { display: none; }
 .ui-segtabs-fit .rt-SegmentedControlItem { flex: 0 0 auto; }
-/* Auch UNGEWÄHLTE Einträge als Knöpfe erkennbar (User 2026-09-17): leichte
-   Fläche, beim Überfahren dunkler; der gewählte bleibt die weisse Karte. */
-.ui-segtabs-fit .rt-SegmentedControlItemLabel {
-  background: var(--gray-a3); border-radius: var(--radius-2);
-  box-shadow: 0 0 0 1px var(--gray-a4); }
-.ui-segtabs-fit .rt-SegmentedControlItem:hover .rt-SegmentedControlItemLabel {
-  background: var(--gray-a4); }
-.ui-segtabs-fit .rt-SegmentedControlItem[data-state='on'] .rt-SegmentedControlItemLabel {
-  background: var(--color-panel-solid);
-  box-shadow: 0 0 0 1px var(--gray-a6), 0 1px 2px var(--black-a3); }
-
 /* ---------- Einstellungen: Masonry-Spalten (User 2026-09-17) ---------- */
 .st-masonry {
   height: 100%; overflow-y: auto; padding: 16px;
@@ -638,3 +627,20 @@ body { margin: 0; background: var(--gray-1); }
 }
 @media (min-width: 900px) { .st-masonry { columns: 2; } }
 .st-masonry > * { break-inside: avoid; display: block; margin-bottom: 16px; }
+
+/* ---------- EIN Knopfstil (User 2026-09-17): alle Knöpfe, die eine
+   Funktion auslösen, im «soft»-Stil der Einstellungen — auch die Tabs.
+   SegmentedControl: keine Schiene, jeder Eintrag eine weiche Pille in
+   Akzentfarbe; der gewählte kräftiger und fett. ---------- */
+.rt-SegmentedControlRoot {
+  background: transparent; box-shadow: none; padding: 0; gap: 4px; }
+.rt-SegmentedControlRoot .rt-SegmentedControlIndicator,
+.rt-SegmentedControlRoot .rt-SegmentedControlSeparator { display: none; }
+.rt-SegmentedControlRoot .rt-SegmentedControlItemLabel {
+  background: var(--accent-a3); color: var(--accent-a11);
+  border-radius: var(--radius-2); box-shadow: none; }
+.rt-SegmentedControlRoot .rt-SegmentedControlItem:hover .rt-SegmentedControlItemLabel {
+  background: var(--accent-a4); }
+.rt-SegmentedControlRoot .rt-SegmentedControlItem[data-state='on'] .rt-SegmentedControlItemLabel {
+  background: var(--accent-a5); color: var(--accent-a12); font-weight: 600;
+  box-shadow: none; }

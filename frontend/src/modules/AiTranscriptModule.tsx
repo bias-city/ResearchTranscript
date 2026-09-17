@@ -292,7 +292,7 @@ export default function AiTranscriptModule({ settings, onEdit }: {
           <Flex align="center" gap="3" wrap="wrap" pt="3">
             <Text size="1" color="gray">{tr("ai.zahl.hinweis")}</Text>
             <div style={{ flex: 1 }} />
-            <Button disabled={offen || schickt}
+            <Button variant="soft" disabled={offen || schickt}
                     onClick={() => void starte()}>
               {tr("ai.starten", { n: wartend.length })}</Button>
           </Flex>

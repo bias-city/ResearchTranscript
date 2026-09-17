@@ -131,7 +131,7 @@ function EintragZeile({ e, onOpen, onChanged }: {
                    onOpenChange={(o) => !o && setFrage(null)}
                    title={tr("bib.umbenennen")}
                    footer={
-                     <Button onClick={() => {
+                     <Button variant="soft" onClick={() => {
                        void apiSend(`/api/transcripts/${e.id}/rename`,
                                     { name })
                          .then(() => { setFrage(null); onChanged(); })
@@ -146,7 +146,7 @@ function EintragZeile({ e, onOpen, onChanged }: {
                    onOpenChange={(o) => !o && setFrage(null)}
                    title={tr("bib.loeschen")}
                    footer={
-                     <Button color="red" onClick={() => {
+                     <Button variant="soft" color="red" onClick={() => {
                        void apiSend(`/api/transcripts/${e.id}/delete`,
                                     { confirm: e.id })
                          .then(() => { setFrage(null); onChanged(); })
