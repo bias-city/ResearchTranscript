@@ -58,6 +58,7 @@ damit die Messung nicht vom WebView abhängt.
 | 2 Import `researchtranscript.jobs`, `pydantic_core` | 125 ms, Module aus dem Bundle-venv |
 | 3 Vier Fake-Jobs (`jobs.starte`, Python-Threads, `_konvertiere` durch Schlaf-Fake ersetzt) | alle vier laufen parallel, Fortschritt steigt gleichmässig, Rust-Callback 395 Aufrufe in 20 s, Poll 0,0 ms je Aufruf, `abbruch` → `cancelled` nach < 500 ms bei 28 %, die anderen drei bis 99 % und in den gewollten Fehler |
 | 4 Ordner per Open-Panel (`~/Documents/ResearchTranscript`), Python listet/schreibt/löscht darin | ja — Liste, Schreiben «ok», Rücklesen, Löschen; die Powerbox-Freigabe vererbt sich in den eingebetteten Interpreter |
+| 4a Zotero-Probe: Ordner `~/Zotero` per Open-Panel, Python öffnet `zotero.sqlite` mit `?immutable=1` | ja — 12 314 Items gezählt, jüngster Titel gelesen, 111 ms, neben laufendem Zotero (`-journal` vorhanden); der heutige SQLite-Weg trägt in der Sandbox, sobald der Ordner freigegeben ist |
 | 5 Kind `argmax-cli` mit `app-sandbox` + `inherit` | exit 0, 16 RTTM-Zeilen auf der 5-min-Feldaufnahme, 5,7 s |
 | Sandbox-Verstösse (`log show`, sender Sandbox) | keine |
 | `codesign --verify --deep --strict` | ok (Hülle, `libpython3.13.dylib`, `argmax-cli` mit eigenen Entitlements) |
