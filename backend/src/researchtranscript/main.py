@@ -110,6 +110,16 @@ def transcribe_path(req: dict) -> dict:
     return api.transcribe_path(req)
 
 
+@app.get("/api/warteliste")
+def warteliste_get() -> dict:
+    return api.warteliste_get()
+
+
+@app.put("/api/warteliste")
+def warteliste_set(req: list) -> dict:
+    return api.warteliste_set(req)
+
+
 @app.get("/api/jobs")
 def jobs_liste() -> dict:
     return api.jobs_liste()

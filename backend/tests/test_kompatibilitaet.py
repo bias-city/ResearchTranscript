@@ -55,4 +55,4 @@ def test_frischer_start_ohne_erbe(tmp_path, monkeypatch):
 
 
 def test_identitaet_nennt_den_neuen_namen():
-    assert config.identitaet()["app"].startswith("researchtranscript/0.4.0")
+    assert config.identitaet()["app"].startswith("researchtranscript/0.5.0")

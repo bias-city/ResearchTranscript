@@ -165,11 +165,17 @@ fn beobachter_setzen(py: Python<'_>, app: tauri::AppHandle) -> PyResult<()> {
 /// stdio umleiten, Beobachter setzen. Liefert die Startzeit in ms.
 pub fn init(app: &tauri::AppHandle) -> Result<f64, String> {
     let res = resources(app)?;
-    let site = site_packages(&res)?;
+    init_pfad(&res, Some(app))
+}
+
+/// Dasselbe ohne Hülle — für den Integrationstest (`cargo test`),
+/// der die gebündelte Laufzeit direkt aus `resources/` startet.
+pub fn init_pfad(res: &Path, app: Option<&tauri::AppHandle>) -> Result<f64, String> {
+    let site = site_packages(res)?;
     let t0 = std::time::Instant::now();
     INIT.call_once(|| {
         // VOR dem Start (Python friert os.environ beim os-Import ein)
-        std::env::set_var("LT_APP_ROOT", &res);
+        std::env::set_var("LT_APP_ROOT", res);
         std::env::set_var("LT_BUNDLED", "1");
         std::env::set_var("LT_EMBEDDED", "1");
         let r = unsafe { interpreter_starten(&res.join("python-runtime"), &site) };
@@ -181,7 +187,7 @@ pub fn init(app: &tauri::AppHandle) -> Result<f64, String> {
             stdio_umleiten(py)?;
             let m = py.import("researchtranscript.api")?;
             let _ = API.set(py, m.unbind());
-            beobachter_setzen(py, app.clone())?;
+            if let Some(app) = app { beobachter_setzen(py, app.clone())?; }
             Ok(())
         });
         if let Err(e) = r {

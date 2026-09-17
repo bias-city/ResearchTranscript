@@ -65,6 +65,22 @@ function sammle(dir, aus = []) {
   return aus;
 }
 
+/** R7: eine Bibliothek, die an einem absoluten Fremdpfad hängt
+    (/opt/homebrew/lib/…, /Users/…), lädt auf jedem anderen Rechner
+    nicht — und Homebrew-Pfade wären im Store ein Ablehnungsgrund. */
+function fremdePfade(datei) {
+  try {
+    // Der eigene Install-Name (otool -D) darf absolut sein — er zählt
+    // nur, wenn ein ANDERER ihn so lädt; geprüft werden die Ladebefehle.
+    const eigen = execFileSync("/usr/bin/otool", ["-D", datei], { encoding: "utf8" })
+      .split("\n")[1]?.trim();
+    const aus = execFileSync("/usr/bin/otool", ["-L", datei], { encoding: "utf8" });
+    return aus.split("\n").slice(1).map((z) => z.trim().split(" ")[0]).filter(Boolean)
+      .filter((p) => p !== eigen)
+      .filter((p) => !/^(@rpath|@loader_path|@executable_path|\/usr\/lib|\/System)/.test(p));
+  } catch { return []; }
+}
+
 const id = identitaet();
 if (!fs.existsSync(RES)) {
   console.error(`resources/ fehlt (${RES}) — erst bundle-resources.mjs`);
@@ -72,6 +88,18 @@ if (!fs.existsSync(RES)) {
 }
 const dateien = sammle(RES);
 console.log(`${dateien.length} Mach-O-Dateien unter resources/`);
+const fremd = dateien.map((f) => [f, fremdePfade(f)]).filter(([, p]) => p.length);
+if (fremd.length) {
+  console.error("ABBRUCH: Bibliotheken mit absoluten Fremdpfaden (R7):");
+  for (const [f, p] of fremd) console.error(`  ${path.relative(RES, f)} → ${p.join(", ")}`);
+  process.exit(1);
+}
+for (const verboten of ["venv", "python/site-packages/bin"]) {
+  if (fs.existsSync(path.join(RES, verboten))) {
+    console.error(`ABBRUCH: ${verboten} gehört nicht ins Bundle — bundle-resources.mjs erneut laufen lassen.`);
+    process.exit(1);
+  }
+}
 console.log(`Identität: ${id}`);
 
 let ok = 0;
@@ -100,4 +128,13 @@ process.stdout.write("\n");
 console.log(`signiert: ${ok}${fehler.length ? `, Fehler: ${fehler.length}` : ""}`);
 for (const f of fehler.slice(0, 10)) console.error("  " + f);
 if (fehler.length) process.exit(1);
+
+// Smoke-Test NACH dem Signieren, genau so, wie die Hülle startet:
+// isoliert, nur python/site-packages im Pfad. Erst jetzt tragen
+// python3 und die .so-Dateien dieselbe Team-ID.
+const SITE = path.join(RES, "python/site-packages");
+execFileSync(path.join(RES, "python-runtime/bin/python3"), ["-I", "-c",
+  `import sys; sys.path.insert(0, ${JSON.stringify(SITE)}); ` +
+  "import researchtranscript.api, enrich_core, pydantic_core; print('Import-Probe: python/site-packages ok')"],
+  { stdio: "inherit" });
 console.log("Fertig — jetzt `npx tauri build` (versiegelt die Hülle).");

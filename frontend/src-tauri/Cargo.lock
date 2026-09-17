@@ -2879,7 +2879,7 @@ dependencies = [
 
 [[package]]
 name = "researchtranscript-app"
-version = "0.4.0"
+version = "0.5.0"
 dependencies = [
  "pyo3",
  "pyo3-build-config",

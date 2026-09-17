@@ -251,6 +251,53 @@ def transcribe_temp(tmp: Path, name: str, args: dict) -> dict:
     return {"job_id": job["id"]}
 
 
+# ---------- Warteliste (Plan R2 / 1.17) ----------
+# Abgelegte Dateien warten in der Oberfläche mit ihrer Sprecherzahl, bis
+# «Starten» gedrückt wird. Bis 0.4.0 lebte diese Liste nur im
+# Frontend-State — ein Absturz oder ein versehentliches Beenden nahm sie
+# mit. Jetzt spiegelt die Oberfläche sie hierher (Pfade, nie Dateiinhalte;
+# Browser-Uploads haben keinen Pfad und bleiben flüchtig).
+
+def _warteliste_datei() -> Path:
+    return config._config_dir() / "warteliste.json"
+
+
+class WartendReq(ApiModel):
+    name: str
+    pfad: str
+    zahl: str = ""
+
+
+@befehl
+def warteliste_get() -> dict:
+    try:
+        roh = json.loads(_warteliste_datei().read_text("utf-8"))
+    except (OSError, ValueError):
+        return {"eintraege": []}
+    aus = []
+    for e in roh if isinstance(roh, list) else []:
+        try:
+            w = WartendReq.model_validate(e)
+        except ValidationError:
+            continue
+        if Path(w.pfad).is_file():          # verschwundene Dateien fallen weg
+            aus.append(w.model_dump())
+    return {"eintraege": aus}
+
+
+@befehl
+def warteliste_set(eintraege: list) -> dict:
+    if not isinstance(eintraege, list):
+        raise ApiFehler(422, "Liste erwartet")
+    daten = [_pruefe(WartendReq, e).model_dump() for e in eintraege]
+    d = _warteliste_datei()
+    d.parent.mkdir(parents=True, exist_ok=True)
+    tmp = d.with_suffix(".tmp")
+    tmp.write_text(json.dumps(daten, ensure_ascii=False, indent=1), "utf-8")
+    tmp.replace(d)
+    return {"eintraege": daten}
+
+
 @befehl
 def jobs_liste() -> dict:
     return {"jobs": [jobs.sicht(j) for j in list(jobs.JOBS.values())]}

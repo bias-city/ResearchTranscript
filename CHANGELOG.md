@@ -3,6 +3,36 @@
 All notable changes to LocalTranscript. The GitHub release notes for
 a version are the corresponding section of this file.
 
+## 0.5.0 — unreleased
+
+### Changed
+
+- **Python now runs inside the app.** Until 0.4.0 the app started a
+  Python web server on port 5628 and talked to it over HTTP. Since
+  0.5.0 the same Python logic runs inside the app process (embedded
+  CPython 3.13); the interface calls it directly. Visible effects: the
+  app opens instantly (no "backend starting" wait), there is no port,
+  no leftover process after a crash, and audio/video play straight from
+  the library file. Nothing changes in the library, the transcript
+  format or the exports.
+- **The waiting list survives a restart.** Files dropped into the AI
+  Transcript tab, with their chosen speaker count, are kept until they
+  are started or removed — a crash or an accidental quit no longer
+  empties the list.
+- **A log for problems.** The app keeps a small local log (errors,
+  processing messages); "Open log" in the settings shows it. If
+  processing ever stops responding, a banner says so and offers a
+  restart.
+- The AGPL §13 wording and the privacy card now say what is true:
+  there is no server and no listener in the app.
+
+### Internal
+
+- Bundle without a virtual environment (`python/site-packages`), no
+  FastAPI/uvicorn in the app, empty hardened-runtime entitlements;
+  start self-check with a plain-text dialog. Preparation for the Mac
+  App Store build (docs/appstore-plan.md).
+
 ## 0.4.0 — 2026-09-16
 
 ### Changed

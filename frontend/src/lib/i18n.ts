@@ -362,10 +362,10 @@ const W: Record<string, Eintrag> = {
     fr: "Aucun segment.", it: "Nessun segmento." },
 
   "st.agpl": {
-    de: "AGPL §13 verlangt, Fernnutzern den Quellcode anzubieten. ResearchTranscript hört nur auf 127.0.0.1 und weist fremde Hosts ab — es gibt keine Fernnutzung. Der Quellcode liegt zudem offen auf GitHub.",
-    en: "AGPL §13 requires offering the source to remote users. ResearchTranscript listens on 127.0.0.1 only and rejects foreign hosts — there is no remote use. The source is public on GitHub anyway.",
-    fr: "L'AGPL §13 exige d'offrir le code source aux utilisateurs distants. ResearchTranscript n'écoute que sur 127.0.0.1 et rejette les hôtes étrangers — aucun usage distant. Le code est de toute façon public sur GitHub.",
-    it: "L'AGPL §13 richiede di offrire il codice agli utenti remoti. ResearchTranscript ascolta solo su 127.0.0.1 e rifiuta host estranei — nessun uso remoto. Il codice è comunque pubblico su GitHub." },
+    de: "AGPL §13 verlangt, Fernnutzern den Quellcode anzubieten. ResearchTranscript ist kein Netzwerkdienst: die Verarbeitung läuft im Prozess der App, es gibt keinen Server und keine Fernnutzung. Der Quellcode liegt zudem offen auf GitHub.",
+    en: "AGPL §13 requires offering the source to remote users. ResearchTranscript is not a network service: processing runs inside the app process, there is no server and no remote use. The source is public on GitHub anyway.",
+    fr: "L'AGPL §13 exige d'offrir le code source aux utilisateurs distants. ResearchTranscript n'est pas un service réseau : le traitement s'exécute dans le processus de l'application, sans serveur ni usage distant. Le code est de toute façon public sur GitHub.",
+    it: "L'AGPL §13 richiede di offrire il codice agli utenti remoti. ResearchTranscript non è un servizio di rete: l'elaborazione avviene nel processo dell'app, senza server e senza uso remoto. Il codice è comunque pubblico su GitHub." },
   "st.formate": { de: "Formate", en: "Formats", fr: "Formats",
     it: "Formati" },
   "st.formate.sub": {
@@ -509,10 +509,10 @@ const W: Record<string, Eintrag> = {
   "st.datenschutz": { de: "Datenschutz", en: "Privacy",
     fr: "Confidentialité", it: "Privacy" },
   "st.datenschutz.text": {
-    de: "Läuft vollständig lokal (nur 127.0.0.1) — keine Cloud, keine Netzwerk-Übertragung. Audio, Video und Transkripte liegen ausschließlich im Bibliotheks-Ordner, bis du sie löschst (Papierkorb der Bibliothek statt Löschen); temporäre Arbeitsdateien werden direkt nach jedem Lauf entfernt. Video wird nie umgewandelt; Zotero nur mit Einwilligung und nur lesend.",
-    en: "Runs fully local (127.0.0.1 only) — no cloud, no network transfer. Audio, video and transcripts live solely in the library folder until you delete them (library trash instead of deletion); temporary working files are removed right after each run. Video is never transcoded; Zotero is read only with consent, read-only.",
-    fr: "Fonctionne entièrement en local (127.0.0.1 uniquement) — pas de cloud, aucun transfert réseau. Audio, vidéo et transcriptions restent dans le dossier bibliothèque jusqu'à leur suppression (corbeille de la bibliothèque) ; les fichiers temporaires sont supprimés après chaque traitement. La vidéo n'est jamais convertie ; Zotero n'est lu qu'avec autorisation, en lecture seule.",
-    it: "Funziona completamente in locale (solo 127.0.0.1) — nessun cloud, nessun trasferimento di rete. Audio, video e trascrizioni restano nella cartella biblioteca finché non li elimini (cestino della biblioteca); i file temporanei vengono rimossi subito dopo ogni elaborazione. Il video non viene mai convertito; Zotero viene letto solo con consenso, in sola lettura." },
+    de: "Läuft vollständig lokal im Prozess der App — keine Cloud, keine Netzwerk-Übertragung, kein Server. Audio, Video und Transkripte liegen ausschließlich im Bibliotheks-Ordner, bis du sie löschst (Papierkorb der Bibliothek statt Löschen); temporäre Arbeitsdateien werden direkt nach jedem Lauf entfernt. Video wird nie umgewandelt; Zotero nur mit Einwilligung und nur lesend.",
+    en: "Runs fully local inside the app process — no cloud, no network transfer, no server. Audio, video and transcripts live solely in the library folder until you delete them (library trash instead of deletion); temporary working files are removed right after each run. Video is never transcoded; Zotero is read only with consent, read-only.",
+    fr: "Fonctionne entièrement en local, dans le processus de l'application — pas de cloud, aucun transfert réseau, aucun serveur. Audio, vidéo et transcriptions restent dans le dossier bibliothèque jusqu'à leur suppression (corbeille de la bibliothèque) ; les fichiers temporaires sont supprimés après chaque traitement. La vidéo n'est jamais convertie ; Zotero n'est lu qu'avec autorisation, en lecture seule.",
+    it: "Funziona completamente in locale, nel processo dell'app — nessun cloud, nessun trasferimento di rete, nessun server. Audio, video e trascrizioni restano nella cartella biblioteca finché non li elimini (cestino della biblioteca); i file temporanei vengono rimossi subito dopo ogni elaborazione. Il video non viene mai convertito; Zotero viene letto solo con consenso, in sola lettura." },
   "st.lizenzen": { de: "Lizenzen", en: "Licenses", fr: "Licences",
     it: "Licenze" },
   "st.lizenzen.text": {
@@ -531,10 +531,10 @@ const W: Record<string, Eintrag> = {
   // Lesefassung selbst). Die AGPL bleibt als eigene Wahl — das strengste
   // mitgelieferte Werkzeug ist jetzt ffmpeg (GPL-3.0-Build).
   "st.app.text": {
-    de: "Quellcode, Lizenztext und Releases auf GitHub. Die App steht bewusst unter der AGPL; das strengste mitgelieferte Werkzeug ist ffmpeg (GPL-3.0-Build). Die Netzwerkklausel ist erfüllt, bevor sie greift: die App hört nur auf 127.0.0.1.",
-    en: "Source code, license text and releases on GitHub. The app is deliberately under the AGPL; the strictest bundled tool is ffmpeg (GPL-3.0 build). The network clause is satisfied before it applies: the app listens on 127.0.0.1 only.",
-    fr: "Code source, licence et versions sur GitHub. L'application est délibérément sous AGPL ; l'outil embarqué le plus strict est ffmpeg (build GPL-3.0). La clause réseau est satisfaite avant de s'appliquer : l'application n'écoute que sur 127.0.0.1.",
-    it: "Codice sorgente, licenza e release su GitHub. L'app è deliberatamente sotto AGPL; lo strumento incluso più restrittivo è ffmpeg (build GPL-3.0). La clausola di rete è soddisfatta prima di applicarsi: l'app ascolta solo su 127.0.0.1." },
+    de: "Quellcode, Lizenztext und Releases auf GitHub. Die App steht bewusst unter der AGPL; das strengste mitgelieferte Werkzeug ist ffmpeg (GPL-3.0-Build). Die Netzwerkklausel ist erfüllt, bevor sie greift: die App öffnet keine Netzwerkverbindung.",
+    en: "Source code, license text and releases on GitHub. The app is deliberately under the AGPL; the strictest bundled tool is ffmpeg (GPL-3.0 build). The network clause is satisfied before it applies: the app opens no network connection.",
+    fr: "Code source, licence et versions sur GitHub. L'application est délibérément sous AGPL ; l'outil embarqué le plus strict est ffmpeg (build GPL-3.0). La clause réseau est satisfaite avant de s'appliquer : l'application n'ouvre aucune connexion réseau.",
+    it: "Codice sorgente, licenza e release su GitHub. L'app è deliberatamente sotto AGPL; lo strumento incluso più restrittivo è ffmpeg (build GPL-3.0). La clausola di rete è soddisfatta prima di applicarsi: l'app non apre alcuna connessione di rete." },
   "ueber.titel": { de: "Über ResearchTranscript",
     en: "About ResearchTranscript", fr: "À propos de ResearchTranscript",
     it: "Informazioni su ResearchTranscript" },

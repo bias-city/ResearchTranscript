@@ -14,8 +14,8 @@ use std::time::Duration;
 
 use tauri::{Emitter, Manager, RunEvent};
 
-mod protokoll;
-mod python;
+pub mod protokoll;
+pub mod python;
 
 /// Pfade, die macOS zum Öffnen gab (Info.plist: .enrich) — gesammelt,
 /// bis das Frontend sie abholt; beim Start per Doppelklick kommt das

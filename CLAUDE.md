@@ -6,7 +6,7 @@ PrepareAudio 0.2.0). Bundle `city.bias.researchtranscript`, Python-Paket
 `researchtranscript`, Repo github.com/bias-city/ResearchTranscript.
 KEINE Übernahme alter Einstellungen (User-Entscheid): die App startet
 frisch und fragt nach dem Bibliotheksordner.
-Unverändert und bewusst: Port 5628, `LT_*`-Umgebungsvariablen,
+Unverändert und bewusst: Port 5628 (nur noch Dev-Server), `LT_*`-Umgebungsvariablen,
 `lt.*`-Speicherschlüssel, die QDPX-GUID-Namensräume
 (`localtranscript:refi-*`), `EIGENE_TOOLS` mit beiden Altnamen und das
 Schlüsselbund-Profil `localtranscript`. Diese Stellen NIE pauschal
@@ -32,9 +32,16 @@ Electron-Prototyps `../whisper-web` als Tauri-App. Plan:
   `tests/test_drift_guard.py` vergleicht gegen `../enrich`. Bei
   enrich-Änderungen an textsatz/textimport: neu vendoren (Kopf-
   kommentar sagt wie).
-- Die Shell beendet NUR selbst gestartete Backends (ps-identifiziert);
-  fremde Prozesse auf Port 5628 sind tabu (5628 = „LOCT" auf der
-  Telefontastatur, enrich-Muster; `LT_SERVE_PORT` überschreibt).
+- Seit 0.5.0 (Branch `eingebettet-spike`, Plan docs/appstore-plan.md)
+  läuft Python IM PROZESS der Hülle (PyO3): kein Port, kein Kind
+  `python3`, keine Merkdatei. Die Oberfläche ruft `invoke("api",
+  {name, args})`; `main.py` ist nur noch Dev-Server/Test-Hülle auf
+  5628 („LOCT", `LT_SERVE_PORT`). Regeln in `src-tauri/src/python.rs`-
+  Kopf: nie `Python::attach` auf dem Hauptthread, Befehle `async` →
+  `spawn_blocking`, nie `Py_FinalizeEx`. Jede Transport-/Medien-/
+  Dialog-Änderung im gebauten Bundle prüfen (nicht nur im Browser).
+  Bauen: `node scripts/bundle-resources.mjs` (python/site-packages,
+  kein venv) → `sign-resources.mjs` → `PYO3_CONFIG_FILE=… tauri build`.
 - Recursive-Fonts (nur noch auf der Website, site/fonts): SIL OFL 1.1 — Nennung dort und
   bei jeder Veröffentlichung.
 
@@ -59,7 +66,10 @@ Bewusst NICHT portiert: HF-Token-Screen (tot), PyWebView (app.py),
 
 `cd backend && uv run pytest` · `uv run ruff check src tests` ·
 Frontend `npx tsc && npm run build`. Browser-Demo: uvicorn auf 5628
-mit `LT_CONFIG_DIR`-Scratch (Muster in tests/conftest.py).
+mit `LT_CONFIG_DIR`-Scratch (Muster in tests/conftest.py). App-Test
+ohne echte Bibliothek: `LT_CONFIG_DIR=<scratch> <App>/Contents/MacOS/
+researchtranscript-app`; Protokoll unter
+~/Library/Logs/city.bias.researchtranscript/researchtranscript.log.
 Echte Transkript-Beispiele: ~/Documents/LocalTranscript/<stamp>/.
 
 ## Abend-Runde 2026-08-30 (Live-Feedback + Multi-Agent-Review)

@@ -144,6 +144,22 @@ def test_alle_abbrechen_beendet_laufende_jobs(bibliothek, tmp_path,
     assert api.job_get(jid)["status"] == "cancelled"
 
 
+# ---------- Warteliste (R2) ----------
+
+def test_warteliste_ueberlebt_und_vergisst_verschwundene(tmp_path, monkeypatch):
+    monkeypatch.setenv("LT_CONFIG_DIR", str(tmp_path / "cfg"))
+    a = tmp_path / "a.mp3"; a.write_bytes(b"x")
+    b = tmp_path / "b.mp3"; b.write_bytes(b"x")
+    api.warteliste_set([{"name": "a.mp3", "pfad": str(a), "zahl": "2-2"},
+                        {"name": "b.mp3", "pfad": str(b)}])
+    b.unlink()
+    aus = api.warteliste_get()["eintraege"]
+    assert [e["pfad"] for e in aus] == [str(a)]
+    assert aus[0]["zahl"] == "2-2"
+    with pytest.raises(ApiFehler):
+        api.warteliste_set([{"name": "x"}])          # pfad fehlt → 422
+
+
 # ---------- Bundle-Regel (R6) ----------
 
 def test_im_bundle_kein_homebrew_rueckfall(tmp_path, monkeypatch):

@@ -92,6 +92,25 @@ export default function AiTranscriptModule({ settings, onEdit }: {
   // hinterher wüsste niemand mehr, was gewählt war.
   const [wartend, setWartend] = useState<Wartend[]>([]);
   const lfd = useRef(0);
+  // Die Liste überlebt Absturz und Neustart (Plan R2): Pfad-Einträge
+  // werden im Backend gespiegelt; Browser-Uploads (File) bleiben
+  // flüchtig. Erst laden, dann jede Änderung zurückschreiben.
+  const geladen = useRef(false);
+  useEffect(() => {
+    void apiGet<{ eintraege: { name: string; pfad: string; zahl: string }[] }>(
+      "/api/warteliste").then((r) => {
+        if (r.eintraege.length) {
+          setWartend((w) => [...r.eintraege.map((e) => ({
+            ...e, key: `w${++lfd.current}` })), ...w]);
+        }
+      }).catch(() => undefined).finally(() => { geladen.current = true; });
+  }, []);
+  useEffect(() => {
+    if (!geladen.current) return;
+    void apiSend("/api/warteliste", wartend.filter((w) => w.pfad)
+      .map((w) => ({ name: w.name, pfad: w.pfad, zahl: w.zahl })), "PUT")
+      .catch(() => undefined);
+  }, [wartend]);
   const reihen = useCallback((neue: Omit<Wartend, "key" | "zahl">[]) => {
     if (!neue.length) return;
     // Eine einzelne Datei übernimmt die Vorgabe aus den Optionen; bei

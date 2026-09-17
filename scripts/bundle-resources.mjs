@@ -42,6 +42,27 @@ for (const teil of ["python-runtime", "bin", "lib", "models"]) {
   kopiere(quelle, ziel);
 }
 
+// 1a0. Laufzeit stutzen (Plan §2 Streichliste): Tcl/Tk, tkinter, IDLE,
+//      Test-Suite, ensurepip haben in der App nichts zu suchen — sie
+//      kosten 30 MB, und die Tcl-Bibliotheken tragen nackte Install-
+//      Namen, die der otool-Wächter (R7) zu Recht anmeckert. pip bleibt
+//      in der Laufzeit, weil dieses Skript damit installiert.
+{
+  const rt = path.join(RES, "python-runtime");
+  const weg = [
+    ...fs.readdirSync(path.join(rt, "lib")).filter((n) =>
+      /^(itcl|tcl|tk|thread|libtcl|libtk|libitcl)/.test(n)).map((n) => path.join(rt, "lib", n)),
+    ...["tkinter", "idlelib", "ensurepip", "turtledemo", "test", "turtle.py"]
+      .map((n) => path.join(rt, "lib/python3.13", n)),
+    ...fs.readdirSync(path.join(rt, "lib/python3.13/lib-dynload"))
+      .filter((n) => /^_tkinter/.test(n)).map((n) => path.join(rt, "lib/python3.13/lib-dynload", n)),
+    path.join(rt, "share"), path.join(rt, "include"),
+  ];
+  let n = 0;
+  for (const p of weg) { if (fs.existsSync(p)) { fs.rmSync(p, { recursive: true, force: true }); n++; } }
+  if (n) console.log(`✓ Laufzeit gestutzt: ${n} Einträge (Tcl/Tk, tkinter, IDLE, Tests, ensurepip)`);
+}
+
 // 1a. SpeakerKit (Sprechertrennung): argmax-cli + Core-ML-Modelle.
 //     Beides liegt im Checkout unter bin/ bzw. models/speakerkit und
 //     wird von `node scripts/hole-argmax.mjs` beschafft.
@@ -121,11 +142,11 @@ const py = path.join(RES, "python-runtime/bin/python3");
       process.exit(1);
     }
   }
-  // Smoke-Test genau so, wie die Hülle startet: isoliert, nur dieser Pfad
-  execFileSync(py, ["-I", "-c",
-    `import sys; sys.path.insert(0, ${JSON.stringify(SITE)}); ` +
-    "import researchtranscript.api, enrich_core, pydantic_core; print('python/site-packages ok')"],
-    { stdio: "inherit" });
+  // Der Import-Smoke-Test läuft in sign-resources.mjs NACH dem Signieren:
+  // python3 der Laufzeit trägt Team-ID + Hardened Runtime, ein frisch
+  // installiertes pydantic_core.so noch nicht — vorher verweigert die
+  // Library-Validation das Laden («different Team IDs»).
+  console.log("✓ python/site-packages installiert");
 }
 
 // 3. Marker

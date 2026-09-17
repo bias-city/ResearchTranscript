@@ -22,9 +22,11 @@ REFI-QDA for ATLAS.ti.
 - **Diarisation:** SpeakerKit (Argmax, MIT) running pyannote
   community-1 on Core ML — no Hugging Face token, no account, no network.
 - **Interface:** German, English, French, Italian.
-- **Loopback only:** `127.0.0.1:5628` (`LOCT` on a phone keypad;
-  `LT_SERVE_PORT` overrides). Requests from any other host are rejected
-  with 421.
+- **No server:** since 0.5.0 the Python logic runs *inside* the app
+  process (embedded CPython 3.13 via PyO3); the interface calls it
+  through Tauri commands. No port, no HTTP, no child interpreter. The
+  loopback server (`127.0.0.1:5628`, `LOCT` on a phone keypad) exists
+  only for browser development and the tests.
 
 > The screenshots below use an **invented** two-person interview about
 > housing cooperatives, synthesised with macOS `say`. No real research
@@ -244,8 +246,9 @@ of the `.enrich` export.
 cd backend && uv sync && uv run pytest          # backend + tests
 cd frontend && npm install
 npm run dev                                      # browser dev (proxy :5628)
-uv run uvicorn researchtranscript.main:app --port 5628    # in backend/
-npx tauri dev                                    # app dev
+uv run uvicorn researchtranscript.main:app --port 5628    # in backend/ (dev server only)
+node scripts/bundle-resources.mjs                # once: runtime + python/site-packages
+PYO3_CONFIG_FILE=$PWD/src-tauri/pyo3-config.txt npx tauri dev   # app dev (Python in-process)
 ```
 
 ## Building the bundle
@@ -343,14 +346,15 @@ plan. The code stays AGPL-3.0-or-later, and the Recursive font on the
 website stays SIL OFL 1.1.
 
 **The network clause is satisfied before it applies:** ResearchTranscript
-binds to `127.0.0.1` only, and the host guard in `main.py` turns
-everything foreign away with 421 — there is no remote use in the sense
-of §13. The source is public anyway; the "Source code (GitHub)" button
+is not a network service — the logic runs inside the app process, and
+the only listener, the development server in `main.py`, binds to
+`127.0.0.1` and turns everything foreign away with 421 — there is no
+remote use in the sense of §13. The source is public anyway; the "Source code (GitHub)" button
 in the About dialog is the offer inside the app itself.
 
 Bundled, among others: whisper.cpp (MIT), large-v3-turbo model (OpenAI,
 MIT), silero-vad (MIT), SpeakerKit (Argmax, MIT) with the pyannote
 community-1 and WeSpeaker ResNet34 models (CC BY 4.0, converted to
-Core ML and quantised by Argmax), enrich-core (B/IAS, MIT), FastAPI/uvicorn (MIT), React/Radix (MIT), Lucide (ISC), ffmpeg
+Core ML and quantised by Argmax), enrich-core (B/IAS, MIT), CPython 3.13 (PSF), pydantic (MIT), React/Radix (MIT), Lucide (ISC), ffmpeg
 (GPL-3.0 build, `--enable-gpl --enable-version3`) — the complete list is
 in the settings.
