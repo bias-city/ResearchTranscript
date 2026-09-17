@@ -45,7 +45,8 @@
       "resources/python-runtime": "python-runtime",
       "resources/python": "python",
       "resources/models": "models",
-      "resources/BUNDLED": "BUNDLED"
+      "resources/BUNDLED": "BUNDLED",
+      "../../THIRD_PARTY_LICENSES.md": "licenses/THIRD_PARTY_LICENSES.md"
     },
     "macOS": {
       "minimumSystemVersion": "14.0",

@@ -12,6 +12,13 @@ export async function protokollPfad(): Promise<string | null> {
   return invoke<string | null>("protokoll_pfad");
 }
 
+/** Pfad der Drittanbieter-Lizenzliste im Bundle. */
+export async function lizenzenPfad(): Promise<string | null> {
+  if (!isTauri()) return null;
+  const { invoke } = await import("@tauri-apps/api/core");
+  return invoke<string | null>("lizenzen_pfad");
+}
+
 /** Hülle neu starten (nach «Verarbeitung blockiert»). */
 export async function neustart(): Promise<void> {
   if (!isTauri()) { window.location.reload(); return; }

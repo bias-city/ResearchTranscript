@@ -569,6 +569,8 @@ const W: Record<string, Eintrag> = {
     fr: "Code source (GitHub)", it: "Codice sorgente (GitHub)" },
   "st.link.releases": { de: "Releases", en: "Releases",
     fr: "Versions", it: "Release" },
+  "st.link.lizenzliste": { de: "Alle Lizenzen (Liste)", en: "All licences (list)",
+    fr: "Toutes les licences (liste)", it: "Tutte le licenze (elenco)" },
   "st.link.lamesrc": { de: "LAME-Quellcode (LGPL)", en: "LAME source (LGPL)",
     fr: "Source LAME (LGPL)", it: "Sorgente LAME (LGPL)" },
   "st.link.lamekopie": { de: "LAME-Quelle, wie mitgeliefert",

@@ -1,0 +1,63 @@
+Additional permission under GNU AGPL version 3 section 7
+(App Store distribution of ResearchTranscript)
+
+Copyright (C) 2026 Ben Pohl, B/IAS – Basel Institut für angewandte
+Stadtforschung, Basel, Switzerland — sole copyright holder of
+ResearchTranscript (see LICENSE, GNU Affero General Public License,
+version 3 or later).
+
+Why this file exists
+
+The GNU AGPL requires that anyone who conveys the program does so
+without imposing further restrictions on the recipient's exercise of
+the rights granted by the license. The terms of Apple's App Store
+(the Apple Media Services Terms and Conditions and the Licensed
+Application End User License Agreement) impose such restrictions, for
+example on the number of devices and on redistribution. Without an
+explicit permission, conveying ResearchTranscript through the App
+Store would therefore not be compatible with the AGPL. This file grants
+that permission, in the way section 7 of the AGPL provides for it, so
+that the same code can be published under the AGPL on GitHub and
+distributed through the Mac App Store.
+
+Additional permission
+
+As a special exception to the terms of the GNU Affero General Public
+License, version 3 or later, the copyright holder grants the following
+additional permission:
+
+  You may convey ResearchTranscript, in object code form, through the
+  Apple App Store (including the Mac App Store, TestFlight and any
+  successor service operated by Apple Inc.), under Apple's standard
+  terms for such distribution, notwithstanding that those terms impose
+  restrictions that would otherwise be prohibited by section 10 of the
+  AGPL. This permission applies to the object code conveyed through the
+  App Store only. It does not restrict, replace or waive any right you
+  have under the AGPL to obtain, modify and redistribute the
+  corresponding source code, which remains available at
+
+      https://github.com/bias-city/ResearchTranscript
+
+  under the AGPL, version 3 or later, with this same additional
+  permission.
+
+Scope and removal
+
+This permission applies to ResearchTranscript as published by the
+copyright holder and to modified versions only insofar as the
+modifications are also licensed under the AGPL with this same
+permission. Section 7 of the AGPL allows you to remove this additional
+permission from your copy or from any modified version.
+
+Third-party components
+
+Third-party components bundled with the app (whisper.cpp, the
+large-v3-turbo and silero-vad models, SpeakerKit and its models,
+CPython, pydantic, React/Radix, LAME and others) are licensed under
+their own terms, listed in THIRD_PARTY_LICENSES.md and in the app's
+settings. LAME (GNU LGPL 2.1 or later) is linked dynamically; its
+source code is shipped with the app and offered at
+https://bias.city/researchtranscript/quellen/ so that it can be
+replaced, as the LGPL requires. None of these components requires the
+AGPL; the AGPL is the copyright holder's own choice for the
+ResearchTranscript code.

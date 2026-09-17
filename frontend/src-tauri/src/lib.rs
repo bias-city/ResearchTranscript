@@ -8,7 +8,7 @@
 // Was die Hülle noch tut: Fenster, Menü, Dialoge, Dateien vom Finder,
 // Medien-Freigabe für `asset://`, Herzschlag (R4), Protokoll (R3),
 // Start-Selbstprüfung (R5).
-use std::path::Path;
+use std::path::{Path, PathBuf};
 use std::sync::Mutex;
 use std::time::Duration;
 
@@ -100,6 +100,16 @@ fn standard_ordner() -> String {
 
 #[tauri::command]
 fn ist_sandboxed() -> bool { bookmarks::sandboxed() }
+
+/// Die Drittanbieter-Lizenzliste (THIRD_PARTY_LICENSES.md) — im Bundle
+/// unter Resources/licenses, im Checkout an der Repo-Wurzel.
+#[tauri::command]
+fn lizenzen_pfad(app: tauri::AppHandle) -> Option<String> {
+    let mut kandidaten = Vec::new();
+    if let Ok(r) = app.path().resource_dir() { kandidaten.push(r.join("licenses/THIRD_PARTY_LICENSES.md")); }
+    kandidaten.push(PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../THIRD_PARTY_LICENSES.md"));
+    kandidaten.into_iter().find(|p| p.is_file()).map(|p| p.to_string_lossy().into_owned())
+}
 
 #[tauri::command]
 fn protokoll_pfad() -> Option<String> {
@@ -268,7 +278,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![api, sprecher_probe, medien_pfad,
                                                  ordner_oeffnen, geoeffnete_dateien,
                                                  protokoll_pfad, neustart, ordner_merken,
-                                                 standard_ordner, ist_sandboxed])
+                                                 standard_ordner, ist_sandboxed, lizenzen_pfad])
         .build(tauri::generate_context!())
         .expect("ResearchTranscript konnte nicht starten");
 

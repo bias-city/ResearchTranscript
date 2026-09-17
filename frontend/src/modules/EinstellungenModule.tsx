@@ -9,8 +9,8 @@ import {
   type Settings, type ZoteroStatus,
 } from "../lib/api";
 import { setSprache, useT, type Sprache } from "../lib/i18n";
-import { isTauri, ordnerMerken, ordnerOeffnen, pickOrdner, protokollPfad,
-  standardOrdner } from "../lib/tauri";
+import { isTauri, lizenzenPfad, ordnerMerken, ordnerOeffnen, pickOrdner,
+  protokollPfad, standardOrdner } from "../lib/tauri";
 import { TURN_SCHRIFT_WAHL, turnSchrift, turnSchriftSetzen } from "../lib/storage";
 
 const BIAS_URL = "https://bias.city/researchtranscript/";
@@ -250,6 +250,11 @@ export default function EinstellungenModule({ settings, onChange }: {
             <Button size="1" variant="soft" color="gray" highContrast onClick={() =>
               void ordnerOeffnen("https://bias.city/researchtranscript/quellen/lame-4.0.tar.gz")}>
               {tr("st.link.lamekopie")}</Button>
+            {isTauri() && (
+              <Button size="1" variant="soft" color="gray" highContrast onClick={() =>
+                void lizenzenPfad().then((p) => { if (p) void ordnerOeffnen(p); })}>
+                {tr("st.link.lizenzliste")}</Button>
+            )}
           </Flex>
         </Flex>
       </Karte>

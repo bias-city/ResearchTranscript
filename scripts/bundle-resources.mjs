@@ -158,6 +158,9 @@ const py = path.join(RES, "python-runtime/bin/python3");
   console.log("✓ python/site-packages installiert");
 }
 
+// 2b. Lizenzliste erzeugen (kommt über tauri.conf.json → Resources/licenses)
+execFileSync("python3", [path.join(ROOT, "scripts/gen-licenses.py")], { stdio: "inherit" });
+
 // 3. Marker
 fs.writeFileSync(path.join(RES, "BUNDLED"),
                  `ResearchTranscript bundle ${new Date().toISOString()}\n`);
