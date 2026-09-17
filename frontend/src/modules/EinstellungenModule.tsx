@@ -2,7 +2,7 @@
 // (inkl. Recursive-OFL-Nennung — Pflicht, Fonts liegen im Bundle).
 import { useEffect, useState } from "react";
 import {
-  Button, Flex, Grid, Karte, LabeledSelect, Switch, Text, TextField,
+  Button, Flex, Karte, LabeledSelect, Switch, Text, TextField,
 } from "../components/ui";
 import {
   apiGet, apiSend, errMsg, type ModellInfo, type ModellListe,
@@ -54,11 +54,10 @@ export default function EinstellungenModule({ settings, onChange }: {
   if (!settings) return null;
 
   return (
-    // Karten-Raster wie enrich-Einstellungen (User 2026-08-30):
-    // responsives 1–2-Spalten-Grid, volle Breite
-    <Grid columns={{ initial: "1", md: "2" }} gap="4" p="4"
-          style={{ height: "100%", overflowY: "auto",
-                   alignContent: "start" }}>
+    // Karten in zwei Spalten wie enrich-Einstellungen (User 2026-08-30),
+    // seit 2026-09-17 als Masonry (CSS columns): jede Karte so hoch wie
+    // ihr Inhalt, keine leeren Flächen neben hohen Nachbarn
+    <div className="st-masonry">
       <Karte titel={tr("st.speicherort")}
              subline={tr("st.speicherort.text")}>
         <Flex align="center" gap="2">
@@ -130,7 +129,8 @@ export default function EinstellungenModule({ settings, onChange }: {
             <Text size="1" weight="medium">{tr("st.modell.eigene")}</Text>
             <Text size="1" color="gray">{tr("st.modell.eigene.text")}</Text>
             <Flex gap="2" align="center" wrap="wrap">
-              <Text size="1" style={{ fontFamily: "monospace" }}>{eigeneDir}</Text>
+              <Text size="1" style={{ fontFamily: "monospace",
+                                      wordBreak: "break-all" }}>{eigeneDir}</Text>
               {isTauri() && (
                 <Button size="1" variant="soft"
                         onClick={() => void ordnerOeffnen(eigeneDir)}>
@@ -296,6 +296,6 @@ export default function EinstellungenModule({ settings, onChange }: {
       </Karte>
 
       {fehler && <Text size="1" color="red">{fehler}</Text>}
-    </Grid>
+    </div>
   );
 }
