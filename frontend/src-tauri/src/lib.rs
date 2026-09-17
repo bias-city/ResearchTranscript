@@ -14,6 +14,8 @@ use std::time::Duration;
 
 use tauri::{Emitter, Manager, RunEvent};
 
+#[cfg(feature = "motoren")]
+pub mod motoren;
 pub mod protokoll;
 pub mod python;
 

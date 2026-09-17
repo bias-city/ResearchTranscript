@@ -178,6 +178,18 @@ pub fn init_pfad(res: &Path, app: Option<&tauri::AppHandle>) -> Result<f64, Stri
         std::env::set_var("LT_APP_ROOT", res);
         std::env::set_var("LT_BUNDLED", "1");
         std::env::set_var("LT_EMBEDDED", "1");
+        // Motoren im Prozess (Plan §5): das Rust-Modul muss VOR dem
+        // Interpreter in die inittab; libmp3lame liegt im Bundle unter
+        // Contents/Frameworks, im Checkout unter resources/frameworks.
+        #[cfg(feature = "motoren")]
+        {
+            use crate::motoren::researchtranscript_motoren;
+            pyo3::append_to_inittab!(researchtranscript_motoren);
+            let lame = [res.parent().map(|p| p.join("Frameworks/libmp3lame.dylib")),
+                        Some(res.join("frameworks/libmp3lame.dylib"))]
+                .into_iter().flatten().find(|p| p.is_file());
+            if let Some(p) = lame { std::env::set_var("LT_LAME_DYLIB", p); }
+        }
         let r = unsafe { interpreter_starten(&res.join("python-runtime"), &site) };
         if let Err(e) = r {
             *INIT_FEHLER.lock().unwrap() = Some(e);
