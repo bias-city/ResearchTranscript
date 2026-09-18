@@ -285,6 +285,7 @@ const kapitel: Kapitel[] = [
         ["**Gleichzeitige Läufe**", "1 bis 4. Empfohlen ist **1 — nacheinander**."],
         ["**Oberflächen-Sprache**", "Deutsch, English, Français, Italiano. Gilt sofort, auch für dieses Hilfefenster."],
         ["**Schrift Turn-Text**", "Schriftgrösse des Transkripttexts im Editor."],
+        ["**Schriftart Turn-Text**", "Serifenlos oder mit Serifen. Beides sind Schriften von macOS; die App liefert keine Schrift mit."],
       ] },
       { art: "h", text: "Identität im Dossier" },
       { art: "p", text: "**E-Mail als User-ID (freiwillig)** schreibt deine Adresse ins Journal jedes enrich-Dossiers, das du exportierst. Sie verlässt den Rechner nur mit dieser Datei. Die **Kennung dieser Installation** ist zufällig und hat keinen Bezug zu Gerät oder Person; **Neu erzeugen** vergibt eine neue." },

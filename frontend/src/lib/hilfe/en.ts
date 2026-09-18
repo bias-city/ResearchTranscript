@@ -283,6 +283,7 @@ const kapitel: Kapitel[] = [
         ["**Simultaneous runs**", "1 to 4. Recommended is **1 — one after another**."],
         ["**Interface language**", "Deutsch, English, Français, Italiano. Applies at once, also to this help window."],
         ["**Turn text size**", "Text size of the transcript text in the editor."],
+        ["**Turn text typeface**", "Sans serif or serif. Both are fonts that ship with macOS; the app bundles no font."],
       ] },
       { art: "h", text: "Identity in the dossier" },
       { art: "p", text: "**E-mail as user ID (optional)** writes your address into the journal of every enrich dossier you export. It leaves the computer only with that file. The **ID of this installation** is random and has no connection to a device or person; **Regenerate** assigns a new one." },

@@ -11,7 +11,8 @@ import {
 import { setSprache, useT, type Sprache } from "../lib/i18n";
 import { isTauri, lizenzenPfad, ordnerMerken, ordnerOeffnen, pickOrdner,
   protokollPfad, standardOrdner, vertriebskanal } from "../lib/tauri";
-import { TURN_SCHRIFT_WAHL, turnSchrift, turnSchriftSetzen } from "../lib/storage";
+import { TURN_SCHRIFT_WAHL, turnFamilie, turnFamilieSetzen, turnSchrift, turnSchriftSetzen,
+  type TurnFamilie } from "../lib/storage";
 
 const BIAS_URL = "https://bias.city/researchtranscript/";
 
@@ -50,6 +51,7 @@ export default function EinstellungenModule({ settings, onChange }: {
   // Schriftgrösse des Turn-Texts (lokal im Browser-Speicher, nicht in
   // der Backend-Config — eine Anzeige-Vorliebe dieses Rechners)
   const [schrift, setSchrift] = useState(() => turnSchrift());
+  const [familie, setFamilie] = useState<TurnFamilie>(() => turnFamilie());
   useEffect(() => { setZdir(settings?.zotero_dir ?? ""); },
             [settings?.zotero_dir]);
   const [zstatus, setZstatus] = useState<ZoteroStatus | null>(null);
@@ -123,6 +125,11 @@ export default function EinstellungenModule({ settings, onChange }: {
             onChange={(v) => { setSchrift(Number(v)); turnSchriftSetzen(Number(v)); }}
             options={TURN_SCHRIFT_WAHL.map(String)}
             optionLabels={Object.fromEntries(TURN_SCHRIFT_WAHL.map((n) => [String(n), `${n} px`]))} />
+          <LabeledSelect label={tr("st.turnfamilie")}
+            value={familie}
+            onChange={(v) => { setFamilie(v as TurnFamilie); turnFamilieSetzen(v as TurnFamilie); }}
+            options={["sans", "serif"]}
+            optionLabels={{ sans: tr("st.turnfamilie.sans"), serif: tr("st.turnfamilie.serif") }} />
         </Flex>
         {modelle.length > 0 && !modelle.some((m) => m.name === settings.model) && (
           <Text size="1" color="red" mt="2" as="div">

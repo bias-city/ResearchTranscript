@@ -14,6 +14,8 @@ export const KEYS = {
   editorAktiv: "lt.editor.aktiv.",
   // Schriftgrösse des Turn-Texts in px (User 2026-09-17), Standard 13
   editorSchrift: "lt.editor.schrift",
+  // Schriftart des Turn-Texts: «sans» (Systemschrift) oder «serif»
+  editorFamilie: "lt.editor.familie",
   hilfeKapitel: "lt.hilfe.kapitel",
 } as const;
 
@@ -30,6 +32,25 @@ export function turnSchriftSetzen(px: number, merken = true): void {
 export function turnSchrift(): number {
   const n = Number(lget(KEYS.editorSchrift));
   return (TURN_SCHRIFT_WAHL as readonly number[]).includes(n) ? n : TURN_SCHRIFT_STANDARD;
+}
+
+/** Serifenschriften, die macOS mitbringt — die App verweist nur darauf und
+    liefert keine Schriftdatei mit (keine Lizenzfrage). `ui-serif` ist auf
+    dem Mac «New York»; die übrigen sind Rückfälle. */
+export const TURN_SERIF = 'ui-serif, "New York", "Iowan Old Style", Charter, Georgia, serif';
+export type TurnFamilie = "sans" | "serif";
+
+/** Schriftart des Turn-Texts anwenden und merken; der Editor misst neu,
+    weil Serifenschrift anders läuft (Zeilenumbrüche, Feldhöhen). */
+export function turnFamilieSetzen(f: TurnFamilie, merken = true): void {
+  const stil = document.documentElement.style;
+  if (f === "serif") stil.setProperty("--rt-turn-familie", TURN_SERIF);
+  else stil.removeProperty("--rt-turn-familie");
+  if (merken) lset(KEYS.editorFamilie, f);
+  window.dispatchEvent(new CustomEvent("rt-schrift", { detail: f }));
+}
+export function turnFamilie(): TurnFamilie {
+  return lget(KEYS.editorFamilie) === "serif" ? "serif" : "sans";
 }
 
 export function sget(key: string): string | null {

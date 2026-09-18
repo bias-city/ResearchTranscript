@@ -5,9 +5,10 @@ import "@radix-ui/themes/styles.css";
 import App from "./App";
 import HilfeModule from "./modules/HilfeModule";
 import "./styles.css";
-import { turnSchrift, turnSchriftSetzen } from "./lib/storage";
+import { turnFamilie, turnFamilieSetzen, turnSchrift, turnSchriftSetzen } from "./lib/storage";
 
 turnSchriftSetzen(turnSchrift(), false);
+turnFamilieSetzen(turnFamilie(), false);
 
 /** Statt weißem Fenster: Fehlertext sichtbar (enrich-Lehre — im
     WKWebView gibt es keinen Inspector). */

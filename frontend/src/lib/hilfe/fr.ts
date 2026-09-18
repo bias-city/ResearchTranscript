@@ -283,6 +283,7 @@ const kapitel: Kapitel[] = [
         ["**Exécutions simultanées**", "1 à 4. Recommandé : **1 — l'un après l'autre**."],
         ["**Langue de l'interface**", "Deutsch, English, Français, Italiano. S'applique aussitôt, y compris à cette fenêtre d'aide."],
         ["**Taille du texte des tours**", "Taille du texte de la transcription dans l'éditeur."],
+        ["**Police du texte des tours**", "Sans ou avec empattement. Les deux sont des polices de macOS ; l'app ne fournit aucune police."],
       ] },
       { art: "h", text: "Identité dans le dossier" },
       { art: "p", text: "**E-mail comme identifiant (facultatif)** écrit ton adresse dans le journal de chaque dossier enrich que tu exportes. Elle ne quitte l'ordinateur qu'avec ce fichier. L'**Identifiant de cette installation** est aléatoire, sans lien avec l'appareil ni la personne ; **Régénérer** en attribue un nouveau." },

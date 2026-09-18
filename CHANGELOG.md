@@ -5,6 +5,8 @@ a version are the corresponding section of this file.
 
 ## 0.6.0 — unreleased
 
+- Einstellungen: Schriftart des Turn-Texts wählbar — serifenlos (Systemschrift) oder mit Serifen (New York von macOS). Die App liefert keine Schriftdatei mit; ein toter Recursive-Verweis in den Styles ist entfernt.
+
 - Dokumentation für Forschende, aus den echten Werten erzeugt (Editor › Export): Transkript als Markdown und Word, und ein Dokumentationspaket (.zip) je Transkript — Transkriptionsprotokoll, Methodenbaustein mit Absatz für den Methodenteil, Repositoriums-Datenblatt (Zenodo/DataCite, Facharchive, vorausgefüllt aus Zotero), Verfahrensbaustein, Zitierdatei für Zotero; jedes Dokument als .md und .docx. Eingriffsmass gegen den gesicherten Maschinenstand (`ausgang.json`): Korrekturrate auf Wortebene, neu zugeordnete Sprechzeit. Viersprachig. Grundlagen: `docs/begleitdokumente.md`. `CITATION.cff` im Repo.
 
 - Handbuch in der App: Menü «Help» (⌘?) und Fragezeichen im Hauptfenster öffnen ein eigenes Fenster mit 14 Kapiteln, Volltextsuche, allen Tastenkürzeln und Bildern in Hell und Dunkel — viersprachig, folgt der Oberflächen-Sprache. Bilder: `node scripts/appstore-screenshots.mjs --hilfe`.

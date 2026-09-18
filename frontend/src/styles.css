@@ -1,17 +1,12 @@
 /* enrich — Eigenanteile über Radix Themes: App-Raster, Panel-Gerüst,
    Tab-Leiste, Kacheln. Farben/Radien kommen aus den Theme-Variablen. */
 
-/* Recursive Variable Font (OFL 1.1 — Lizenz liegt bei:
-   src/assets/fonts/Recursive-LICENSE.txt; Nennung in Einstellungen
-   und bei Veröffentlichung ist PFLICHT, Memory
-   enrich-recursive-font-lizenz). Label-Identität im Codebuch:
-   Achsen CASL/MONO/wght je Label (CorpusMind §10). */
-@font-face {
-  font-family: "Recursive";
-  src: url("./assets/fonts/Recursive_VF.woff2") format("woff2");
-  font-weight: 300 1000;
-  font-display: swap;
-}
+/* Schriften: Die App liefert KEINE Schriftdatei mit. Oberfläche = System-
+   schrift (Radix-Standard, auf dem Mac San Francisco); der Turn-Text kann in
+   den Einstellungen auf eine Serifenschrift des Systems wechseln
+   (--rt-turn-familie, lib/storage.ts). Nur Verweise, nichts wird verteilt —
+   darum keine Schriftlizenz im Bundle. (Recursive/OFL gibt es nur noch auf
+   der Website, site/fonts.) */
 
 html, body, #root { height: 100%; }
 body { margin: 0; background: var(--gray-1); }
@@ -592,6 +587,7 @@ body { margin: 0; background: var(--gray-1); }
   background: transparent;
   width: 100%;
   font: inherit;
+  font-family: var(--rt-turn-familie, inherit);   /* Einstellungen (User 2026-09-18) */
   font-size: var(--rt-turn-schrift, 13px);   /* Einstellungen (User 2026-09-17) */
   line-height: 1.5;
   outline: none;

@@ -283,6 +283,7 @@ const kapitel: Kapitel[] = [
         ["**Esecuzioni simultanee**", "Da 1 a 4. Consigliato è **1 — uno dopo l'altro**."],
         ["**Lingua dell'interfaccia**", "Deutsch, English, Français, Italiano. Vale subito, anche per questa finestra di aiuto."],
         ["**Dimensione testo dei turni**", "Dimensione del carattere del testo della trascrizione nell'editor."],
+        ["**Carattere del testo dei turni**", "Senza o con grazie. Entrambi sono caratteri di macOS; l'app non include alcun carattere."],
       ] },
       { art: "h", text: "Identità nel dossier" },
       { art: "p", text: "**E-mail come ID utente (facoltativo)** scrive il tuo indirizzo nel giornale di ogni dossier enrich che esporti. Lascia il computer solo con questo file. L'**ID di questa installazione** è casuale e non ha alcun legame con il dispositivo o la persona; **Rigenera** ne assegna uno nuovo." },
