@@ -717,6 +717,12 @@ export default function EditorModule({ id, onExit }: {
       if (e.code === "Space" && (e.shiftKey || e.altKey) && !e.metaKey && !e.ctrlKey) {
         halt(); toggle(); return;
       }
+      // fn+↑/↓ = Bild auf/ab (PageUp/PageDown): Turn wechseln wie ⌥↑/⌥↓,
+      // auch beim Tippen — so lässt sich ein Fusspedal anschliessen, das
+      // diese Tasten sendet (User 2026-09-18)
+      if ((e.key === "PageDown" || e.key === "PageUp") && !e.metaKey && !e.ctrlKey) {
+        halt(); turn(e.key === "PageDown" ? 1 : -1, tippt); return;
+      }
       if (e.altKey && !e.metaKey && !e.ctrlKey) {
         if (e.code === "KeyJ") { halt(); a.currentTime -= 5; }
         else if (e.code === "KeyL") {
