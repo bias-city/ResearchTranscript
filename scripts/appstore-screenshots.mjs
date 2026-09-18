@@ -23,6 +23,10 @@
 //              höchstens 716 px breit, das reicht für Retina), JPEG, dazu
 //              drei Motive nur fürs Handbuch (Memo, Steuerzeile, Zeile).
 //              Danach `npm run build`, damit sie in dist landen.
+//   --site:    Bilder für die Website: site/img/<motiv>-<sprache>.png, 1200×750,
+//              nur hell. Startet scripts/demo_backend.py (erfundene Zotero-
+//              Einträge) und transkribiert zusätzlich ein erzeugtes Demo-Video
+//              (ffmpeg, Farbverlauf + Ton des Demo-Interviews).
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -37,15 +41,16 @@ const { webkit } = require("playwright");
 const PORT = 5631;
 const B = `http://127.0.0.1:${PORT}`;
 const HILFE = process.argv.includes("--hilfe");
-const AUS = HILFE ? path.join(ROOT, "frontend/public/hilfe") : path.join(ROOT, "appstore/screenshots");
+const SITE = process.argv.includes("--site");
+const AUS = SITE ? path.join(ROOT, "site/img") : HILFE ? path.join(ROOT, "frontend/public/hilfe") : path.join(ROOT, "appstore/screenshots");
 const SCRATCH = fs.mkdtempSync(path.join(os.tmpdir(), "rt-shots-"));
 const LIB = path.join(SCRATCH, "lib");
 const DEMO = path.join(ROOT, "docs/demo/housing-cooperatives-interview.mp3");
 const HAUPT = path.resolve(ROOT, "../enrich-transcript");   // argmax-cli + models/speakerkit
 const arg = (n) => { const i = process.argv.indexOf(n); return i >= 0 ? process.argv[i + 1] ?? true : null; };
 const SPRACHEN = arg("--nur") ? [arg("--nur")] : ["de", "en", "fr", "it"];
-const GROESSEN = HILFE ? [[1200, 760, 1.2]] : (arg("--schnell") ? [[1440, 900, 2]] : [[1280, 800, 1], [1440, 900, 1], [1280, 800, 2], [1440, 900, 2]]);
-const MODI = [["hell", "light"], ["dunkel", "dark"]];
+const GROESSEN = SITE ? [[1200, 750, 1]] : HILFE ? [[1200, 760, 1.2]] : (arg("--schnell") ? [[1440, 900, 2]] : [[1280, 800, 1], [1440, 900, 1], [1280, 800, 2], [1440, 900, 2]]);
+const MODI = SITE ? [["hell", "light"]] : [["hell", "light"], ["dunkel", "dark"]];
 
 const warte = (ms) => new Promise((r) => setTimeout(r, ms));
 async function api(pfad, init) {
@@ -58,11 +63,11 @@ const json = (body, method = "POST") => ({ method, headers: { "Content-Type": "a
 // ---------- Backend ----------
 fs.mkdirSync(LIB, { recursive: true });
 fs.mkdirSync(path.join(SCRATCH, "cfg"), { recursive: true });
-fs.writeFileSync(path.join(SCRATCH, "cfg/config.json"), JSON.stringify({ library_root: LIB, zotero_consent: false }));
-const server = spawn("uv", ["run", "uvicorn", "researchtranscript.main:app", "--port", String(PORT)], {
+fs.writeFileSync(path.join(SCRATCH, "cfg/config.json"), JSON.stringify({ library_root: LIB, zotero_consent: SITE }));
+const server = spawn("uv", ["run", "uvicorn", ...(SITE ? ["demo_backend:app", "--app-dir", path.join(ROOT, "scripts")] : ["researchtranscript.main:app"]), "--port", String(PORT)], {
   cwd: path.join(ROOT, "backend"),
   env: { ...process.env, LT_SERVE_PORT: String(PORT), LT_CONFIG_DIR: path.join(SCRATCH, "cfg"),
-         LT_MODELS_DIR: path.join(ROOT, "frontend/src-tauri/resources/models"), LT_APP_ROOT: HAUPT, LT_MOTOR: "kind" },
+         LT_MODELS_DIR: path.join(ROOT, "frontend/src-tauri/resources/models"), LT_APP_ROOT: HAUPT, LT_MOTOR: "kind", DEMO_ZOTERO_DIR: path.join(SCRATCH, "Zotero") },
   stdio: ["ignore", "ignore", "inherit"],
 });
 const ende = () => { try { server.kill(); } catch { /* schon weg */ } };
@@ -96,8 +101,27 @@ for (const name of ["Interview_02_Mara", "Interview_03_Workshop"]) {
   fd.append("audio", new Blob([fs.readFileSync(DEMO)], { type: "audio/mpeg" }), `${name}.mp3`);
   await api("/api/import", { method: "POST", body: fd });
 }
+// Website: ein Eintrag mit Video — erzeugter Farbverlauf, Ton des Demo-Interviews
+let videoEid = null;
+if (SITE) {
+  const { execFileSync } = await import("node:child_process");
+  const mp4 = path.join(SCRATCH, "Gruppengespraech_Quartier.mp4");
+  execFileSync("ffmpeg", ["-v", "error", "-y", "-f", "lavfi", "-i", "gradients=s=640x360:c0=0x7400a4:c1=0x151515:speed=0.008",
+    "-i", DEMO, "-shortest", "-c:v", "libx264", "-pix_fmt", "yuv420p", "-r", "25", "-c:a", "aac", mp4]);
+  const v = await (await api("/api/transcribe-path", json({ path: mp4, language: "en", speaker_range: "2-2" }))).json();
+  let vj;
+  for (let i = 0; i < 400; i++) { vj = await (await api(`/api/jobs/${v.job_id}`)).json(); if (["completed", "failed", "cancelled"].includes(vj.status)) break; await warte(500); }
+  if (vj.status !== "completed") throw new Error(`Demo-Video: ${vj.status} ${vj.error ?? ""}`);
+  videoEid = vj.eintrag;
+  const vt = await (await api(`/api/transcripts/${videoEid}`)).json();
+  const e1 = vt.segmente[0].sprecher;
+  await api(`/api/transcripts/${videoEid}`, json({ sprecher: vt.sprecher.map((s) => ({ id: s.id, name: s.id === e1 ? "Nora" : "Julian" })),
+    segmente: vt.segmente.map(({ id, start, end, sprecher, text }) => ({ id, start, end, sprecher, text })) }, "PUT"));
+  await api(`/api/transcripts/${videoEid}/rename`, json({ name: "Gruppengespraech_Quartier" }));
+}
 const liste = (await (await api("/api/transcripts")).json()).transcripts;
 eid = liste.find((e) => e.name === "Interview_01_Julian").id;
+if (SITE) videoEid = liste.find((e) => e.name === "Gruppengespraech_Quartier").id;
 // Wellenform-Cache vorab bauen
 await api(`/api/transcripts/${eid}/wellenform?t0=0&t1=0&buckets=1`);
 console.log(`Demo bereit: ${liste.length} Einträge, Editor-Eintrag ${eid}, ${t.segmente.length} Segmente`);
@@ -126,7 +150,7 @@ for (const sprache of SPRACHEN) {
   await api("/api/settings", json({ ui_language: sprache }));
   for (const [modus, schema] of MODI) {
     for (const [b, h, dpr] of GROESSEN) {
-      const ordner = HILFE ? path.join(AUS, sprache, modus) : path.join(AUS, sprache, modus, `${b * dpr}x${h * dpr}`);
+      const ordner = SITE ? AUS : HILFE ? path.join(AUS, sprache, modus) : path.join(AUS, sprache, modus, `${b * dpr}x${h * dpr}`);
       fs.mkdirSync(ordner, { recursive: true });
       const ctx = await browser.newContext({ viewport: { width: b, height: h }, deviceScaleFactor: dpr, colorScheme: schema, locale: sprache });
       const page = await ctx.newPage();
@@ -137,7 +161,16 @@ for (const sprache of SPRACHEN) {
         await warte(400);
       };
       // Store: PNG in voller Grösse · Handbuch: JPEG, optional nur ein Ausschnitt
+      // Website: andere Dateinamen (<motiv>-<sprache>.png); Motive ohne Eintrag entfallen
+      const SITE_NAMEN = { "01-editor.png": "hero", "02-ai-transkript.png": "batch", "03-bibliothek.png": "library",
+        "04-suchen-ersetzen.png": "find", "05-sprecherfarbe.png": "edit", "06-export.png": "export", "07-einstellungen.png": "settings" };
       const knips = async (name, clip) => {
+        if (SITE) {
+          const motiv = SITE_NAMEN[name] ?? name.replace(/\.png$/, "");
+          await page.screenshot({ path: path.join(ordner, `${motiv}-${sprache}.png`) });
+          if (motiv === "library") fs.copyFileSync(path.join(ordner, `library-${sprache}.png`), path.join(ordner, `import-${sprache}.png`));
+          zahl += 1; return;
+        }
         const datei = path.join(ordner, HILFE ? name.replace(/\.png$/, ".jpg") : name);
         await page.screenshot(HILFE ? { path: datei, type: "jpeg", quality: 80, ...(clip ? { clip } : {}) } : { path: datei });
         zahl += 1;
@@ -220,6 +253,30 @@ for (const sprache of SPRACHEN) {
       await warte(400);
       await knips("06-export.png");
       await page.keyboard.press("Escape");
+
+      if (SITE) {
+        // Video: Editor mit mitlaufendem Bild
+        await oeffne({ "lt.ui.tab": "editor", "lt.ui.editor": videoEid, [`lt.editor.aktiv.${videoEid}`]: "3", "lt.editor.seitentab": "sprecher" });
+        await page.waitForSelector("[data-seg='3']");
+        await warte(1800);
+        await bild("video.png");
+        // Zotero: Suche mit Treffern, dann verknüpft
+        await oeffne({ ...editor, "lt.editor.seitentab": "metadaten" });
+        await page.waitForSelector("[data-seg='7']");
+        const feld = page.locator(".ui-sidepanel input").first();
+        await feld.fill("housing");
+        await feld.press("Enter");
+        await warte(900);
+        await bild("zotero.png");
+        try {
+          await page.getByText("whitfield2026", { exact: false }).first().click();     // Treffer wählen
+          await warte(500);
+          await page.locator(".ui-sidepanel button").filter({ hasText: /^(Verknüpfen|Link|Lier|Collega)$/ }).first().click({ timeout: 8000 });
+          await warte(900);
+        } catch (e) { console.log("  (Zotero nicht verknüpft:", String(e).split("\n")[0], ")"); }
+        await bild("zotero-linked.png");
+        await api(`/api/transcripts/${eid}/zotero`, { method: "DELETE" }).catch(() => undefined);
+      }
 
       // 07 Einstellungen
       await oeffne({ "lt.ui.tab": "einstellungen" });
