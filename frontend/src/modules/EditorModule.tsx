@@ -1347,7 +1347,7 @@ const SegmentZeile = memo(function SegmentZeile({
            display: "grid",
            // Aktionsspalte so breit wie ihre Icons, rechtsbündig — mit dem
            // Listenrand ergibt das ~32 px bis zur Spaltenkante (User 2026-09-18)
-           gridTemplateColumns: "26px 74px 130px 1fr auto",
+           gridTemplateColumns: "26px 74px 98px 1fr auto",   // Sprecherspalte ¼ schmaler (User 2026-09-18)
            gap: 8, alignItems: "start", padding: "5px 4px",
            borderRadius: 8,
            background: aktiv ? "var(--accent-a3)" : undefined,
@@ -1400,9 +1400,13 @@ const SegmentZeile = memo(function SegmentZeile({
                        // Nur so breit wie das Abzeichen: die restliche
                        // Spalte bis zum Textfeld bleibt neutral.
                        justifySelf: "start", width: "fit-content",
-                       maxWidth: 130, overflow: "hidden" }}>
-        <Badge color={farbe} variant="soft">
-          {name || tr("ed.sprecher.ohne")}
+                       maxWidth: 98, overflow: "hidden" }}>
+        <Badge color={farbe} variant="soft" title={name || undefined}
+               style={{ maxWidth: 98 }}>
+          {/* lange Namen enden in «…» statt hart abgeschnitten */}
+          <span style={{ overflow: "hidden", textOverflow: "ellipsis",
+                         whiteSpace: "nowrap" }}>
+            {name || tr("ed.sprecher.ohne")}</span>
         </Badge>
       </button>
       <textarea ref={(el) => {
