@@ -1,72 +1,58 @@
-"""Begleitdokumente für Forschende, aus den echten Werten erzeugt (BACKLOG 16).
+"""Dokumentationspaket für Forschende — je Transkript EIN Zip (BACKLOG 16).
 
-Zuschnitt nach Recherche (docs/begleitdokumente.md):
+Zuschnitt (User 2026-09-18, docs/begleitdokumente.md): Aussagen gelten für
+das einzelne Dokument; im Zip nur Word-Dateien, kurz, in Unterordnern:
 
-  protokoll     je Transkript — Transkriptionsprotokoll (Provenienz,
-                Objektebene der Datendokumentation)
-  methoden      Auswahl von 1…n Transkripten — Methodenbaustein: ein
-                Methodenteil beschreibt das KORPUS (n, Dauer, Mittel und
-                Spanne), nicht das einzelne Interview
-  verfahren     je Projekt — Baustein fürs Verzeichnis der
-                Bearbeitungstätigkeiten / DSFA / Ethikantrag: nur die
-                Fakten der App; alles, was nur die Stelle weiss, bleibt
-                ein markiertes Feld
-  repositorium  Auswahl — Datenblatt für die Ablage in einem
-                DOI-Repositorium (Zenodo/DataCite, Facharchive), vorausgefüllt
-                aus Zotero und Transkript, offen, wo die Forscherin entscheidet
+  LIESMICH.docx                      Wegweiser; Warnhinweise EINMAL
+  1-methoden/transkriptionsprotokoll Lauf, Bearbeitung, Eingriff, Dateien
+  1-methoden/methodenabsatz          kurz + ausführlich, offene Felder, Zitat
+  2-datenschutz/app-tatsachen        was die App tut/nicht tut, wo Daten liegen
+  2-datenschutz/angaben-der-stelle   Formular für die verantwortliche Stelle
+  3-datenablage/datenblatt-datensatz Felder wie im Zenodo-Formular
+  3-datenablage/datenblatt-interview was zu DIESEM Interview gehört
+  3-datenablage/ethik-checkliste     Prüfpunkte, mit «trifft nicht zu»
+  3-datenablage/repositorien-und-vorgaben
+  zitieren/researchtranscript.bib    Software + Modelle für Zotero
 
-Grundsätze: Die App behauptet nichts, was sie nicht weiss (Rechtsgrundlage,
-Speicherort, Backups, wer korrigiert hat). Eingriffsmasse heissen
-«Korrekturrate», nie «Fehlerrate» oder «Genauigkeit». Befragte aus Zotero
-erscheinen nie als Urheber. Offene Felder sind `[ … ]`.
+Grundsätze: Die App behauptet nichts, was sie nicht weiss. Für Läufe von
+vor 0.6.0 (LocalTranscript, TurnScript) stehen nur aufgezeichnete Angaben.
+Das Eingriffsmass heisst «Korrekturrate», nie «Fehlerrate»/«Genauigkeit».
+Aus Zotero kommt nie ein Titel- oder Beschreibungsvorschlag (Interview-
+Titel sind oft Namen) und nie eine Person der befragten Seite. Quellen in
+den Dokumenten: nur Technik (Repos, Modellkarten) und die Vorgaben der
+Repositorien; die Fachliteratur steht in der .bib.
 
-Texte viersprachig in `dokumente_texte/<sprache>.py` (de = Quelle); hier
-steht nur, WAS in welcher Reihenfolge erscheint.
+Texte viersprachig in `dokumente_texte/<sprache>.py` (de = Quelle).
 """
 from __future__ import annotations
 
 import hashlib
 import importlib
-import statistics
+import io
+import zipfile
 from datetime import UTC, datetime
 from pathlib import Path
 
-from . import bibliothek, eingriff
+from . import bibliothek, docx, eingriff
 from .ausgabe import format_hms
-from .config import APP_VERSION, get_available_models
+from .config import APP_VERSION
 
-ARTEN = ("protokoll", "methoden", "verfahren", "repositorium")
 SPRACHEN = ("de", "en", "fr", "it")
 
-#: Mitgelieferte Bestandteile — dieselben Stände wie scripts/gen-licenses.py
+#: Mitgelieferte Bestandteile — dieselben Stände wie scripts/gen-licenses.py.
+#: jobs._lauf_fakten zeichnet sie je Lauf auf; für ältere Läufe gelten sie nicht.
 WHISPER_CPP = "1.8.2"
 SILERO = "v5.1.2"
 SPEAKERKIT = "argmax-oss-swift ea872ff"
+APP_JAHR = "2026"
+REPO = "https://github.com/bias-city/ResearchTranscript"
+SEITE = "https://bias.city/researchtranscript/"
 
 #: Zotero-Rollen der befragten Seite: nie als Urheber vorschlagen
 BEFRAGTE = {"interviewee", "guest", "castMember", "author"}
-
-NACHWEISE = [
-    ("Radford, A., Kim, J. W., Xu, T., Brockman, G., McLeavey, C., & Sutskever, I. (2022). "
-    "Robust Speech Recognition via Large-Scale Weak Supervision. arXiv:2212.04356. <https://arxiv.org/abs/2212.04356>"),
-    f"whisper.cpp {WHISPER_CPP} (ggml-org, MIT). <https://github.com/ggml-org/whisper.cpp>",
-    "OpenAI. whisper-large-v3-turbo (MIT). <https://huggingface.co/openai/whisper-large-v3-turbo>",
-    ("Plaquet, A., & Bredin, H. (2023). Powerset multi-class cross entropy loss for neural speaker "
-    "diarization. Proc. Interspeech 2023, 3222–3226. <https://doi.org/10.21437/Interspeech.2023-205>"),
-    ("Bredin, H. (2023). pyannote.audio 2.1 speaker diarization pipeline: principle, benchmark, and "
-    "recipe. Proc. Interspeech 2023, 1983–1987. <https://doi.org/10.21437/Interspeech.2023-105>"),
-    ("pyannote. speaker-diarization-community-1 (CC BY 4.0). "
-    "<https://huggingface.co/pyannote/speaker-diarization-community-1>"),
-    (f"Argmax, Inc. Argmax OSS: WhisperKit, SpeakerKit ({SPEAKERKIT}, MIT). "
-    "<https://github.com/argmaxinc/argmax-oss-swift>"),
-    f"Silero Team. Silero VAD {SILERO} (MIT). <https://github.com/snakers4/silero-vad>",
-    ("Snover, M., Dorr, B., Schwartz, R., Micciulla, L., & Makhoul, J. (2006). A Study of Translation "
-    "Edit Rate with Targeted Human Annotation. Proc. AMTA 2006. <https://aclanthology.org/2006.amta-papers.25/>"),
-    ("Wollin-Giering, S., Hoffmann, M., Höfting, J., & Ventzke, C. (2024). Automatic Transcription of "
-    "English and German Qualitative Interviews. Forum Qualitative Sozialforschung 25(1). "
-    "<https://doi.org/10.17169/fqs-25.1.4129>"),
-    "American Psychological Association. JARS–Qual, Table 1. <https://apastyle.apa.org/jars/qual-table-1.pdf>",
-]
+APP_NAMEN = {"researchtranscript": "ResearchTranscript", "localtranscript": "LocalTranscript",
+             "turnscript": "TurnScript"}
+OFFEN = "[ … ]"
 
 
 def _texte(sprache: str) -> dict[str, str]:
@@ -88,16 +74,35 @@ def _sha256(p: Path) -> str:
 
 def _dateien(eid: str, daten: dict) -> list[dict]:
     ordner = bibliothek.eintrag_pfad(eid)
-    namen = ["transkript.json", bibliothek.AUSGANG, daten.get("audio"), daten.get("video")]
     aus = []
-    for n in namen:
+    for n in ("transkript.json", bibliothek.AUSGANG, daten.get("audio"), daten.get("video")):
         p = ordner / n if n else None
         if p is not None and p.is_file():
             aus.append({"name": n, "bytes": p.stat().st_size, "sha256": _sha256(p)})
     return aus
 
 
-def fakten(eid: str, *, mit_dateien: bool = True) -> dict:
+def _journal_mass(hand: list[dict], heute: int) -> dict:
+    """Eingriff laut Journal (User 2026-09-18: «der Grad der Eingriffe kann
+    doch aus den Protokollen entnommen werden»): verschiedene Segmente je
+    Art der Änderung. Innerhalb einer Sitzung überschreibt die letzte Art
+    die frühere (bibliothek.journal_eintrag) — darum Mindestwerte."""
+    nach_art: dict[str, set[str]] = {}
+    for r in hand:
+        for rid, art in (r.get("changed") or {}).items():
+            nach_art.setdefault(art, set()).add(rid)
+    seg = {a: nach_art.get(a, set()) for a in ("text", "speaker", "time")}
+    alle = seg["text"] | seg["speaker"] | seg["time"]
+    anteil = lambda n: (n / heute) if heute else None
+    return {"segmente": heute,
+            "text": len(seg["text"]), "sprecher": len(seg["speaker"]), "zeit": len(seg["time"]),
+            "summe": len(alle), "text_anteil": anteil(len(seg["text"])),
+            "sprecher_anteil": anteil(len(seg["speaker"])), "summe_anteil": anteil(len(alle)),
+            "neu": len(nach_art.get("new", ())), "weg": len(nach_art.get("removed", ())),
+            "name": len(nach_art.get("name", ()))}
+
+
+def fakten(eid: str) -> dict:
     daten = bibliothek.lese(eid)
     seg = daten.get("segmente", [])
     q = daten.get("quelle", {}) or {}
@@ -105,57 +110,51 @@ def fakten(eid: str, *, mit_dateien: bool = True) -> dict:
     maschine = next((r for r in journal if r.get("origin") == "machine"), None)
     hand = [r for r in journal if r.get("origin") == "human"
             and any(k != "zotero" for k in (r.get("changed") or {}))]
-    arten: dict[str, int] = {}
+    app_roh = (maschine or {}).get("who", {}).get("app") or ""
+    kurz, _, version = app_roh.partition("/")
+    wer: dict[str, int] = {}
     for r in hand:
-        for art in (r.get("changed") or {}).values():
-            arten[art] = arten.get(art, 0) + 1
+        w = r.get("who", {})
+        schluessel = w.get("user") or f"#{w.get('install') or '?'}"
+        wer[schluessel] = wer.get(schluessel, 0) + 1
     ausgang, woher = bibliothek.ausgangsstand(eid)
-    mass = eingriff.vergleiche(ausgang, daten) if ausgang is not None else None
-    hand_seg = sum(1 for s in seg if s.get("origin") == "human")
     return {
         "id": daten["id"], "name": daten.get("name", ""), "datei": q.get("datei"),
         "transkribiert": q.get("erzeugt") == "transcription",
         "dauer": max((s.get("end", 0) for s in seg), default=0.0),
         "sprache": q.get("language"), "modell": q.get("model"),
-        "modell_quelle": q.get("modell_quelle") or _modell_quelle_heute(q.get("model")),
-        "modell_quelle_aufgezeichnet": bool(q.get("modell_quelle")),
-        "diarize": q.get("diarize"), "sprecherzahl": q.get("sprecherzahl"),
-        "trennung": q.get("trennung"), "vad": q.get("vad"),
-        "app": q.get("app") or ((maschine or {}).get("who", {}).get("app") or "").rpartition("/")[2] or None,
+        # «aufgezeichnet»: der Lauf hat seine Fakten selbst festgehalten (ab 0.6.0)
+        "aufgezeichnet": bool(q.get("app")), "modell_quelle": q.get("modell_quelle"),
+        "whisper_cpp": q.get("whisper_cpp"), "vad": q.get("vad"), "motor": q.get("motor"),
+        "diarize": q.get("diarize"), "sprecherzahl": q.get("sprecherzahl"), "trennung": q.get("trennung"),
+        "app_name": APP_NAMEN.get(kurz.lower(), kurz or "ResearchTranscript"),
+        "app_version": q.get("app") or version or None,
         "lauf_datum": (maschine or {}).get("finished") or daten.get("created"),
         "segmente": len(seg), "sprecher": len(daten.get("sprecher", [])),
         "memos": sum(1 for s in seg if s.get("memo")),
-        "sitzungen": len(hand),
+        "sitzungen": len(hand), "wer": wer,
         "hand_von": min((r.get("started") for r in hand if r.get("started")), default=None),
         "hand_bis": max((r.get("finished") for r in hand if r.get("finished")), default=None),
-        "aenderungen": arten, "hand_segmente": hand_seg,
-        "ausgang": woher, "mass": mass, "zotero": daten.get("zotero"),
-        "dateien": _dateien(eid, daten) if mit_dateien else [],
+        "journal": _journal_mass(hand, len(seg)),
+        "ausgang": woher, "mass": eingriff.vergleiche(ausgang, daten) if ausgang is not None else None,
+        "zotero": daten.get("zotero"), "dateien": _dateien(eid, daten),
     }
-
-
-def _modell_quelle_heute(modell: str | None) -> str | None:
-    return next((m["quelle"] for m in get_available_models() if m["name"] == modell), None)
 
 
 # ---------- Formatierung ----------
 
-def _prozent(x: float | None, sprache: str) -> str:
-    if x is None:
-        return "–"
-    s = f"{x * 100:.1f}"
-    return (s if sprache == "en" else s.replace(".", ",")) + " %"
+def _prozent(x: float | None, t: dict) -> str:
+    return "–" if x is None else f"{x * 100:.1f}".replace(".", t["dezimal"]) + " %"
 
 
 def _tag(iso: str | None) -> str:
     return (iso or "")[:10] or "–"
 
 
-def _groesse(n: int, sprache: str) -> str:
+def _groesse(n: int, t: dict) -> str:
     for einheit, teiler in (("GB", 1e9), ("MB", 1e6), ("kB", 1e3)):
         if n >= teiler:
-            s = f"{n / teiler:.1f}"
-            return f"{s if sprache == 'en' else s.replace('.', ',')} {einheit}"
+            return f"{n / teiler:.1f}".replace(".", t["dezimal"]) + f" {einheit}"
     return f"{n} B"
 
 
@@ -165,304 +164,248 @@ def _tabelle(kopf: list[str], zeilen: list[list[str]]) -> list[str]:
             + ["| " + " | ".join(sauber(z) for z in zeile) + " |" for zeile in zeilen] + [""])
 
 
-def _spanne(werte: list[float], fmt) -> str:
-    return "–" if not werte else (fmt(werte[0]) if len(werte) == 1
-                                  else f"{fmt(min(werte))} – {fmt(max(werte))}")
+def _punkte(text: str) -> list[str]:
+    return [f"- {p}" for p in text.split("\n")] + [""]
 
 
-def _modell_text(f: dict, t: dict) -> str:
-    if not f["modell"]:
-        return "–"
-    herkunft = {"bundled": t["modell.mitgeliefert"], "eigen": t["modell.eigen"]}.get(
-        f["modell_quelle"], t["modell.unbekannt"])
-    zusatz = "" if f["modell_quelle_aufgezeichnet"] or not f["modell_quelle"] else f" {t['modell.heute']}"
-    return f"`{f['modell']}` ({herkunft}{zusatz})"
+def _spalten(text: str) -> list[list[str]]:
+    return [p.split(" :: ") for p in text.split("\n")]
 
 
-def _sprecher_text(f: dict, t: dict) -> str:
-    if not f["diarize"]:
-        return t["diar.aus"]
-    zahl = (f["sprecherzahl"] or "auto")
-    zahl = t["diar.auto"] if zahl == "auto" else zahl.split("-")[0]
-    trenn = "" if f["trennung"] is None else f"; {t['diar.trennung']} {str(f['trennung']).replace('.', t['dezimal'])}"
-    return f"{t['diar.an']} ({t['diar.zahl']} {zahl}{trenn})"
+def _app(f: dict, t: dict, *, kurz: bool = False) -> str:
+    """Wie die App beim Lauf hiess. «ResearchTranscript 2.5.0» gab es nie."""
+    version = f["app_version"] or t["nicht_aufgezeichnet"]
+    if f["app_name"] == "ResearchTranscript":
+        return t["a.app.neu"].format(version=version)
+    return (t["a.app.alt"] if kurz else t["app.vorgaenger"]).format(name=f["app_name"], version=version)
 
 
-def _kopf(t: dict, titel: str, einleitung: str, sprache: str) -> list[str]:
+def _fuss(f: dict | None, t: dict) -> list[str]:
     heute = datetime.now(UTC).strftime("%Y-%m-%d")
-    return [f"# {titel}", "", einleitung, "",
-            t["kopf.erzeugt"].format(v=APP_VERSION, datum=heute), ""]
+    return ["---", "", t["fuss"].format(v=APP_VERSION, datum=heute, name=(f or {}).get("name", "–")), ""]
 
 
-def _mass_zeilen(f: dict, t: dict, sprache: str) -> list[list[str]]:
-    m = f["mass"]
-    n, r, sp = m["text"]["normiert"], m["text"]["roh"], m["sprecher"]
-    zeilen = [
-        [t["mass.norm"], _prozent(n["rate"], sprache),
-         t["mass.sdi"].format(s=n["ersetzt"], d=n["geloescht"], i=n["eingefuegt"], n=n["woerter_heute"])],
-        [t["mass.orth"], _prozent(r["rate"], sprache),
-         t["mass.sdi"].format(s=r["ersetzt"], d=r["geloescht"], i=r["eingefuegt"], n=r["woerter_heute"])],
-    ]
-    if sp["maschine_ohne_sprecher"]:
-        zeilen.append([t["mass.sprechzeit"], "–", t["mass.ohne_maschine"]])
-    else:
-        zeilen.append([t["mass.sprechzeit"], _prozent(sp["eins_zu_eins"], sprache),
-                       t["mass.sprechzeit.basis"].format(zeit=format_hms(sp["verglichen_s"]),
-                                                         a=sp["sprecher_ausgang"], b=sp["sprecher_heute"])])
-        zeilen.append([t["mass.sprechzeit.mehrheit"], _prozent(sp["mehrheit"], sprache),
-                       t["mass.sprechzeit.mehrheit.text"]])
-    return zeilen
+# ---------- 1a Transkriptionsprotokoll ----------
 
-
-def _nachweise(t: dict) -> list[str]:
-    return [f"## {t['nachweise']}", ""] + [f"- {n}" for n in NACHWEISE] + [""]
-
-
-# ---------- 1. Transkriptionsprotokoll ----------
-
-def protokoll(eid: str, sprache: str) -> str:
-    t, f = _texte(sprache), fakten(eid)
-    z = _kopf(t, f"{t['p.titel']} — {f['name']}", t["p.einleitung"], sprache)
-    z += [f"## {t['p.aufnahme']}", ""]
-    zeilen = [[t["f.kennung"], f"`{f['id']}`"], [t["f.name"], f["name"]],
-              [t["f.quelldatei"], f["datei"] or "–"], [t["f.dauer"], format_hms(f["dauer"])],
-              [t["f.sprache"], f["sprache"] or "–"], [t["f.segmente"], str(f["segmente"])],
-              [t["f.sprecher"], str(f["sprecher"])], [t["f.memos"], str(f["memos"])]]
-    if f["zotero"] and f["zotero"].get("citekey"):
-        zeilen.append(["Zotero", f"`{f['zotero']['citekey']}`"])
-    z += _tabelle([t["feld"], t["wert"]], zeilen)
+def protokoll(f: dict, t: dict) -> str:
+    z = [f"# {t['p.titel']}", "", t["p.einleitung"], "", f"## {t['p.transkript']}", ""]
+    z += _tabelle([t["feld"], t["wert"]], [
+        [t["f.name"], f["name"]], [t["f.quelldatei"], f["datei"] or "–"],
+        [t["f.dauer"], format_hms(f["dauer"])], [t["f.sprache"], f["sprache"] or "–"],
+        [t["f.segmente"], str(f["segmente"])], [t["f.sprecher"], str(f["sprecher"])],
+        [t["f.memos"], str(f["memos"])],
+        [t["f.zotero"], t["zotero.ja" if f["zotero"] else "zotero.nein"]]])
 
     z += [f"## {t['p.maschine']}", ""]
     if f["transkribiert"]:
-        vad = {True: f"Silero VAD {SILERO}", False: t["vad.aus"], None: t["nicht_aufgezeichnet"]}[f["vad"]]
-        z += _tabelle([t["feld"], t["wert"]], [
-            [t["f.datum"], _tag(f["lauf_datum"])],
-            [t["f.app"], f"ResearchTranscript {f['app'] or t['nicht_aufgezeichnet']}"],
-            [t["f.erkennung"], f"whisper.cpp {WHISPER_CPP}, {t['f.modell.satz']} {_modell_text(f, t)}"],
-            [t["f.vad"], vad],
-            [t["f.trennung"], _sprecher_text(f, t)],
-            [t["f.ort"], t["ort.lokal"]]])
+        neu = f["aufgezeichnet"]
+        herkunft = {"bundled": t["modell.mitgeliefert"], "eigen": t["modell.eigen"]}.get(
+            f["modell_quelle"], t["modell.unbekannt"])
+        erkennung = (t["erkennung.wert"].format(whisper=f["whisper_cpp"] or WHISPER_CPP,
+                                                modell=f["modell"], herkunft=herkunft)
+                     if neu else t["erkennung.alt"].format(modell=f["modell"]))
+        if not f["diarize"]:
+            trennung = t["diar.aus"]
+        else:
+            zahl = f["sprecherzahl"] or "auto"
+            trennung = t["diar.an"].format(zahl=t["diar.auto"] if zahl == "auto" else zahl.split("-")[0])
+            if f["trennung"] is not None:
+                trennung += "; " + t["diar.schwelle"].format(
+                    wert=str(f["trennung"]).replace(".", t["dezimal"]))
+        zeilen = [[t["f.datum"], _tag(f["lauf_datum"])], [t["f.app"], _app(f, t)],
+                  [t["f.erkennung"], erkennung], [t["f.trennung"], trennung]]
+        if neu:
+            vad = (t["vad.diar"] if f["diarize"] else
+                   t["vad.an"].format(silero=SILERO) if f["vad"] else t["vad.aus"])
+            zeilen.insert(3, [t["f.vad"], vad])
+        zeilen.append([t["f.ort"], t["ort.neu" if neu else "ort.alt"]])
+        z += _tabelle([t["feld"], t["wert"]], zeilen)
     else:
         z += [t["p.importiert"].format(datei=f["datei"] or "?"), ""]
 
     z += [f"## {t['p.hand']}", ""]
-    a = f["aenderungen"]
+    wer = "; ".join(t["wer.eintrag"].format(
+        wer=(t["wer.install"].format(kennung=k[1:]) if k.startswith("#") else k), n=n)
+        for k, n in sorted(f["wer"].items())) or "–"
     z += _tabelle([t["feld"], t["wert"]], [
-        [t["f.sitzungen"], str(f["sitzungen"])],
+        [t["f.sitzungen"], t["sitzungen.text"].format(n=f["sitzungen"])],
         [t["f.zeitraum"], "–" if not f["sitzungen"] else f"{_tag(f['hand_von'])} – {_tag(f['hand_bis'])}"],
-        [t["f.journal"], t["journal.arten"].format(
-            text=a.get("text", 0), sprecher=a.get("speaker", 0), zeit=a.get("time", 0),
-            neu=a.get("new", 0), weg=a.get("removed", 0), name=a.get("name", 0))],
-        [t["f.wer"], t["offen.wer"]], [t["f.abgehoert"], t["offen.abgehoert"]],
+        [t["f.wer"], wer], [t["f.rolle"], t["offen.rolle"]], [t["f.abgehoert"], t["offen.abgehoert"]],
         [t["f.regeln"], t["offen.regeln"]], [t["f.pseudonym"], t["offen.pseudonym"]]])
 
-    z += [f"## {t['p.mass']}", ""]
+    z += [f"## {t['p.eingriff']}", "", f"### {t['e.journal']}", ""]
+    j = f["journal"]
+    von = lambda n, a: t["von"].format(n=n, gesamt=j["segmente"], anteil=_prozent(a, t))
+    z += _tabelle([t["mass.kopf"], t["wert"]], [
+        [t["e.j.text"], von(j["text"], j["text_anteil"])],
+        [t["e.j.sprecher"], von(j["sprecher"], j["sprecher_anteil"])],
+        [t["e.j.summe"], von(j["summe"], j["summe_anteil"])]])
+    z += [t["e.journal.text"] + " " + t["e.j.weitere"].format(neu=j["neu"], weg=j["weg"], name=j["name"]), ""]
+    z += [f"### {t['e.wort']}", ""]
     if f["mass"] is None:
-        anteil = f["hand_segmente"] / f["segmente"] if f["segmente"] else None
-        z += [t["mass.fehlt"].format(anteil=_prozent(anteil, sprache), n=f["hand_segmente"],
-                                     gesamt=f["segmente"]), ""]
+        z += [t["e.wort.fehlt"], ""]
     else:
-        z += _tabelle([t["mass.kopf.mass"], t["wert"], t["mass.kopf.basis"]], _mass_zeilen(f, t, sprache))
+        n, r, sp = f["mass"]["text"]["normiert"], f["mass"]["text"]["roh"], f["mass"]["sprecher"]
+        sdi = lambda m: t["mass.sdi"].format(s=m["ersetzt"], d=m["geloescht"], i=m["eingefuegt"],
+                                             n=m["woerter_heute"])
+        zeilen = [[t["mass.norm"], _prozent(n["rate"], t), sdi(n)], [t["mass.orth"], _prozent(r["rate"], t), sdi(r)]]
+        if sp["maschine_ohne_sprecher"]:
+            zeilen.append([t["mass.sprechzeit"], "–", t["mass.ohne_maschine"]])
+        elif sp["eins_zu_eins"] is not None:
+            zeilen.append([t["mass.sprechzeit"], _prozent(sp["eins_zu_eins"], t),
+                           t["mass.sprechzeit.basis"].format(zeit=format_hms(sp["verglichen_s"]),
+                                                             a=sp["sprecher_ausgang"], b=sp["sprecher_heute"])])
+            zeilen.append([t["mass.mehrheit"], _prozent(sp["mehrheit"], t), t["mass.mehrheit.text"]])
+        z += _tabelle([t["mass.kopf"], t["wert"], t["mass.basis"]], zeilen)
         if f["ausgang"] == "verlauf":
-            z += [t["mass.aus_verlauf"], ""]
-        z += [t["mass.definition"], "", f"> {t['mass.vorbehalt']}", ""]
+            z += [t["e.wort.verlauf"], ""]
+        z += [t["mass.definition"], ""]
+    z += [f"> {t['mass.vorbehalt']}", ""]
 
-    z += [f"## {t['p.dateien']}", "", t["dateien.hinweis"], ""]
+    z += [f"## {t['p.dateien']}", "", t["dateien.text"]
+          + (" " + t["dateien.ausgang"] if any(d["name"] == bibliothek.AUSGANG for d in f["dateien"]) else ""), ""]
     z += _tabelle([t["datei"], t["groesse"], "SHA-256"],
-                  [[f"`{d['name']}`", _groesse(d["bytes"], sprache), f"`{d['sha256']}`"] for d in f["dateien"]])
-    return "\n".join(z + _nachweise(t))
+                  [[f"`{d['name']}`", _groesse(d["bytes"], t), f"`{d['sha256']}`"] for d in f["dateien"]])
+    z += [f"## {t['p.software']}", ""] + _punkte(t["software.punkte"])
+    return "\n".join(z + _fuss(f, t))
 
 
-# ---------- 2. Methodenbaustein (Korpus) ----------
+# ---------- 1b Methodenabsatz ----------
 
-def _median_spanne(werte: list[float], sprache: str) -> str:
-    if not werte:
-        return "–"
-    return f"{_prozent(statistics.median(werte), sprache)} ({_spanne(werte, lambda x: _prozent(x, sprache))})"
-
-
-def methoden(ids: list[str], sprache: str) -> str:
-    t = _texte(sprache)
-    fs = [fakten(e, mit_dateien=False) for e in ids]
-    if not fs:
-        raise ValueError("Keine Transkripte gewählt")
-    dauern = [f["dauer"] for f in fs]
-    mit = [f for f in fs if f["mass"] is not None]
-    norm = [f["mass"]["text"]["normiert"]["rate"] for f in mit if f["mass"]["text"]["normiert"]["rate"] is not None]
-    orth = [f["mass"]["text"]["roh"]["rate"] for f in mit if f["mass"]["text"]["roh"]["rate"] is not None]
-    spz = [f["mass"]["sprecher"]["eins_zu_eins"] for f in mit if f["mass"]["sprecher"]["eins_zu_eins"] is not None]
-    modelle = sorted({f["modell"] for f in fs if f["modell"]})
-    versionen = sorted({f["app"] for f in fs if f["app"]})
-    sprachen = sorted({f["sprache"] for f in fs if f["sprache"]})
-    laeufe = sorted(_tag(f["lauf_datum"]) for f in fs if f["transkribiert"])
-    importiert = sum(1 for f in fs if not f["transkribiert"])
-    eigen = any(f["modell_quelle"] == "eigen" for f in fs)
-    mittel = format_hms(statistics.mean(dauern))
-
-    eines = len(fs) == 1            # der Regelfall: das Paket gilt EINEM Transkript
-    ms = _median_spanne if not eines else (lambda w, sp: _prozent(w[0], sp) if w else "–")
-    z = _kopf(t, t["m.titel"], t["m.einleitung.eins" if eines else "m.einleitung"], sprache)
-    z += [f"## {t['m.korpus.eins' if eines else 'm.korpus']}", ""]
-    z += _tabelle([t["feld"], t["wert"]], ([
-        [t["f.name"], fs[0]["name"]], [t["f.dauer"], format_hms(dauern[0])]] if eines else [
-        [t["m.n"], str(len(fs)) + (f" ({t['m.importiert'].format(n=importiert)})" if importiert else "")],
-        [t["m.gesamt"], format_hms(sum(dauern))],
-        [t["m.mittel"], f"{mittel} ({_spanne(dauern, format_hms)})"]]) + [
-        [t["f.sprache"], ", ".join(sprachen) or "–"],
-        [t["f.app"], ", ".join(f"ResearchTranscript {v}" for v in versionen) or t["nicht_aufgezeichnet"]],
-        [t["f.erkennung"], f"whisper.cpp {WHISPER_CPP}, {t['f.modell.satz']} " + (", ".join(f"`{m}`" for m in modelle) or "–")
-         + (f" — {t['m.eigen']}" if eigen else "")],
-        [t["f.trennung"], t["m.diar"].format(n=sum(1 for f in fs if f["diarize"]), gesamt=len(fs))],
-        [t["m.zeitraum"], _spanne(laeufe, str) if laeufe else "–"]])
-
-    z += [f"## {t['p.mass' if eines else 'm.mass']}", ""]
-    if not eines:
-        z += [t["m.mass.text"].format(n=len(mit), gesamt=len(fs)), ""]
-    elif not mit:
-        z += [t["m.mass.fehlt"], ""]
-    z += _tabelle([t["mass.kopf.mass"], t["wert" if eines else "m.median"]], [
-        [t["mass.norm"], ms(norm, sprache)], [t["mass.orth"], ms(orth, sprache)],
-        [t["mass.sprechzeit"], ms(spz, sprache)]])
-    z += [t["mass.definition"], "", f"> {t['mass.vorbehalt']}", ""]
-
-    z += [f"## {t['m.absatz']}", "", t["m.absatz.hinweis"], ""]
-    absatz = t["m.absatz.text.eins" if eines else "m.absatz.text"].format(
-        n=len(fs), gesamt=format_hms(sum(dauern)), mittel=mittel, spanne=_spanne(dauern, format_hms),
-        version=", ".join(versionen) or "[ … ]", whisper=WHISPER_CPP,
-        modell=", ".join(modelle) or "[ … ]", norm=ms(norm, sprache),
-        diar=t["m.absatz.diar.eins" if eines else "m.absatz.diar"].format(sprechzeit=ms(spz, sprache))
-        if any(f["diarize"] for f in fs) else "")
-    z += [f"> {' '.join(absatz.split())}", ""]
-
-    z += [f"## {t['m.offen']}", ""] + [f"- {t[k]}" for k in ("m.offen.wer", "m.offen.regeln",
-                                                             "m.offen.pseudonym", "m.offen.einwilligung")] + [""]
-    if eines:
-        return "\n".join(z + _nachweise(t))
-    z += [f"## {t['m.je']}", ""]
-    z += _tabelle([t["f.name"], t["f.dauer"], t["f.modell"], t["mass.norm"], t["mass.orth"], t["mass.sprechzeit"]], [
-        [f["name"], format_hms(f["dauer"]), f["modell"] or "–",
-         _prozent(f["mass"]["text"]["normiert"]["rate"], sprache) if f["mass"] else "–",
-         _prozent(f["mass"]["text"]["roh"]["rate"], sprache) if f["mass"] else "–",
-         _prozent(f["mass"]["sprecher"]["eins_zu_eins"], sprache) if f["mass"] else "–"] for f in fs])
-    return "\n".join(z + _nachweise(t))
+def _eingriff_satz(f: dict, t: dict) -> str:
+    m, j = f["mass"], f["journal"]
+    if m is not None and m["text"]["normiert"]["rate"] is not None:
+        sp = m["sprecher"]["eins_zu_eins"]
+        zusatz = t["a.s5.sprechzeit"].format(wert=_prozent(sp, t)) if sp is not None else ""
+        return t["a.s5.wort"].format(norm=_prozent(m["text"]["normiert"]["rate"], t), sprechzeit=zusatz)
+    if f["sitzungen"]:
+        return t["a.s5.journal"].format(text=_prozent(j["text_anteil"], t),
+                                        sprecher=_prozent(j["sprecher_anteil"], t))
+    return ""
 
 
-# ---------- 3. Verfahrensbaustein (Projekt) ----------
-
-def verfahren(sprache: str) -> str:
-    t = _texte(sprache)
-    modelle = get_available_models()
-    z = _kopf(t, t["v.titel"], t["v.einleitung"], sprache)
-    z += [f"## {t['v.schritte']}", ""]
-    z += _tabelle([t["v.schritt"], t["v.werkzeug"], t["v.wo"]],
-                  [[t[f"v.s{k}.a"], t[f"v.s{k}.b"].format(whisper=WHISPER_CPP, silero=SILERO), t[f"v.s{k}.c"]]
-                   for k in range(1, 7)])
-    z += [t["v.modelle"], ""]
-    z += _tabelle([t["f.modell"], t["groesse"], t["v.herkunft"]],
-                  [[f"`{m['name']}`", _groesse(int(m["size_mb"] * 1e6), sprache),
-                    t["modell.mitgeliefert"] if m["quelle"] == "bundled" else t["modell.eigen"]] for m in modelle])
-    for k in ("nicht", "ablage", "export"):
-        z += [f"## {t[f'v.{k}']}", ""] + [f"- {p}" for p in t[f"v.{k}.punkte"].split("\n")] + [""]
-    z += [f"## {t['v.offen']}", "", t["v.offen.text"], ""]
-    z += _tabelle([t["feld"], t["v.eintrag"], t["v.hinweis"]],
-                  [[a, "[ … ]", b] for a, b in (p.split(" :: ", 1) for p in t["v.offen.felder"].split("\n"))])
-    z += [f"## {t['v.warnung']}", ""] + [f"- {p}" for p in t["v.warnung.punkte"].split("\n")] + [""]
-    return "\n".join(z)
+def absatz(f: dict, t: dict) -> str:
+    app, modell = _app(f, t, kurz=True), f["modell"] or OFFEN
+    eingriff_satz = _eingriff_satz(f, t)
+    lang = [t["a.s1"].format(dauer=format_hms(f["dauer"]), app=app), t["a.s2"].format(modell=modell)]
+    if f["diarize"]:
+        lang.append(t["a.s3"])
+    lang.append(t["a.s4"])
+    if eingriff_satz:
+        lang += [eingriff_satz, t["a.s6"]]
+    kurz = [t["a.k1"].format(app=app, modell=modell)] + ([eingriff_satz] if eingriff_satz else [])
+    z = [f"# {t['a.titel']}", "", t["a.einleitung"], "",
+         f"## {t['a.kurz']}", "", "> " + " ".join(kurz), "",
+         f"## {t['a.lang']}", "", "> " + " ".join(lang), "",
+         f"## {t['a.offen']}", ""] + _punkte(t["a.offen.punkte"])
+    z += [f"## {t['a.zitieren']}", "",
+          t["a.zitieren.text"].format(jahr=APP_JAHR, v=APP_VERSION, zitieren=t["ordner.zitieren"]), ""]
+    return "\n".join(z + _fuss(f, t))
 
 
-# ---------- 4. Repositoriums-Datenblatt ----------
+# ---------- 2 Datenschutz ----------
 
-def _urheber(fs: list[dict]) -> list[str]:
-    """Vorschlag für Creators: nur Zotero-Personen, die NICHT zur befragten
-    Seite gehören (Interviewer:in, Mitwirkende …)."""
+def tatsachen(f: dict | None, t: dict) -> str:
+    z = [f"# {t['t.titel']}", "", t["t.einleitung"].format(v=APP_VERSION), "", f"## {t['t.schritte']}", ""]
+    z += _tabelle([t["t.schritt"], t["t.werkzeug"], t["t.wo"]],
+                  _spalten(t["t.schritte.zeilen"].format(whisper=WHISPER_CPP, silero=SILERO)))
+    for k in ("schutz", "nicht", "ablage", "person", "export"):
+        z += [f"## {t[f't.{k}']}", ""] + _punkte(t[f"t.{k}.punkte"])
+    return "\n".join(z + _fuss(f, t))
+
+
+def stelle(f: dict | None, t: dict) -> str:
+    z = [f"# {t['s.titel']}", "", t["s.einleitung"], ""]
+    z += _tabelle([t["feld"], t["eintrag"], t["hinweis"]], [[a, OFFEN, b] for a, b in _spalten(t["s.felder"])])
+    z += [f"## {t['s.achten']}", ""] + _punkte(t["s.achten.punkte"])
+    z += [f"## {t['s.entfernen']}", "", t["s.entfernen.text"], ""] + _punkte(t["s.entfernen.punkte"])
+    return "\n".join(z + _fuss(f, t))
+
+
+# ---------- 3 Datenablage ----------
+
+def _urheber(f: dict) -> list[str]:
     aus: list[str] = []
-    for f in fs:
-        for c in (f["zotero"] or {}).get("creators") or []:
-            if c.get("role") in BEFRAGTE:
-                continue
-            name = ", ".join(filter(None, [c.get("last"), c.get("first")]))
-            eintrag = f"{name} ({c.get('role')})"
-            if name and eintrag not in aus:
-                aus.append(eintrag)
+    for c in (f["zotero"] or {}).get("creators") or []:
+        name = ", ".join(filter(None, [c.get("last"), c.get("first")]))
+        if c.get("role") not in BEFRAGTE and name:
+            aus.append(f"{name} ({c.get('role')})")
     return aus
 
 
-def repositorium(ids: list[str], sprache: str) -> str:
-    t = _texte(sprache)
-    fs = [fakten(e) for e in ids]
-    if not fs:
-        raise ValueError("Keine Transkripte gewählt")
-    offen = "[ … ]"
-    sprachen = sorted({f["sprache"] for f in fs if f["sprache"] and f["sprache"] != "auto"})
-    jahre = sorted({str((f["zotero"] or {}).get("year") or (f["zotero"] or {}).get("date") or "")[:4]
-                    for f in fs} - {""})
-    titel = (fs[0]["zotero"] or {}).get("title") if len(fs) == 1 else None
-    abstract = (fs[0]["zotero"] or {}).get("abstract") if len(fs) == 1 else None
-    urheber = _urheber(fs)
-    befragte = any(c.get("role") in BEFRAGTE for f in fs for c in (f["zotero"] or {}).get("creators") or [])
-    dois = sorted({(f["zotero"] or {}).get("doi") for f in fs} - {None, ""})
-    modelle = sorted({f["modell"] for f in fs if f["modell"]})
-    technik = t["r.technik.wert"].format(
-        version=", ".join(sorted({f["app"] for f in fs if f["app"]})) or APP_VERSION,
-        whisper=WHISPER_CPP, modell=", ".join(modelle) or "–")
-    vorschlag = lambda w: f"{w} — {t['r.vorschlag']}" if w else offen
+def datensatz(f: dict, t: dict) -> str:
+    zot = f["zotero"] or {}
+    urheber = _urheber(f)
+    werte = {"creators": f"{'; '.join(urheber)} — {t['r.vorschlag']}" if urheber else OFFEN,
+             "sprachen": f["sprache"] if f["sprache"] and f["sprache"] != "auto" else OFFEN,
+             "dois": f"{zot['doi']} — {t['r.vorschlag']}" if zot.get("doi") else OFFEN}
+    z = [f"# {t['d.titel']}", "", t["d.einleitung"], ""]
+    z += _tabelle([t["feld"], t["r.status"], t["eintrag"], t["hinweis"]],
+                  [[a, t[f"r.st.{st}"], wert.format(**werte), b] for a, st, wert, b in _spalten(t["d.zeilen"])])
+    if any(c.get("role") in BEFRAGTE for c in zot.get("creators") or []):
+        z += [t["d.befragte"], ""]
+    z += [f"## {t['d.archiv']}", ""] + _punkte(t["d.archiv.punkte"])
+    return "\n".join(z + _fuss(f, t))
 
-    z = _kopf(t, t["r.dok"], t["r.einleitung"].format(n=len(fs)), sprache)
-    z += [f"## {t['r.warnung']}", ""] + [f"- {p}" for p in t["r.warnung.punkte"].split("\n")] + [""]
 
-    def gruppe(name: str, zeilen: list[tuple[str, str, str]]) -> None:
-        z.extend([f"## {t[name]}", ""])
-        z.extend(_tabelle([t["feld"], t["r.status"], t["wert"], t["r.erlaeuterung"]],
-                          [[t[f"r.{k}"], t[f"r.st.{st}"], wert, t[f"r.{k}.e"]] for k, st, wert in zeilen]))
+def interview(f: dict, t: dict) -> str:
+    jahr = str((f["zotero"] or {}).get("year") or (f["zotero"] or {}).get("date") or "")[:4]
+    z = [f"# {t['i.titel']}", "", t["i.einleitung"], ""]
+    z += _tabelle([t["feld"], t["eintrag"]], [
+        [t["i.umfang"], t["i.umfang.wert"].format(dauer=format_hms(f["dauer"]), segmente=f["segmente"],
+                                                  sprecher=f["sprecher"])],
+        [t["i.sprache"], f["sprache"] or OFFEN],
+        [t["i.jahr"], f"{jahr} — {t['r.vorschlag']}" if jahr else OFFEN],
+        [t["i.verfahren"], t["i.verfahren.wert"].format(app=_app(f, t, kurz=True), modell=f["modell"] or OFFEN)],
+        [t["i.konventionen"], t["i.konventionen.wert"]], [t["i.pseudonym"], t["i.pseudonym.wert"]]])
+    z += [f"## {t['i.formate']}", ""] + _punkte(t["i.formate.punkte"])
+    return "\n".join(z + _fuss(f, t))
 
-    gruppe("r.g.beschreibung", [
-        ("titel", "pflicht", vorschlag(titel)), ("typ", "pflicht", "Dataset"),
-        ("pubdatum", "pflicht", offen), ("abstract", "empfohlen", vorschlag(abstract)),
-        ("schlagworte", "empfohlen", offen), ("sprache", "optional", ", ".join(sprachen) or offen),
-        ("erhebung", "empfohlen", vorschlag(_spanne(jahre, str) if jahre else "")),
-        ("ort", "optional", offen), ("version", "optional", "1.0"), ("publisher", "pflicht", offen),
-        ("verwandt", "empfohlen", ", ".join(dois) or offen), ("foerderung", "optional", offen)])
-    gruppe("r.g.personen", [
-        ("creators", "pflicht", vorschlag("; ".join(urheber)) + (f" {t['r.befragte_weg']}" if befragte else "")),
-        ("contributors", "empfohlen", offen), ("kontakt", "empfohlen", offen), ("rechteinhaber", "optional", offen)])
-    gruppe("r.g.rechte", [
-        ("lizenz", "pflicht", offen), ("zugang", "pflicht", offen),
-        ("embargo", "optional", offen), ("bedingungen", "optional", offen)])
-    gruppe("r.g.methode", [
-        ("methode", "empfohlen", offen), ("sampling", "archiv", offen),
-        ("umfang", "optional", t["r.umfang.wert"].format(n=len(fs), dauer=format_hms(sum(f["dauer"] for f in fs)))),
-        ("technik", "empfohlen", technik), ("konventionen", "archiv", t["r.konventionen.wert"]),
-        ("anonymisierung", "archiv", offen), ("begleit", "archiv", offen)])
 
-    z += [f"## {t['r.g.dateien']}", "", t["r.dateien.text"], ""]
-    z += _tabelle([t["f.name"], t["datei"], t["groesse"], "SHA-256"],
-                  [[f["name"], f"`{d['name']}`", _groesse(d["bytes"], sprache), f"`{d['sha256']}`"]
-                   for f in fs for d in f["dateien"]])
-    z += [t["r.formate"], ""] + [f"- {p}" for p in t["r.formate.punkte"].split("\n")] + [""]
+def ethik(f: dict | None, t: dict) -> str:
+    z = [f"# {t['e.titel']}", "", t["e.einleitung"], ""]
+    z += _tabelle([t["e.punkt"], t["e.ja"], t["e.nz"], t["hinweis"]],
+                  [[a, "[ ]", "[ ]", b] for a, b in _spalten(t["e.punkte"])])
+    return "\n".join(z + _fuss(f, t))
 
-    z += [f"## {t['r.g.ethik']}", "", t["r.ethik.text"], ""]
-    z += _tabelle([t["r.pruefpunkt"], t["r.erledigt"], t["r.erlaeuterung"]],
-                  [[a, "[ ]", b] for a, b in (p.split(" :: ", 1) for p in t["r.ethik.punkte"].split("\n"))])
 
-    z += [f"## {t['r.wohin']}", ""]
-    z += _tabelle([t["r.repo"], t["r.repo.fuer"], "URL"],
-                  [p.split(" :: ") for p in t["r.repos"].split("\n")])
-    z += [f"## {t['r.quellen']}", ""] + [f"- {p}" for p in t["r.quellen.punkte"].split("\n")] + [""]
-    return "\n".join(z)
+def repos(f: dict | None, t: dict) -> str:
+    z = [f"# {t['o.titel']}", "", t["o.einleitung"], "", f"## {t['o.zenodo']}", ""] + _punkte(t["o.zenodo.punkte"])
+    z += [f"## {t['o.repos']}", ""] + _tabelle([t["o.repo"], t["o.fuer"], "URL"], _spalten(t["o.repos.zeilen"]))
+    z += [f"## {t['o.vorgaben']}", ""] + _punkte(t["o.vorgaben.punkte"])
+    return "\n".join(z + _fuss(f, t))
+
+
+def liesmich(f: dict, t: dict) -> str:
+    namen = {k: t[f"ordner.{k}"] for k in ("methoden", "datenschutz", "ablage", "zitieren")}
+    namen.update({k: t[f"datei.{k}"] + ".docx" for k in ("protokoll", "absatz", "tatsachen", "stelle",
+                                                        "datensatz", "interview", "ethik", "repos")})
+    z = [f"# {t['l.titel']}", "", t["l.text"], ""]
+    z += _tabelle([t["datei"], t["l.wofuer"]], [[f"`{a}`", b] for a, b in _spalten(t["l.zeilen"].format(**namen))])
+    z += [f"## {t['l.vorher']}", ""] + _punkte(t["l.vorher.punkte"])
+    return "\n".join(z + _fuss(f, t))
+
+
+#: (Ordner-Schlüssel | None, Datei-Schlüssel, Erzeuger)
+PLAN = ((None, "liesmich", liesmich), ("methoden", "protokoll", protokoll), ("methoden", "absatz", absatz),
+        ("datenschutz", "tatsachen", tatsachen), ("datenschutz", "stelle", stelle),
+        ("ablage", "datensatz", datensatz), ("ablage", "interview", interview),
+        ("ablage", "ethik", ethik), ("ablage", "repos", repos))
+
+
+def dokumente(eid: str, sprache: str) -> list[tuple[str, str]]:
+    """[(Pfad im Paket ohne Endung, Markdown)] — die Quelle der Word-Dateien."""
+    t, f = _texte(sprache), fakten(eid)
+    return [("/".join(filter(None, [t[f"ordner.{ordner}"] if ordner else None, t[f"datei.{datei}"]])),
+             bau(f, t)) for ordner, datei, bau in PLAN]
 
 
 # ---------- Zitierdatei ----------
 
-APP_JAHR = "2026"
-REPO = "https://github.com/bias-city/ResearchTranscript"
-SEITE = "https://bias.city/researchtranscript/"
-
-
 def zitate_bib() -> str:
     """BibLaTeX für Zotero (Datei › Importieren): die App als Eintragsart
-    «Software» — Titel, Programmierer, Version, Datum, System, Firma, Ort,
-    Lizenz, URL — und dazu alles, was ein Methodenteil zitiert. `@software`
-    liest Zotero als Software; ältere BibTeX-Stile behandeln es wie @misc."""
+    «Software», dazu Programme, Modelle und die Arbeiten, die deren
+    Modellkarten zu zitieren bitten."""
     heute = datetime.now(UTC).strftime("%Y-%m-%d")
     return f"""% ResearchTranscript — Zitierdatei (BibLaTeX). In Zotero: Datei > Importieren.
 % Erzeugt von ResearchTranscript {APP_VERSION} am {heute}.
@@ -481,15 +424,6 @@ def zitate_bib() -> str:
   abstract     = {{Lokale Transkription von Interviews mit Sprechertrennung (whisper.cpp, SpeakerKit/pyannote) und Editor; keine Übertragung von Aufnahmen oder Texten.}}
 }}
 
-@online{{radford2022whisper,
-  title      = {{Robust Speech Recognition via Large-Scale Weak Supervision}},
-  author     = {{Radford, Alec and Kim, Jong Wook and Xu, Tao and Brockman, Greg and McLeavey, Christine and Sutskever, Ilya}},
-  date       = {{2022}},
-  eprint     = {{2212.04356}},
-  eprinttype = {{arXiv}},
-  url        = {{https://arxiv.org/abs/2212.04356}}
-}}
-
 @software{{whispercpp,
   title   = {{whisper.cpp}},
   author  = {{Gerganov, Georgi and {{ggml-org contributors}}}},
@@ -506,30 +440,13 @@ def zitate_bib() -> str:
   url    = {{https://huggingface.co/openai/whisper-large-v3-turbo}}
 }}
 
-@inproceedings{{plaquet2023powerset,
-  title     = {{Powerset multi-class cross entropy loss for neural speaker diarization}},
-  author    = {{Plaquet, Alexis and Bredin, Hervé}},
-  booktitle = {{Proc. Interspeech 2023}},
-  pages     = {{3222--3226}},
-  date      = {{2023}},
-  doi       = {{10.21437/Interspeech.2023-205}}
-}}
-
-@inproceedings{{bredin2023pyannote,
-  title     = {{pyannote.audio 2.1 speaker diarization pipeline: principle, benchmark, and recipe}},
-  author    = {{Bredin, Hervé}},
-  booktitle = {{Proc. Interspeech 2023}},
-  pages     = {{1983--1987}},
-  date      = {{2023}},
-  doi       = {{10.21437/Interspeech.2023-105}}
-}}
-
-@online{{pyannotecommunity1,
-  title  = {{speaker-diarization-community-1}},
-  author = {{{{pyannote}}}},
-  date   = {{2025}},
-  note   = {{Modellkarte, CC BY 4.0}},
-  url    = {{https://huggingface.co/pyannote/speaker-diarization-community-1}}
+@online{{radford2022whisper,
+  title      = {{Robust Speech Recognition via Large-Scale Weak Supervision}},
+  author     = {{Radford, Alec and Kim, Jong Wook and Xu, Tao and Brockman, Greg and McLeavey, Christine and Sutskever, Ilya}},
+  date       = {{2022}},
+  eprint     = {{2212.04356}},
+  eprinttype = {{arXiv}},
+  url        = {{https://arxiv.org/abs/2212.04356}}
 }}
 
 @software{{argmaxoss,
@@ -540,6 +457,23 @@ def zitate_bib() -> str:
   url     = {{https://github.com/argmaxinc/argmax-oss-swift}}
 }}
 
+@online{{pyannotecommunity1,
+  title  = {{speaker-diarization-community-1}},
+  author = {{{{pyannote}}}},
+  date   = {{2025}},
+  note   = {{Modellkarte, CC BY 4.0; von Argmax nach Core ML umgewandelt}},
+  url    = {{https://huggingface.co/pyannote/speaker-diarization-community-1}}
+}}
+
+@inproceedings{{plaquet2023powerset,
+  title     = {{Powerset multi-class cross entropy loss for neural speaker diarization}},
+  author    = {{Plaquet, Alexis and Bredin, Hervé}},
+  booktitle = {{Proc. Interspeech 2023}},
+  pages     = {{3222--3226}},
+  date      = {{2023}},
+  doi       = {{10.21437/Interspeech.2023-205}}
+}}
+
 @software{{silerovad,
   title   = {{Silero VAD}},
   author  = {{{{Silero Team}}}},
@@ -547,87 +481,31 @@ def zitate_bib() -> str:
   license = {{MIT}},
   url     = {{https://github.com/snakers4/silero-vad}}
 }}
-
-@inproceedings{{snover2006ter,
-  title     = {{A Study of Translation Edit Rate with Targeted Human Annotation}},
-  author    = {{Snover, Matthew and Dorr, Bonnie and Schwartz, Richard and Micciulla, Linnea and Makhoul, John}},
-  booktitle = {{Proceedings of AMTA 2006}},
-  date      = {{2006}},
-  url       = {{https://aclanthology.org/2006.amta-papers.25/}}
-}}
-
-@article{{wollingiering2024,
-  title        = {{Automatic Transcription of English and German Qualitative Interviews}},
-  author       = {{Wollin-Giering, Susanne and Hoffmann, Markus and Höfting, Jonas and Ventzke, Carla}},
-  journaltitle = {{Forum Qualitative Sozialforschung / Forum: Qualitative Social Research}},
-  volume       = {{25}},
-  number       = {{1}},
-  date         = {{2024}},
-  doi          = {{10.17169/fqs-25.1.4129}}
-}}
 """
-
-
-def paket(ids: list[str], sprache: str) -> bytes:
-    """Dokumentationspaket (User 2026-09-18): alle Begleitdokumente zur
-    Auswahl in EINEM Zip — je als .md und .docx, dazu die Zitierdatei."""
-    import io
-    import zipfile
-
-    from . import docx
-    if not ids:
-        raise ValueError("Keine Transkripte gewählt")
-    t = _texte(sprache)
-    teile: list[tuple[str, str]] = [
-        (t["datei.methoden"], methoden(ids, sprache)),
-        (t["datei.repositorium"], repositorium(ids, sprache)),
-        (t["datei.verfahren"], verfahren(sprache))]
-    gesehen: set[str] = set()
-    for eid in ids:
-        stamm = bibliothek._slug(bibliothek.lese(eid)["name"]) or eid
-        while stamm in gesehen:
-            stamm += "_"
-        gesehen.add(stamm)
-        teile.append((f"{t['paket.protokolle']}/{stamm}-{t['datei.protokoll']}", protokoll(eid, sprache)))
-    inhalt = [f"# {t['paket.titel']}", "", t["paket.text"], ""]
-    inhalt += [f"- `{name}.md` / `.docx`" for name, _ in teile] + ["- `researchtranscript.bib` — " + t["paket.bib"], ""]
-    puffer = io.BytesIO()
-    with zipfile.ZipFile(puffer, "w", zipfile.ZIP_DEFLATED) as zf:
-        wurzel = t["paket.ordner"]
-        zf.writestr(f"{wurzel}/{t['paket.liesmich']}.md", "\n".join(inhalt))
-        zf.writestr(f"{wurzel}/researchtranscript.bib", zitate_bib())
-        for name, md in teile:
-            zf.writestr(f"{wurzel}/{name}.md", md)
-            zf.writestr(f"{wurzel}/{name}.docx", docx.aus_markdown(md, titel=md.splitlines()[0].lstrip("# ")))
-    return puffer.getvalue()
 
 
 # ---------- Ausgabe ----------
 
-def erzeuge(art: str, ids: list[str], sprache: str, format: str) -> tuple[bytes, str]:
-    """(Inhalt, Dateiname). `format`: md | docx; «paket» ist immer ein Zip,
-    «zitate» immer eine .bib."""
-    sprache_ok = sprache if sprache in SPRACHEN else "de"
-    if art == "paket":
-        return paket(ids, sprache_ok), f"{_texte(sprache_ok)['paket.ordner']}.zip"
+def paket(eid: str, sprache: str) -> tuple[bytes, str]:
+    """Das Zip (nur .docx und die .bib) und sein Dateiname."""
+    sprache = sprache if sprache in SPRACHEN else "de"
+    t = _texte(sprache)
+    stamm = bibliothek._slug(bibliothek.lese(eid)["name"]) or eid
+    wurzel = f"{stamm}-{t['paket.ordner']}"
+    puffer = io.BytesIO()
+    with zipfile.ZipFile(puffer, "w", zipfile.ZIP_DEFLATED) as zf:
+        for pfad, md in dokumente(eid, sprache):
+            zf.writestr(f"{wurzel}/{pfad}.docx", docx.aus_markdown(md, titel=md.splitlines()[0].lstrip("# ")))
+        zf.writestr(f"{wurzel}/{t['ordner.zitieren']}/researchtranscript.bib", zitate_bib())
+    return puffer.getvalue(), f"{wurzel}.zip"
+
+
+def erzeuge(art: str, ids: list[str], sprache: str, format: str = "zip") -> tuple[bytes, str]:
+    """API-Eingang: «paket» (genau ein Transkript) oder «zitate»."""
     if art == "zitate":
         return zitate_bib().encode("utf-8"), "researchtranscript.bib"
-    if art not in ARTEN or format not in ("md", "docx"):
-        raise ValueError(f"Unbekanntes Dokument: {art}.{format}")
-    sprache = sprache if sprache in SPRACHEN else "de"
-    if art == "protokoll":
-        if len(ids) != 1:
-            raise ValueError("Das Transkriptionsprotokoll gilt für genau ein Transkript")
-        md = protokoll(ids[0], sprache)
-    elif art == "methoden":
-        md = methoden(ids, sprache)
-    elif art == "repositorium":
-        md = repositorium(ids, sprache)
-    else:
-        md = verfahren(sprache)
-    t = _texte(sprache)
-    name = t[f"datei.{art}"]
-    if format == "md":
-        return md.encode("utf-8"), f"{name}.md"
-    from . import docx
-    return docx.aus_markdown(md, titel=md.splitlines()[0].lstrip("# ")), f"{name}.docx"
+    if art != "paket":
+        raise ValueError(f"Unbekanntes Dokument: {art}")
+    if len(ids) != 1:
+        raise ValueError("Das Dokumentationspaket gilt für genau ein Transkript")
+    return paket(ids[0], sprache)

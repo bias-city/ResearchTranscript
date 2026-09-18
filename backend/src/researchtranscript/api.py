@@ -712,8 +712,8 @@ def export_nach_temp(eid: str, format: str, tmp: Path) -> str:
 
 
 class DokumentReq(ApiModel):
-    art: str                       # methoden | repositorium | verfahren | paket | zitate
-    format: str = "md"             # md | docx (paket: zip, zitate: bib)
+    art: str                       # paket (genau ein Transkript) | zitate
+    format: str = "zip"
     ids: list[str] = []
     path: str
 
@@ -735,8 +735,10 @@ def dokument_datei(args: dict) -> dict:
     ziel = Path(req.path).expanduser().resolve()
     if not ziel.parent.is_dir():
         raise ApiFehler(409, f"Ordner fehlt: {ziel.parent}")
-    erlaubt = {"paket": ".zip", "zitate": ".bib"}.get(req.art, f".{req.format}")
-    if erlaubt not in (".md", ".docx", ".zip", ".bib") or ziel.suffix.lower() != erlaubt:
+    erlaubt = {"paket": ".zip", "zitate": ".bib"}.get(req.art)
+    if erlaubt is None:
+        raise ApiFehler(409, f"Unbekanntes Dokument: {req.art}")
+    if ziel.suffix.lower() != erlaubt:
         raise ApiFehler(409, f"Zieldatei muss auf {erlaubt} enden")
     inhalt, _name = dokument_bytes(req.art, req.format, req.ids)
     ziel.write_bytes(inhalt)
@@ -760,7 +762,6 @@ def export_datei(eid: str, args: dict) -> dict:
     # Format passen, mehr Constraint erlaubt der freie Save-Dialog nicht
     erlaubt = {"vtt": ".vtt", "csv": ".csv", "txt": ".txt",
                "md": ".md", "docx": ".docx",
-               "protokoll-md": ".md", "protokoll-docx": ".docx",
                "enrich": ".enrich", "qdpx": ".zip",
                "qdpx-video": ".zip"}.get(req.format)
     if erlaubt is None:

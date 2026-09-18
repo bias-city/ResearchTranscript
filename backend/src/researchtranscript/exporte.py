@@ -44,12 +44,6 @@ def export_bytes(eid: str, format: str) -> tuple[bytes, str, str]:
         from . import docx
         return (docx.aus_markdown(md, titel=daten["name"]), f"{stamm}.docx",
                 "application/vnd.openxmlformats-officedocument.wordprocessingml.document")
-    if format in ("protokoll-md", "protokoll-docx"):
-        from . import dokumente
-        from .config import read_config
-        inhalt, name = dokumente.erzeuge("protokoll", [eid], read_config().get("ui_language", "de"),
-                                         format.split("-")[1])
-        return inhalt, f"{stamm}-{name}", "application/octet-stream"
     if format == "enrich":
         # EINE Datei mit Endung .enrich — ein Zip ohne Kompression, wie
         # .docx oder .qdpx (User 2026-09-10). enrich öffnet sie am Inhalt

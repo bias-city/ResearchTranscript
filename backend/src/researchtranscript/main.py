@@ -265,7 +265,7 @@ def dokument_datei(req: dict) -> dict:
 
 
 @app.get("/api/dokument/{art}")
-def dokument_download(art: str, format: str = "md", ids: str = "") -> Response:
+def dokument_download(art: str, format: str = "zip", ids: str = "") -> Response:
     inhalt, name = api.dokument_bytes(art, format, [i for i in ids.split(",") if i])
     return Response(inhalt, media_type="application/octet-stream",
                     headers={"Content-Disposition": f'attachment; filename="{name}"'})

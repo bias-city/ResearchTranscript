@@ -117,10 +117,14 @@ def aufraeumen(jetzt: float | None = None) -> int:
 
 def _lauf_fakten(p: dict) -> dict:
     from .config import APP_VERSION, get_available_models, get_vad_model
+    from .dokumente import SPEAKERKIT, WHISPER_CPP
     from .motor import motor
     quelle = next((m["quelle"] for m in get_available_models() if m["name"] == p["model"]), None)
+    # VAD läuft nur im Ganzdatei-Weg (transcribe_classic); mit Sprechertrennung
+    # schneidet diese die Blöcke, whisper läuft je Block ohne --vad
     return {"app": APP_VERSION, "modell_quelle": quelle,
-            "vad": get_vad_model() is not None, "motor": motor().name,
+            "whisper_cpp": WHISPER_CPP, "speakerkit": SPEAKERKIT if p.get("diarize") else None,
+            "vad": (not p.get("diarize")) and get_vad_model() is not None, "motor": motor().name,
             "trennung": p.get("cluster_threshold") if p.get("diarize") else None}
 
 

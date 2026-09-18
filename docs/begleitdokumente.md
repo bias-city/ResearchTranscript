@@ -7,17 +7,51 @@ Stand 18.9.2026, ResearchTranscript 0.6.0. Gehört zu BACKLOG 16. Code:
 ## Was die App erzeugt
 
 Ein Zugang: **Editor › Export › «Dokumentationspaket (.zip) …»** — ein Zip
-zum offenen Transkript, jedes Dokument als `.md` und `.docx`, ohne
-Transkript und ohne Aufnahme. Dazu im selben Menü das Transkript selbst als
-`.md` / `.docx`.
+zum offenen Transkript. Nur Word-Dateien, kurz, in Unterordnern (User
+18.9.2026: «es reicht docx», «in kürzere Dokumente teilen», Quellen auf
+die technischen beschränken, die Vorgaben der Repositorien behalten):
 
-| Im Paket | Inhalt |
+| Pfad im Zip | Inhalt |
 |---|---|
-| Transkriptionsprotokoll | Provenienz: Modell, Version, Datum, Bearbeitung von Hand, Eingriffsmass, Dateien mit Prüfsummen |
-| Methodenbaustein | Eckdaten, Verfahren, Eingriffsmass dieses Transkripts; Absatz für den Methodenteil mit Nachweisen |
-| Repositoriums-Datenblatt | Felder nach Zenodo/DataCite und Facharchiven, vorausgefüllt aus Zotero und Transkript; Ethik-Checkliste |
-| Verfahrensbaustein | Tatsachen über die App für Verzeichnis der Bearbeitungstätigkeiten, DSFA, Ethikantrag; offene Felder |
-| `researchtranscript.bib` | Software-Eintrag für Zotero samt Whisper, pyannote und den übrigen Quellen (`CITATION.cff` liegt im Repo) |
+| `LIESMICH` | Wegweiser; die Hinweise vor einer Weitergabe stehen nur hier |
+| `1-methoden/transkriptionsprotokoll` | App und Modell DES LAUFS (nur Aufgezeichnetes), Bearbeitung von Hand samt Kennung/E-Mail aus dem Journal, Eingriff (Journal-Mass immer, Wortrate wenn Ausgangsstand da), Dateien mit SHA-256, technische Quellen |
+| `1-methoden/methodenabsatz` | Kurzfassung und ausführliche Fassung, offene Felder, Zitierzeile |
+| `2-datenschutz/app-tatsachen` | Schritte, Schutzmassnahmen, was die App nicht tut, wo Daten liegen, was sie über Forschende speichert, was Exporte enthalten |
+| `2-datenschutz/angaben-der-stelle` | Formular der verantwortlichen Stelle, «Interview vollständig entfernen» |
+| `3-datenablage/datenblatt-datensatz` | Felder in Reihenfolge und Benennung des Zenodo-Formulars |
+| `3-datenablage/datenblatt-interview` | was zu diesem Interview gehört, Formate |
+| `3-datenablage/ethik-checkliste` | Prüfpunkte mit «trifft nicht zu» |
+| `3-datenablage/repositorien-und-vorgaben` | Zenodo-Regeln, Repositorien, Vorgaben von SNF/DFG/CESSDA/FORS |
+| `zitieren/researchtranscript.bib` | Software, Programme, Modelle für Zotero (`CITATION.cff` liegt im Repo) |
+
+### Prüfrunde 18.9.2026 (drei Agenten: Fakten, Lektorat, Nutzersicht)
+
+Behoben, und als Regel für künftige Texte:
+- **Läufe von vor 0.6.0** heissen, wie die App damals hiess («LocalTranscript
+  2.5.0», nie «ResearchTranscript 2.5.0»); whisper.cpp-Version, VAD und «Ort
+  der Verarbeitung» stehen nur da, wenn der Lauf sie aufgezeichnet hat
+  (`jobs._lauf_fakten`: app, modell_quelle, whisper_cpp, speakerkit, vad,
+  motor, trennung).
+- **VAD** läuft nur ohne Sprechertrennung (`transcribe_classic`).
+- **«Im Prozess der App»** stimmt nicht: whisper-cli ist ein Hilfsprogramm.
+- **Sprechertrennung:** drei Modelle nennen, samt «von Argmax nach Core ML
+  umgewandelt» (CC BY 4.0 verlangt den Änderungshinweis).
+- **Nicht «keine generative KI»**, sondern: fasst nichts zusammen, kann aber
+  Wörter setzen, die nicht gesagt wurden. **Netz:** das Entitlement
+  `network.client` offen nennen (WKWebView), nicht «baut keine Verbindungen».
+- **Exporte:** alle Textformate tragen Sprechernamen und Zeitmarken; MD/DOCX
+  den Zotero-Kopf mit gewählten Personen; REFI-QDA Memos + Audio; enrich
+  Journal (Kennung, E-Mail) + Zotero, keine Memos.
+- **Wer bearbeitet hat**, steht im Journal (Kennung der Installation,
+  freiwillig E-Mail) und gehört ins Protokoll; offen bleibt nur die Rolle.
+- **Eingriff aus dem Journal** (verschiedene Segmente je Art der Änderung,
+  Mindestwerte) — immer verfügbar; der Methodenabsatz bleibt nie leer.
+- **Namenslecks:** kein Citekey im Protokoll, kein Titel-/Beschreibungs-
+  vorschlag aus Zotero (Interview-Titel sind oft Namen), Warnung zu
+  Transkript- und Dateinamen.
+- **Zenodo:** Zugang gilt je Eintrag, nicht je Datei.
+- Nicht übernommen (User-Entscheid): Korpus-Absatz im Plural, Zusammenlegen
+  von Protokoll und Absatz.
 
 **Entscheid des Users (18.9.2026): je Transkript, nicht je Korpus.** Die
 Recherche legte einen Korpus-Baustein nahe (JARS-Qual verlangt Mittelwert
