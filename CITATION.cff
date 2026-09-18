@@ -1,0 +1,15 @@
+cff-version: 1.2.0
+message: "Wenn du ResearchTranscript in einer Arbeit verwendest, zitiere es bitte so. / If you use ResearchTranscript, please cite it as below."
+title: ResearchTranscript
+type: software
+authors:
+  - family-names: Pohl
+    given-names: Ben
+    affiliation: "B/IAS – Basel Institut für angewandte Stadtforschung"
+version: 0.6.0
+date-released: 2026-09-18
+license: AGPL-3.0-or-later
+url: "https://bias.city/researchtranscript/"
+repository-code: "https://github.com/bias-city/ResearchTranscript"
+abstract: "Lokale Transkription von Interviews mit Sprechertrennung (whisper.cpp, SpeakerKit/pyannote) und Editor für die qualitative Forschung; keine Übertragung von Aufnahmen oder Texten."
+keywords: [transcription, qualitative research, whisper, speaker diarization, REFI-QDA, macOS]

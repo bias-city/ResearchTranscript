@@ -125,6 +125,7 @@ function befehl(method: string, pfad: string, body: unknown): Befehl {
     return method === "PUT" ? { name: "warteliste_set", args: { eintraege: body ?? [] } }
                             : { name: "warteliste_get", args: {} };
   }
+  if (p === "/api/dokument") return { name: "dokument_datei", args: { args } };
   if (p === "/api/jobs") return { name: "jobs_liste", args: {} };
   if ((t = m(/^\/api\/jobs\/([^/]+)\/cancel$/))) return { name: "job_cancel", args: { job_id: t[1] } };
   if ((t = m(/^\/api\/jobs\/([^/]+)$/))) return { name: "job_get", args: { job_id: t[1] } };

@@ -259,6 +259,18 @@ def export_download(eid: str, format: str) -> Response:
         "Content-Disposition": f'attachment; filename="{name}"'})
 
 
+@app.post("/api/dokument")
+def dokument_datei(req: dict) -> dict:
+    return api.dokument_datei(req)
+
+
+@app.get("/api/dokument/{art}")
+def dokument_download(art: str, format: str = "md", ids: str = "") -> Response:
+    inhalt, name = api.dokument_bytes(art, format, [i for i in ids.split(",") if i])
+    return Response(inhalt, media_type="application/octet-stream",
+                    headers={"Content-Disposition": f'attachment; filename="{name}"'})
+
+
 @app.post("/api/transcripts/{eid}/export")
 def export_datei(eid: str, req: dict) -> dict:
     return api.export_datei(eid, req)

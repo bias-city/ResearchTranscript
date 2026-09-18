@@ -320,21 +320,23 @@ hier neu pinnen, `format2.transkript_schicht` reicht die Memos durch;
 enrich setzt sie beim Import zwischen Textstelle und Code/Label.
 Bis dahin: `transkript.json` in der Bibliothek trägt die Memos.
 
-## 16. Export .md und .docx, dazu erzeugte Begleitblätter (User 2026-09-18)
+## 16. Export .md und .docx, erzeugte Begleitdokumente — UMGESETZT (2026-09-18)
 
-- **Transkript als Markdown (.md) und Word (.docx)** neben VTT/CSV/TXT.
-- **Dynamisch erzeugte Begleitdokumente je Transkript** (hier genügt .md):
-  - *Verfahrensbeschreibung* — was mit der Aufnahme geschah (lokal, welche
-    Schritte, welche Werkzeuge), für Verfahrensverzeichnis und Ethikantrag;
-  - *App-Blatt für Forschende* mit einem fertigen Absatz für den
-    **Methodenteil**.
-  Inhalt aus dem Journal des Transkripts, nicht aus festen Textbausteinen:
-  welches Whisper-Modell (mitgeliefert oder eigenes), welche Modelle der
-  Sprechertrennung, Sprache, Sprecherzahl/Trennung, App-Version — und
-  **wie stark der Human-Edit eingriff, in Prozent**: Anteil geänderter
-  Text (Zeichen- oder Wortebene gegen den Maschinenstand; `origin` je
-  Segment und die history/-Snapshots tragen das) und Anteil umgehängter
-  Sprecherzuordnungen (Segmente bzw. Redezeit).
-  Offen: Messgrösse für «% Text» festlegen (Levenshtein auf Wortebene
-  gegen den ersten Snapshot ist der naheliegende Kandidat); viersprachig;
-  die statischen Textbausteine der Website als Rahmen wiederverwenden.
+Umgesetzt in 0.6.0, Zuschnitt nach Recherche geändert — siehe
+`docs/begleitdokumente.md`: Transkript als .md/.docx; Transkriptionsprotokoll
+je Transkript; Methodenbaustein und Repositoriums-Datenblatt über eine
+Auswahl; Verfahrensbaustein je Projekt; Zitierdatei (.bib) und Paket (.zip).
+Eingriffsmass: Korrekturrate Wortebene (normalisiert/orthografisch) und neu
+zugeordnete Sprechzeit gegen `ausgang.json`.
+
+Offen daraus:
+- Zeichenrate (CER) als drittes Textmass — robuster bei deutschen Komposita.
+- Pseudonym-Ersetzungen («Alle ersetzen» im Suchfeld) im Journal kennzeichnen
+  und in der Korrekturrate getrennt ausweisen.
+- Ausgangsstand und Verlauf enthalten den Wortlaut VOR der Pseudonymisierung:
+  ein Knopf «Verlauf und Ausgangsstand löschen» (mit Warnung: danach kein
+  Eingriffsmass mehr) für Projekte, die das verlangen.
+- Statische Vorlagen auf der Website (`site/docs`, Stand 0.4.0: nennen noch
+  den Loopback-Dienst) an 0.6.0 und an die neuen Dokumente angleichen.
+- Software-DOI: Repo mit Zenodo verbinden, DOI in `CITATION.cff`, `.bib` und
+  Über-Dialog nachtragen.

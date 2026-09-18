@@ -127,3 +127,35 @@ VTT_MINI = """WEBVTT
 00:00:00.000 --> 00:00:01.000
 Anna: Ton läuft.
 """
+
+
+def test_md_und_docx(client, eintrag):
+    import io
+    import zipfile
+    from xml.etree import ElementTree as ET
+    md = client.get(f"/api/transcripts/{eintrag}/export/md").content.decode()
+    assert md.startswith("# ") and "**Anna** `00:00:00`" in md and "Hallo und willkommen" in md
+    r = client.get(f"/api/transcripts/{eintrag}/export/docx")
+    assert r.status_code == 200
+    with zipfile.ZipFile(io.BytesIO(r.content)) as z:
+        assert {"[Content_Types].xml", "_rels/.rels", "word/document.xml",
+                "word/styles.xml", "word/_rels/document.xml.rels"} <= set(z.namelist())
+        for name in z.namelist():                      # jedes Teil ist wohlgeformtes XML
+            ET.fromstring(z.read(name))
+        text = "".join(ET.fromstring(z.read("word/document.xml")).itertext())
+    assert "Anna" in text and "Hallo und willkommen" in text
+
+
+def test_docx_nimmt_maskierte_zeichen_woertlich():
+    import io
+    import zipfile
+    from xml.etree import ElementTree as ET
+
+    from researchtranscript import docx
+    roh = docx.aus_markdown("Ein \\*Stern\\* und **fett** und 3 \\| 4.\n\n| a | b |\n|---|---|\n| x \\| y | z |\n")
+    with zipfile.ZipFile(io.BytesIO(roh)) as z:
+        wurzel = ET.fromstring(z.read("word/document.xml"))
+    text = "".join(wurzel.itertext())
+    assert "*Stern*" in text and "\\" not in text and "x | y" in text
+    w = "{http://schemas.openxmlformats.org/wordprocessingml/2006/main}"
+    assert len(wurzel.findall(f".//{w}tc")) == 4

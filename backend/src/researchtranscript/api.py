@@ -711,6 +711,38 @@ def export_nach_temp(eid: str, format: str, tmp: Path) -> str:
         raise ApiFehler(409, str(e)) from e
 
 
+class DokumentReq(ApiModel):
+    art: str                       # methoden | repositorium | verfahren | paket | zitate
+    format: str = "md"             # md | docx (paket: zip, zitate: bib)
+    ids: list[str] = []
+    path: str
+
+
+def dokument_bytes(art: str, format: str, ids: list[str]) -> tuple[bytes, str]:
+    """Begleitdokumente (dokumente.py) — Download-Weg im Browser."""
+    from . import dokumente
+    try:
+        return dokumente.erzeuge(art, ids, config.read_config().get("ui_language", "de"), format)
+    except (BibliothekFehler, ValueError) as e:
+        raise ApiFehler(409, str(e)) from e
+
+
+@befehl
+def dokument_datei(args: dict) -> dict:
+    """App-Weg: der Save-Dialog liefert den Zielpfad; die Endung muss zum
+    Dokument passen (gleiche Regel wie beim Export)."""
+    req = _pruefe(DokumentReq, args)
+    ziel = Path(req.path).expanduser().resolve()
+    if not ziel.parent.is_dir():
+        raise ApiFehler(409, f"Ordner fehlt: {ziel.parent}")
+    erlaubt = {"paket": ".zip", "zitate": ".bib"}.get(req.art, f".{req.format}")
+    if erlaubt not in (".md", ".docx", ".zip", ".bib") or ziel.suffix.lower() != erlaubt:
+        raise ApiFehler(409, f"Zieldatei muss auf {erlaubt} enden")
+    inhalt, _name = dokument_bytes(req.art, req.format, req.ids)
+    ziel.write_bytes(inhalt)
+    return {"status": "exported", "path": str(ziel)}
+
+
 class ExportReq(ApiModel):
     format: str
     path: str
@@ -727,6 +759,8 @@ def export_datei(eid: str, args: dict) -> dict:
     # überschreiben (~/.zshrc, LaunchAgents) — die Endung muss zum
     # Format passen, mehr Constraint erlaubt der freie Save-Dialog nicht
     erlaubt = {"vtt": ".vtt", "csv": ".csv", "txt": ".txt",
+               "md": ".md", "docx": ".docx",
+               "protokoll-md": ".md", "protokoll-docx": ".docx",
                "enrich": ".enrich", "qdpx": ".zip",
                "qdpx-video": ".zip"}.get(req.format)
     if erlaubt is None:

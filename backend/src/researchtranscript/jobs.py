@@ -115,6 +115,15 @@ def aufraeumen(jetzt: float | None = None) -> int:
     return len(weg)
 
 
+def _lauf_fakten(p: dict) -> dict:
+    from .config import APP_VERSION, get_available_models, get_vad_model
+    from .motor import motor
+    quelle = next((m["quelle"] for m in get_available_models() if m["name"] == p["model"]), None)
+    return {"app": APP_VERSION, "modell_quelle": quelle,
+            "vad": get_vad_model() is not None, "motor": motor().name,
+            "trennung": p.get("cluster_threshold") if p.get("diarize") else None}
+
+
 def alle_abbrechen(frist_s: float = 3.0) -> None:
     """Beim Beenden der Hülle: jedes Abbruch-Ereignis setzen, laufende
     Kinder töten, kurz auf die Threads warten. Die Threads sind
@@ -367,7 +376,10 @@ def _lauf(job: dict, quelle: Path, name: str) -> None:
             quelle={"datei": job["filename"], "model": p["model"],
                     "language": p["language"], "diarize": p["diarize"],
                     "sprecherzahl": p.get("speaker_range", "auto"),
-                    "erzeugt": "transcription"},
+                    "erzeugt": "transcription",
+                    # fürs Transkriptionsprotokoll (dokumente.py): was zum
+                    # Zeitpunkt des Laufs galt, nicht was heute eingestellt ist
+                    **_lauf_fakten(p)},
             audio=audio_fuer_bibliothek, video=quelle if ist_video else None,
             origin="machine",
             by={"tool": "whisper.cpp", "model": p["model"],

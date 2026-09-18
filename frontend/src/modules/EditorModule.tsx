@@ -826,11 +826,16 @@ export default function EditorModule({ id, onExit }: {
     // .enrich ist EINE Datei (ein Zip, wie .docx) und heisst nach dem,
     // was drin ist. .qdpx.zip bleibt: darin liegt das .qdpx UND daneben
     // der Media-Ordner mit dem Audio, wie ATLAS.ti es exportiert.
-    const endung = format.startsWith("qdpx") ? "qdpx.zip" : format;
+    // «protokoll-md»/«protokoll-docx»: das Transkriptionsprotokoll, die
+    // Endung steht hinter dem Bindestrich
+    const protokoll = format.startsWith("protokoll-");
+    const endung = format.startsWith("qdpx") ? "qdpx.zip"
+      : protokoll ? format.slice(10) : format;
     try {
       if (isTauri()) {
-        const p = await savePath(`${name || "transkript"}.${endung}`,
-                                 format.startsWith("qdpx") ? "zip" : format);
+        const stamm = `${name || "transkript"}${protokoll ? `-${tr("ed.export.protokoll.datei")}` : ""}`;
+        const p = await savePath(`${stamm}.${endung}`,
+                                 format.startsWith("qdpx") ? "zip" : endung);
         if (!p) return;
         await apiSend(`/api/transcripts/${id}/export`,
                       { format, path: p });
@@ -1268,6 +1273,8 @@ function ExportMenu({ onExport, hatVideo }: {
         <Select.Item value="vtt">VTT</Select.Item>
         <Select.Item value="csv">CSV</Select.Item>
         <Select.Item value="txt">TXT</Select.Item>
+        <Select.Item value="md">Markdown (.md)</Select.Item>
+        <Select.Item value="docx">Word (.docx)</Select.Item>
         <Select.Item value="enrich">{tr("ed.export.enrich")}
         </Select.Item>
         <Select.Item value="qdpx">{tr("ed.export.qdpx")}
@@ -1276,6 +1283,9 @@ function ExportMenu({ onExport, hatVideo }: {
           <Select.Item value="qdpx-video">{tr("ed.export.qdpxvideo")}
           </Select.Item>
         )}
+        <Select.Separator />
+        <Select.Item value="protokoll-md">{tr("ed.export.protokoll")} (.md)</Select.Item>
+        <Select.Item value="protokoll-docx">{tr("ed.export.protokoll")} (.docx)</Select.Item>
       </Select.Content>
     </Select.Root>
   );

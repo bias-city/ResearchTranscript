@@ -230,6 +230,62 @@ def build_csv(segmente: list[dict]) -> str:
     return buf.getvalue()
 
 
+#: Beschriftungen des Markdown-/Word-Exports je Oberflächensprache
+_MD = {
+    "de": {"dauer": "Dauer", "sprecher": "Sprecher", "datum": "Datum", "personen": "Personen",
+           "citekey": "Citekey", "memo": "Memo", "fuss": "Transkript aus ResearchTranscript {v}"},
+    "en": {"dauer": "Duration", "sprecher": "Speakers", "datum": "Date", "personen": "People",
+           "citekey": "Citekey", "memo": "Memo", "fuss": "Transcript from ResearchTranscript {v}"},
+    "fr": {"dauer": "Durée", "sprecher": "Locuteurs", "datum": "Date", "personen": "Personnes",
+           "citekey": "Citekey", "memo": "Mémo", "fuss": "Transcription issue de ResearchTranscript {v}"},
+    "it": {"dauer": "Durata", "sprecher": "Parlanti", "datum": "Data", "personen": "Persone",
+           "citekey": "Citekey", "memo": "Memo", "fuss": "Trascrizione da ResearchTranscript {v}"},
+}
+
+
+def _md_text(text: str) -> str:
+    """Wortlaut markdown-fest: was am Zeilenanfang oder als Auszeichnung
+    gelesen würde, wird maskiert."""
+    t = " ".join(text.split())
+    t = t.replace("\\", "\\\\").replace("*", "\\*").replace("_", "\\_").replace("`", "\\`")
+    t = t.replace("<", "\\<").replace("|", "\\|")
+    return ("\\" + t) if t[:1] in "#>-+" or t[:2].rstrip(".").isdigit() and t[1:2] == "." else t
+
+
+def build_md(segmente: list[dict], *, name: str, sprache: str = "de",
+             zotero: dict | None = None, version: str = "") -> str:
+    """Lesefassung als Markdown (BACKLOG 16): Kopf mit den Eckdaten, dann je
+    Turn Sprecher und Startzeit (hh:mm:ss) über dem Wortlaut; Memos als
+    Zitatblock darunter. Dieselbe Quelle wird zu .docx (docx.py)."""
+    t = _MD.get(sprache, _MD["en"])
+    turns = _turns(segmente)
+    titel = (zotero or {}).get("title") or name
+    z = [f"# {_md_text(titel)}", ""]
+    dauer = max((s["end"] for s in segmente), default=0)
+    wer = sorted({x["sprecher"] for x in turns if x["sprecher"]})
+    kopf = [(t["dauer"], format_hms(dauer))]
+    if wer:
+        kopf.append((t["sprecher"], ", ".join(wer)))
+    if zotero:
+        if zotero.get("date"):
+            kopf.append((t["datum"], str(zotero["date"])))
+        leute = [f"{' '.join(filter(None, [c.get('first'), c.get('last')]))} ({c.get('role')})"
+                 for c in zotero.get("creators") or []]
+        if leute:
+            kopf.append((t["personen"], ", ".join(leute)))
+        if zotero.get("citekey"):
+            kopf.append((t["citekey"], f"`{zotero['citekey']}`"))
+    z += ["| | |", "|---|---|"] + [f"| {a} | {_md_text(b) if '`' not in b else b} |" for a, b in kopf] + [""]
+    for x in turns:
+        kopfzeile = f"**{_md_text(x['sprecher'])}** `{format_hms(x['start'])}`" if x["sprecher"] \
+            else f"`{format_hms(x['start'])}`"
+        z += [kopfzeile, "", _md_text(x["text"]), ""]
+        if x.get("memo"):
+            z += [f"> {t['memo']}: {_md_text(x['memo'])}", ""]
+    z += ["---", "", t["fuss"].format(v=version).strip(), ""]
+    return "\n".join(z)
+
+
 def build_txt(segmente: list[dict]) -> str:
     bloecke = []
     for t in _turns(segmente):
