@@ -21,6 +21,9 @@ Electron-Prototyps `../whisper-web` als Tauri-App. Plan:
 - UI NUR über `frontend/src/components/ui.tsx` (enrich-Kit-Kopie);
   Icons nur über `components/icons.tsx`; Strings nur über
   `lib/i18n.ts` — VIERSPRACHIG de/en/fr/it, de = Quellsprache.
+- ANREDE: überall Du, nie Sie (User 2026-09-18) — de «du», fr «tu» (nie
+  «vous»), it «tu» (nie «Lei»); gilt für Oberfläche, Handbuch
+  (`lib/hilfe/*.ts`), Website und App-Store-Texte.
 - Timecodes IMMER hh:mm:ss (User: „unbedingt").
 - `transkript.json` ist die kanonische Wahrheit; Exporte sind
   abgeleitet. Schreiben immer atomar + history/-Snapshot; Löschen =

@@ -68,7 +68,7 @@ const W: Record<string, Eintrag> = {
   "he.leer": {
     de: "Noch keine Transkripte — im AI-Transkript-Tab transkribieren oder hier importieren.",
     en: "No transcripts yet — transcribe in the AI Transcript tab or import here.",
-    fr: "Pas encore de transcriptions — transcrivez dans l'onglet Transcription IA ou importez ici.",
+    fr: "Pas encore de transcriptions — transcris dans l'onglet Transcription IA ou importe ici.",
     it: "Ancora nessuna trascrizione — trascrivi nella scheda Trascrizione IA o importa qui." },
   "he.audiowahl": {
     de: "Audio dazu wählen (mp3 — Abbrechen, wenn keins)",
@@ -86,7 +86,7 @@ const W: Record<string, Eintrag> = {
   "firstrun.text": {
     de: "Wo sollen deine Transkripte liegen? Je Transkript entsteht ein Ordner mit Audio, Text und Verlauf.",
     en: "Where should your transcripts live? Each transcript gets a folder with audio, text and history.",
-    fr: "Où placer vos transcriptions ? Chaque transcription reçoit un dossier avec audio, texte et historique.",
+    fr: "Où placer tes transcriptions ? Chaque transcription reçoit un dossier avec audio, texte et historique.",
     it: "Dove salvare le trascrizioni? Ogni trascrizione ha una cartella con audio, testo e cronologia." },
   "firstrun.standard": { de: "Empfohlenen Ort verwenden",
     en: "Use recommended location", fr: "Utiliser l'emplacement recommandé",
@@ -97,11 +97,11 @@ const W: Record<string, Eintrag> = {
 
   // Bibliothek
   "bib.drop": { de: "Audio-Dateien hierher ziehen",
-    en: "Drop audio files here", fr: "Déposez les fichiers audio ici",
+    en: "Drop audio files here", fr: "Dépose les fichiers audio ici",
     it: "Trascina qui i file audio" },
   "bib.dropsub": { de: "oder klicken zum Auswählen — MP3, WAV, M4A, OGG, FLAC; Video MP4, MOV",
     en: "or click to choose — MP3, WAV, M4A, OGG, FLAC; video MP4, MOV",
-    fr: "ou cliquez pour choisir — MP3, WAV, M4A, OGG, FLAC ; vidéo MP4, MOV",
+    fr: "ou clique pour choisir — MP3, WAV, M4A, OGG, FLAC ; vidéo MP4, MOV",
     it: "o fai clic per scegliere — MP3, WAV, M4A, OGG, FLAC; video MP4, MOV" },
   "bib.import": { de: "Transkript importieren (VTT/CSV/enrich) …",
     en: "Import transcript (VTT/CSV/enrich) …",
@@ -131,7 +131,7 @@ const W: Record<string, Eintrag> = {
     fr: "Très stricte", it: "Molto rigida" },
   "bib.leer": { de: "Noch keine Transkripte — Audio hierher ziehen.",
     en: "No transcripts yet — drop audio here.",
-    fr: "Pas encore de transcriptions — déposez un audio ici.",
+    fr: "Pas encore de transcriptions — dépose un audio ici.",
     it: "Ancora nessuna trascrizione — trascina qui un audio." },
   "bib.dauer": { de: "Dauer", en: "Duration", fr: "Durée",
     it: "Durata" },
@@ -372,7 +372,7 @@ const W: Record<string, Eintrag> = {
   "ed.memo.hinweis": {
     de: "Das Memo gehört dir, nicht zum Wortlaut. Es geht in den CSV-Export (eigene Spalte) und in REFI-QDA (Memo an der codierten Stelle) mit.",
     en: "The memo is yours, not part of the wording. It is included in the CSV export (own column) and in REFI-QDA (memo on the coded passage).",
-    fr: "Le mémo vous appartient, il ne fait pas partie du verbatim. Il est inclus dans l’export CSV (colonne dédiée) et dans REFI-QDA (mémo sur le passage codé).",
+    fr: "Le mémo t’appartient, il ne fait pas partie du verbatim. Il est inclus dans l’export CSV (colonne dédiée) et dans REFI-QDA (mémo sur le passage codé).",
     it: "Il memo è tuo, non fa parte del testo. Viene incluso nell’esportazione CSV (colonna dedicata) e in REFI-QDA (memo sul passaggio codificato)." },
   "ed.speed.langsamer": { de: "Langsamer", en: "Slower", fr: "Plus lent", it: "Più lento" },
   "ed.speed.schneller": { de: "Schneller", en: "Faster", fr: "Plus rapide", it: "Più veloce" },
@@ -497,7 +497,7 @@ const W: Record<string, Eintrag> = {
   "st.email.hinweis": {
     de: "Diese Adresse wird beim Export in jedes enrich-Dossier geschrieben — als Person im Journal, wer wann was bearbeitet hat. Sie verlässt den Rechner nur mit der Datei, die du selbst weitergibst. Leer lassen, dann steht nur die App.",
     en: "This address is written into every enrich dossier you export — as the person in the journal of who edited what and when. It leaves the computer only inside the file you pass on yourself. Leave it empty and only the app is named.",
-    fr: "Cette adresse est écrite dans chaque dossier enrich exporté — comme personne dans le journal de qui a modifié quoi et quand. Elle ne quitte l’ordinateur qu’avec le fichier que vous transmettez vous-même. Laissez vide et seule l’application est nommée.",
+    fr: "Cette adresse est écrite dans chaque dossier enrich exporté — comme personne dans le journal de qui a modifié quoi et quand. Elle ne quitte l’ordinateur qu’avec le fichier que tu transmets toi-même. Laisse vide et seule l’application est nommée.",
     it: "Questo indirizzo viene scritto in ogni dossier enrich esportato — come persona nel giornale di chi ha modificato cosa e quando. Lascia il computer solo con il file che consegni tu. Lascia vuoto e compare solo l’app." },
   "st.install": { de: "Kennung dieser Installation",
     en: "ID of this installation", fr: "Identifiant de cette installation",
@@ -603,7 +603,7 @@ const W: Record<string, Eintrag> = {
   "ueber.store": {
     de: "Diese Fassung stammt aus dem Mac App Store; Aktualisierungen kommen von dort. Es ist derselbe Quellcode wie auf GitHub: AGPL-3.0-or-later, mit einer Zusatzerlaubnis nach §7 für den Vertrieb über den App Store. Deine Rechte am Quellcode — lesen, ändern, weitergeben — bleiben unberührt.",
     en: "This build comes from the Mac App Store; updates arrive from there. It is the same source code as on GitHub: AGPL-3.0-or-later, with an additional permission under section 7 for distribution through the App Store. Your rights to the source code — to read, modify and share it — are unaffected.",
-    fr: "Cette version provient du Mac App Store ; les mises à jour arrivent par là. C’est le même code source que sur GitHub : AGPL-3.0-or-later, avec une permission additionnelle (article 7) pour la distribution via l’App Store. Vos droits sur le code source — le lire, le modifier, le partager — restent intacts.",
+    fr: "Cette version provient du Mac App Store ; les mises à jour arrivent par là. C’est le même code source que sur GitHub : AGPL-3.0-or-later, avec une permission additionnelle (article 7) pour la distribution via l’App Store. Tes droits sur le code source — le lire, le modifier, le partager — restent intacts.",
     it: "Questa versione proviene dal Mac App Store; gli aggiornamenti arrivano da lì. È lo stesso codice sorgente di GitHub: AGPL-3.0-or-later, con un permesso aggiuntivo (sezione 7) per la distribuzione tramite l’App Store. I tuoi diritti sul codice sorgente — leggerlo, modificarlo, condividerlo — restano intatti." },
   "ueber.erlaubnis": {
     de: "Dieselbe App gibt es im Mac App Store — derselbe Quellcode, mit einer Zusatzerlaubnis nach AGPL §7 für den Vertrieb dort.",

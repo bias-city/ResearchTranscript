@@ -1,11 +1,11 @@
-ResearchTranscript transcrit entretiens, discussions de groupe et enregistrements de terrain entièrement sur votre Mac. L’enregistrement ne quitte jamais l’ordinateur : pas de cloud, pas de compte, aucune connexion réseau.
+ResearchTranscript transcrit entretiens, discussions de groupe et enregistrements de terrain entièrement sur ton Mac. L’enregistrement ne quitte jamais l’ordinateur : pas de cloud, pas de compte, aucune connexion réseau.
 
 TRANSCRIRE
 • Reconnaissance vocale avec whisper.cpp, modèle large-v3-turbo inclus — français, allemand, anglais, italien et bien d’autres langues
-• Séparation des locuteurs sur le Neural Engine : indiquez le nombre de personnes par enregistrement ou laissez l’application le détecter
-• Glissez plusieurs fichiers dans la liste d’attente, choisissez le nombre de locuteurs par fichier, lancez — la liste survit à un redémarrage
+• Séparation des locuteurs sur le Neural Engine : indique le nombre de personnes par enregistrement ou laisse l’application le détecter
+• Glisse plusieurs fichiers dans la liste d’attente, choisis le nombre de locuteurs par fichier, lance — la liste survit à un redémarrage
 • Vidéo (MP4, MOV en H.264 ou HEVC) comme source : le son est lu, l’image suit en silence dans l’éditeur
-• Vos propres modèles whisper.cpp, par exemple un modèle affiné pour le suisse allemand, se déposent dans le dossier des modèles
+• Tes propres modèles whisper.cpp, par exemple un modèle affiné pour le suisse allemand, se déposent dans le dossier des modèles
 
 CORRIGER
 • Éditeur avec forme d’onde zoomable aux couleurs des locuteurs et tête de lecture
@@ -19,7 +19,7 @@ PARTAGER
 • WebVTT, CSV et texte
 • REFI-QDA (.qdpx) pour ATLAS.ti, MAXQDA et NVivo — avec audio, repères temporels et locuteurs comme codes
 • Dossier enrich avec journal des modifications
-• Sur demande, métadonnées de votre bibliothèque Zotero locale : titre, date, enquêteurs, clé de citation
+• Sur demande, métadonnées de ta bibliothèque Zotero locale : titre, date, enquêteurs, clé de citation
 
 CONFIDENTIALITÉ
 L’application ne collecte aucune donnée, n’a aucune télémétrie et n’ouvre aucune connexion réseau. Tous les modèles sont inclus ; rien n’est téléchargé. Des textes prêts à l’emploi pour le registre des traitements, l’analyse d’impact, les demandes d’éthique et la partie méthodologique se trouvent sur le site web.

@@ -15,7 +15,7 @@ est exporté pour l'analyse (ATLAS.ti, MAXQDA, NVivo via REFI-QDA ;
 enrich ; WebVTT, CSV, texte). Les enregistrements vidéo (MP4/MOV) sont
 aussi acceptés : le son est extrait, la vidéo reste inchangée avec la
 transcription et ne quitte l'ordinateur que si on l'inclut
-explicitement dans l'export REFI-QDA. Tout cela se passe sur votre
+explicitement dans l'export REFI-QDA. Tout cela se passe sur son
 propre Mac.
 
 ## Quelle IA fait quoi
