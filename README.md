@@ -1,5 +1,7 @@
 # ResearchTranscript
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.22831469.svg)](https://doi.org/10.5281/zenodo.22831469)
+
 > **Formerly LocalTranscript, briefly TurnScript.** Renamed in September
 > 2026 because other transcription apps use similar names. Version
 > counting restarts at 0.4.0, in line with the other B/IAS tools.
@@ -329,6 +331,25 @@ the **MIT licence** (B/IAS).
 
 **WebVTT** (W3C) · **CSV** · **TXT** are open and unrestricted.
 
+## Citing
+
+Pohl, Ben (2026). *ResearchTranscript* [software]. B/IAS – Basel Institut
+für angewandte Stadtforschung. <https://doi.org/10.5281/zenodo.22831469>
+
+This DOI always resolves to the latest version; each release has its own
+version DOI on [Zenodo](https://doi.org/10.5281/zenodo.22831469) (community
+[BIAS.CITY](https://zenodo.org/communities/bias-city)). GitHub's "Cite
+this repository" reads `CITATION.cff`, and every documentation package
+the app exports contains the same entry as BibLaTeX for Zotero.
+
+## Authorship and AI assistance
+
+UX/UI and software architecture were developed at **B/IAS – Basel
+Institut für angewandte Stadtforschung**. The code was written with the
+agentic coding capabilities of Anthropic's Claude Opus 5 and Claude
+Fable 5.1, directed, reviewed and tested at B/IAS. Responsibility for
+the software lies with B/IAS.
+
 ## Licence
 
 **AGPL-3.0-or-later** (BIAS.City), by choice. Up to 2.2.0 the licence
@@ -364,6 +385,6 @@ in the About dialog is the offer inside the app itself.
 Bundled, among others: whisper.cpp (MIT), large-v3-turbo model (OpenAI,
 MIT), silero-vad (MIT), SpeakerKit (Argmax, MIT) with the pyannote
 community-1 and WeSpeaker ResNet34 models (CC BY 4.0, converted to
-Core ML and quantised by Argmax), enrich-core (B/IAS, MIT), CPython 3.13 (PSF), pydantic (MIT), React/Radix (MIT), Lucide (ISC), ffmpeg
-(GPL-3.0 build, `--enable-gpl --enable-version3`) — the complete list is
-in the settings.
+Core ML and quantised by Argmax), enrich-core (B/IAS, MIT), CPython 3.13
+(PSF), pydantic (MIT), React/Radix (MIT), Lucide (ISC), LAME (LGPL) —
+the complete list is in the settings.

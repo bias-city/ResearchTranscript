@@ -628,6 +628,8 @@ const W: Record<string, Eintrag> = {
     fr: "Permission additionnelle (App Store)", it: "Permesso aggiuntivo (App Store)" },
   "st.link.datenschutz": { de: "Datenschutzerklärung", en: "Privacy policy",
     fr: "Politique de confidentialité", it: "Informativa sulla privacy" },
+  "st.link.doi": { de: "Zitieren (DOI)", en: "Cite (DOI)",
+    fr: "Citer (DOI)", it: "Citare (DOI)" },
   "st.link.lizenzliste": { de: "Alle Lizenzen (Liste)", en: "All licences (list)",
     fr: "Toutes les licences (liste)", it: "Tutte le licenze (elenco)" },
   "st.link.lamesrc": { de: "LAME-Quellcode (LGPL)", en: "LAME source (LGPL)",

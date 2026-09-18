@@ -3,6 +3,19 @@
 All notable changes to LocalTranscript. The GitHub release notes for
 a version are the corresponding section of this file.
 
+## Unreleased
+
+- **DOI.** ResearchTranscript is archived on Zenodo in the community
+  [BIAS.CITY](https://zenodo.org/communities/bias-city):
+  [10.5281/zenodo.22831469](https://doi.org/10.5281/zenodo.22831469)
+  for all versions, 10.5281/zenodo.22831470 for 0.6.0. The DOI is in
+  `CITATION.cff` (with ORCID), the README, the website, the About dialog
+  and the BibLaTeX entry of the documentation package (app: from the
+  next build). `scripts/zenodo.py` files each release as a new version.
+- **Authorship and AI assistance** stated in the README, on the website
+  and on Zenodo.
+- README: ffmpeg is no longer listed as bundled (gone since 0.6.0).
+
 ## 0.6.0 — 2026-09-18
 
 First version prepared for the Mac App Store; the same code is published

@@ -47,6 +47,8 @@ SPEAKERKIT = "argmax-oss-swift ea872ff"
 APP_JAHR = "2026"
 REPO = "https://github.com/bias-city/ResearchTranscript"
 SEITE = "https://bias.city/researchtranscript/"
+# Zenodo-Konzept-DOI: gilt für alle Versionen (scripts/zenodo.py).
+DOI = "10.5281/zenodo.22831469"
 
 #: Zotero-Rollen der befragten Seite: nie als Urheber vorschlagen
 BEFRAGTE = {"interviewee", "guest", "castMember", "author"}
@@ -418,6 +420,7 @@ def zitate_bib() -> str:
   organization = {{B/IAS – Basel Institut für angewandte Stadtforschung}},
   location     = {{Basel}},
   license      = {{AGPL-3.0-or-later}},
+  doi          = {{{DOI}}},
   url          = {{{SEITE}}},
   urldate      = {{{heute}}},
   note         = {{macOS (Apple Silicon). Quellcode: {REPO}}},

@@ -5,11 +5,20 @@ type: software
 authors:
   - family-names: Pohl
     given-names: Ben
+    orcid: "https://orcid.org/0009-0002-9233-4931"
     affiliation: "B/IAS – Basel Institut für angewandte Stadtforschung"
 version: 0.6.0
 date-released: 2026-09-18
 license: AGPL-3.0-or-later
+doi: 10.5281/zenodo.22831469
 url: "https://bias.city/researchtranscript/"
 repository-code: "https://github.com/bias-city/ResearchTranscript"
 abstract: "Lokale Transkription von Interviews mit Sprechertrennung (whisper.cpp, SpeakerKit/pyannote) und Editor für die qualitative Forschung; keine Übertragung von Aufnahmen oder Texten."
 keywords: [transcription, qualitative research, whisper, speaker diarization, REFI-QDA, macOS]
+identifiers:
+  - type: doi
+    value: 10.5281/zenodo.22831469
+    description: "Alle Versionen / all versions (Zenodo concept DOI)"
+  - type: doi
+    value: 10.5281/zenodo.22831470
+    description: "Version 0.6.0"

@@ -249,6 +249,7 @@ function UeberDialog({ open, onClose }: {
           {link(tr("st.link.lizenztext"), `${REPO}/blob/main/LICENSE`)}
           {link(tr("st.link.erlaubnis"), `${REPO}/blob/main/LICENSE-EXCEPTION`)}
           {link(tr("st.link.datenschutz"), `${BIAS}privacy.html`)}
+          {link(tr("st.link.doi"), "https://doi.org/10.5281/zenodo.22831469")}
           {isTauri() && (
             <Button size="1" variant="soft" color="gray" highContrast onClick={() =>
               void lizenzenPfad().then((p) => { if (p) void ordnerOeffnen(p); })}>
