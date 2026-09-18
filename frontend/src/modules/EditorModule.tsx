@@ -917,14 +917,15 @@ export default function EditorModule({ id, onExit }: {
                 <span style={{ opacity: loop ? 1 : 0.4 }}>
                   <Icon name="loop" size={16} /></span>
               </IconButton>
-              <label style={{ display: "flex", alignItems: "center",
-                              gap: 6 }}>
-                <Checkbox checked={folgen} onCheckedChange={(v) => {
-                  setFolgen(v === true);
-                  lset(KEYS.editorFolgen, v === true ? "1" : "0");
-                }} />
-                <Text size="1">{tr("ed.folgen")}</Text>
-              </label>
+              {/* «Folgen» als Pille wie Tabs und Knöpfe (User 2026-09-18):
+                  an = graue Fläche, aus = weiss — kein blaues Häkchen */}
+              <Button size="1" variant="soft" color="gray" highContrast
+                      aria-pressed={folgen}
+                      style={folgen ? { background: "var(--gray-a5)" } : undefined}
+                      onClick={() => {
+                        setFolgen((f) => { lset(KEYS.editorFolgen, f ? "0" : "1"); return !f; });
+                      }}>
+                {tr("ed.folgen")}</Button>
               <Flex justify="end" align="center" style={{ flex: 1 }}>
                 <Text size="1" color="gray"
                       style={{ fontVariantNumeric: "tabular-nums" }}>
@@ -1201,7 +1202,7 @@ function MetadatenPanel({ id, name, zotero, onChange }: {
           {rollenVon(wahl.creators).map((r) => (
               <Flex key={r} align="center" gap="2" asChild>
                 <label>
-                  <Checkbox checked={rollen.has(r)}
+                  <Checkbox color="gray" highContrast checked={rollen.has(r)}
                     onCheckedChange={(v) => {
                       const n = new Set(rollen);
                       if (v === true) n.add(r); else n.delete(r);
@@ -1908,13 +1909,13 @@ function SuchPanel({ segmente, onZeige, onErsetze, onAlleErsetzen }: {
       <Flex direction="column" gap="2">
         <label style={{ display: "flex", alignItems: "center",
                         gap: 8 }}>
-          <Checkbox checked={gross}
+          <Checkbox color="gray" highContrast checked={gross}
                     onCheckedChange={(v) => setGross(v === true)} />
           <Text size="1">{tr("ed.suche.gross")}</Text>
         </label>
         <label style={{ display: "flex", alignItems: "center",
                         gap: 8 }}>
-          <Checkbox checked={weich}
+          <Checkbox color="gray" highContrast checked={weich}
                     onCheckedChange={(v) => setWeich(v === true)} />
           <Text size="1">{tr("ed.suche.weich")}</Text>
         </label>

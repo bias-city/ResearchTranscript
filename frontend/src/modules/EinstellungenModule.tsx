@@ -187,7 +187,7 @@ export default function EinstellungenModule({ settings, onChange }: {
       <Karte titel={tr("st.zotero")} subline={tr("st.zotero.sub")}>
         <Flex direction="column" gap="3">
           <Flex align="center" gap="2">
-            <Switch checked={settings.zotero_consent}
+            <Switch color="gray" highContrast checked={settings.zotero_consent}
                     onCheckedChange={(v) => setze({ zotero_consent: v })} />
             <Text size="2">{tr("st.zotero.consent")}</Text>
           </Flex>
