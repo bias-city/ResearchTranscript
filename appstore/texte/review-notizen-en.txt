@@ -2,12 +2,13 @@ ResearchTranscript works fully offline: no account, no login, no server, no tele
 
 Architecture: the UI is a WKWebView. The application logic is written in Python and runs inside the app process through an embedded CPython 3.13 interpreter linked as a framework — no socket, no interpreter child process. The interpreter executes only the scripts shipped in the bundle; the app never downloads code, models or other resources (Guideline 2.5.2). Audio decoding uses AVFoundation; MP3 encoding uses the bundled LAME library (LGPL, dynamically linked, source shipped with the app). Speaker diarisation (SpeakerKit, Core ML) runs in-process. Speech recognition uses one bundled helper, whisper-cli (whisper.cpp, Metal), launched by the app with the sandbox "inherit" entitlement; it reads a temporary WAV file inside the app container and the model file, and terminates with the job.
 
-Files are accessed only through the Open/Save panels, drag and drop, or the library folder the user chooses on first launch (kept as a security-scoped bookmark). The optional e-mail field in the settings is written only into dossier files the user exports; it is never transmitted. The Zotero integration is optional, read-only, local, and requires the user to pick the Zotero folder.
+Files are accessed only through the Open/Save panels, drag and drop, or the library folder the user chooses on first launch (kept as a security-scoped bookmark). The optional e-mail field in the settings is stored only in the local change journal of a transcript and in dossier files the user exports; it is never transmitted. The Zotero integration is optional, read-only, local, and requires the user to pick the Zotero folder.
 
 How to test: the attached zip contains a 2-minute synthetic interview (two invented speakers, synthesised with macOS "say") and its reference text.
-1. Launch the app and choose any folder as the library.
+1. Launch the app and click "Use recommended location" (or choose any folder as the library).
 2. Drag housing-cooperatives-interview.mp3 into the "AI Transcript" tab, set "Speakers" to 2, click "Start transcription". It takes about 30 seconds on Apple silicon.
 3. Click "Edit" on the finished run: the editor shows the transcript with two speakers, a waveform and playback.
-4. "Export" writes WebVTT, CSV, text, REFI-QDA or an enrich dossier through the Save panel.
+4. "Export" writes WebVTT, CSV, text, Markdown, Word, REFI-QDA, an enrich dossier or a documentation package (Word files for researchers) through the Save panel.
+5. The Help menu opens a searchable manual in a second window; it is bundled with the app and loads nothing from the network.
 
-Requires Apple silicon and macOS 14 or later. Licence: AGPL-3.0-or-later with an additional permission for App Store distribution (LICENSE-EXCEPTION in the public repository, https://github.com/bias-city/ResearchTranscript). All third-party licences are listed inside the app (Settings → Licences → All licences).
+Requires Apple silicon and macOS 14 or later. Licence: AGPL-3.0-or-later with an additional permission for App Store distribution (LICENSE-EXCEPTION in the public repository, https://github.com/bias-city/ResearchTranscript). All third-party licences are listed inside the app (Settings → Licenses → "All licences (list)").
