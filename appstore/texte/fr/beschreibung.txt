@@ -1,31 +1,34 @@
-ResearchTranscript transcrit entretiens, discussions de groupe et enregistrements de terrain entièrement sur ton Mac. L’enregistrement ne quitte jamais l’ordinateur : pas de cloud, pas de compte, aucune connexion réseau.
+ResearchTranscript transforme entretiens, discussions de groupe et enregistrements de terrain en transcriptions pour la recherche qualitative. L’IA écrit le texte brut, tu le vérifies et le corriges dans l’éditeur, et l’app documente comment la transcription a été produite. Tout se passe en local sur ton Mac : pas de cloud, pas de compte, aucune donnée ne quitte l’ordinateur.
 
-TRANSCRIRE
-• Reconnaissance vocale avec whisper.cpp, modèle large-v3-turbo inclus — français, allemand, anglais, italien et bien d’autres langues
-• Séparation des locuteurs sur le Neural Engine : indique le nombre de personnes par enregistrement ou laisse l’application le détecter
-• Glisse plusieurs fichiers dans la liste d’attente, choisis le nombre de locuteurs par fichier, lance — la liste survit à un redémarrage
-• Vidéo (MP4, MOV en H.264 ou HEVC) comme source : le son est lu, l’image suit en silence dans l’éditeur
-• Tes propres modèles whisper.cpp, par exemple un modèle affiné pour le suisse allemand, se déposent dans le dossier des modèles
+TRANSCRIPTION IA
+• Reconnaissance vocale avec whisper.cpp, modèle large-v3-turbo fourni : allemand, anglais, français, italien et bien d’autres langues
+• Séparation des locuteurs avec SpeakerKit et des modèles pyannote : indiquer le nombre de locuteurs ou le laisser détecter
+• Déposer plusieurs fichiers dans la liste d’attente, choisir le nombre de locuteurs par fichier, lancer
+• Vidéo (MP4, MOV) comme source : le son est lu, l’image suit sans son dans l’éditeur
+• Utiliser tes propres modèles whisper.cpp, par exemple un modèle affiné pour le suisse allemand
 
-CORRIGER
-• Éditeur avec forme d’onde zoomable aux couleurs des locuteurs et tête de lecture
-• Entièrement au clavier : passer d’un tour de parole à l’autre, lire et mettre en pause pendant la saisie, scinder un tour au curseur, fusionner avec le précédent
-• Insérer des interventions à la position de lecture — pour les passages où l’on parle en même temps
-• Régler les repères temporels à la main ; renommer, recolorer et fusionner les locuteurs
-• Rechercher et remplacer dans toute la transcription, échantillon de voix par locuteur
-• Chaque modification est enregistrée ; les états antérieurs restent disponibles dans l’historique
+L’HUMAIN VÉRIFIE : L’ÉDITEUR
+• Écouter et corriger entièrement au clavier, même en pleine saisie ; pédale possible
+• Forme d’onde aux couleurs des locuteurs, zoomable, timecodes au centième de seconde
+• Scinder, fusionner et insérer des tours ; placer des interventions à la position de lecture
+• Nommer, recolorer et fusionner les locuteurs ; extrait sonore par voix
+• Rechercher et remplacer dans toute la transcription, par exemple pour les pseudonymes
+• Mémos par ligne, séparés du verbatim
+• Chaque modification est enregistrée ; l’historique et le journal consignent ce qui a été changé à la main
 
-PARTAGER
-• WebVTT, CSV et texte
-• REFI-QDA (.qdpx) pour ATLAS.ti, MAXQDA et NVivo — avec audio, repères temporels et locuteurs comme codes
-• Dossier enrich avec journal des modifications
-• Sur demande, métadonnées de ta bibliothèque Zotero locale : titre, date, enquêteurs, clé de citation
+POUR LA RECHERCHE
+• REFI-QDA (.qdpx) pour ATLAS.ti, MAXQDA et NVivo : texte, audio, repères temporels, locuteurs comme codes, mémos
+• Paquet de documentation par transcription : protocole de transcription, paragraphe prêt pour la partie méthodes, modules pour la protection des données et la demande éthique, fiche pour Zenodo et les archives spécialisées, fichier de citation pour Zotero
+• L’app mesure à quel point la transcription IA a été révisée à la main : taux de correction et temps de parole réattribué
+• Autres exports : WebVTT, CSV, texte, Markdown, Word, dossier enrich
+• Métadonnées de ta bibliothèque Zotero locale, en lecture seule
+• Manuel dans l’app, consultable par recherche, en quatre langues
 
-CONFIDENTIALITÉ
-L’application ne collecte aucune donnée, n’a aucune télémétrie et n’ouvre aucune connexion réseau. Tous les modèles sont inclus ; rien n’est téléchargé. Des textes prêts à l’emploi pour le registre des traitements, l’analyse d’impact, les demandes d’éthique et la partie méthodologique se trouvent sur le site web.
+PROTECTION DES SOURCES : AUCUNE DONNÉE NE QUITTE L’ORDINATEUR
+Qui mène des entretiens doit la confidentialité aux personnes interrogées. Enregistrements et transcriptions restent dans le dossier que tu choisis. L’app ne collecte aucune donnée, n’a pas de télémétrie et ne télécharge rien ; tous les modèles sont inclus. Elle tourne dans l’App Sandbox de macOS.
 
-LOGICIEL LIBRE
-ResearchTranscript est un logiciel libre sous licence AGPL ; le code source est sur GitHub. Développé au B/IAS – Basel Institut für angewandte Stadtforschung.
+OPEN SOURCE
+ResearchTranscript est un logiciel libre sous licence AGPL. Le code source est public sur GitHub et peut être vérifié. Développé au B/IAS – Basel Institut für angewandte Stadtforschung.
 
 CONFIGURATION REQUISE
-Mac avec puce Apple, macOS 14 ou ultérieur, environ 2 Go d’espace libre.
+Mac avec puce Apple, macOS 14 ou plus récent, environ 2 Go d’espace libre.

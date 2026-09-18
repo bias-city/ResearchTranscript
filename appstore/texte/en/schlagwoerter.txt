@@ -1,1 +1,1 @@
-transcription,interview,speaker,diarization,qualitative,research,QDA,offline,audio,subtitles,speech
+transcription,interview,AI,whisper,speaker,qualitative,research,QDA,qdpx,offline,methods

@@ -1,31 +1,34 @@
-ResearchTranscript transcribes interviews, group discussions and field recordings entirely on your Mac. The recording never leaves your computer: no cloud, no account, no network connection.
+ResearchTranscript turns interviews, group discussions and field recordings into transcripts for qualitative research. The AI writes the raw text, you check and correct it in the editor, and the app documents how the transcript came about. Everything runs locally on your Mac: no cloud, no account, and no data leaves the computer.
 
-TRANSCRIBE
-• Speech recognition with whisper.cpp, large-v3-turbo model included — English, German, French, Italian and many more languages
-• Speaker separation on the Neural Engine: set the number of speakers per recording or let the app detect it
-• Drop several files into the waiting list, choose the speaker count per file, start — the list survives a restart
-• Video (MP4, MOV with H.264 or HEVC) as a source: the audio is read, the picture follows silently in the editor
-• Your own whisper.cpp models, for example a Swiss German fine-tune, go straight into the model folder
+AI TRANSCRIPT
+• Speech recognition with whisper.cpp, large-v3-turbo model included: German, English, French, Italian and many more languages
+• Speaker diarisation with SpeakerKit and pyannote models: set the number of speakers or let the app detect it
+• Drop several files into the waiting list, choose the speaker count per file, start
+• Video (MP4, MOV) as a source: the audio is read, the picture follows silently in the editor
+• Use your own whisper.cpp models, for example a Swiss German fine-tune
 
-CORRECT
-• Editor with a zoomable waveform in the speakers' colours and a playhead
-• Fully keyboard-driven: move between turns, play and pause while typing, split a turn at the cursor, merge with the previous one
-• Insert interjections at the playhead — for passages where people talk over each other
-• Set timecodes by hand; rename, recolour and merge speakers
-• Find and replace across the whole transcript, voice sample per speaker
-• Every change is saved; earlier states are kept as history
+HUMAN IN THE LOOP: THE EDITOR
+• Listen and correct entirely from the keyboard, even while typing; foot pedal supported
+• Waveform in the speakers’ colours, zoomable, timecodes to the hundredth of a second
+• Split, merge and insert turns; place interjections at the playhead
+• Name, recolour and merge speakers; audio sample per voice
+• Find and replace across the whole transcript, for example for pseudonyms
+• Memos per line, separate from the wording
+• Every change is saved; history and journal record what was changed by hand
 
-SHARE
-• WebVTT, CSV and plain text
-• REFI-QDA (.qdpx) for ATLAS.ti, MAXQDA and NVivo — with audio, timestamps and speakers as codes
-• enrich dossier with a change journal
-• Optional metadata from your local Zotero library: title, date, interviewers, citekey
+BUILT FOR RESEARCH
+• REFI-QDA (.qdpx) for ATLAS.ti, MAXQDA and NVivo: text, audio, timestamps, speakers as codes, memos
+• Documentation package per transcript: transcription record, ready-made paragraph for the methods section, building blocks for data protection and ethics applications, data sheet for Zenodo and specialised archives, citation file for Zotero
+• The app measures how much the AI transcript was edited by hand: correction rate and reassigned speech time
+• More exports: WebVTT, CSV, text, Markdown, Word, enrich dossier
+• Metadata from your local Zotero library, read-only
+• Searchable manual inside the app, in four languages
 
-PRIVACY
-The app collects no data, has no telemetry and opens no network connection. All models are included; nothing is downloaded. Ready-made text for records of processing, data protection impact assessments, ethics applications and methods sections is available on the website.
+SOURCE PROTECTION: NO DATA LEAVES THE COMPUTER
+Whoever conducts interviews owes the interviewees confidentiality. Recordings and transcripts stay in the folder you choose. The app collects no data, has no telemetry and downloads nothing; all models are included. It runs in the macOS App Sandbox.
 
-FREE SOFTWARE
-ResearchTranscript is open source under the AGPL; the source code is on GitHub. Developed at B/IAS – Basel Institut für angewandte Stadtforschung.
+OPEN SOURCE
+ResearchTranscript is free software under the AGPL. The source code is public on GitHub and open to inspection. Developed at B/IAS – Basel Institut für angewandte Stadtforschung.
 
 REQUIREMENTS
 Mac with Apple silicon, macOS 14 or later, about 2 GB of free space.

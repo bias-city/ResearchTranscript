@@ -1,31 +1,34 @@
-ResearchTranscript transkribiert Interviews, Gruppengespräche und Feldaufnahmen vollständig auf deinem Mac. Die Aufnahme verlässt den Rechner nie: keine Cloud, kein Konto, keine Netzverbindung.
+ResearchTranscript macht aus Interviews, Gruppengesprächen und Feldaufnahmen Transkripte für die qualitative Forschung. Die KI schreibt den Rohtext, du prüfst und korrigierst ihn im Editor, und die App dokumentiert, wie das Transkript entstand. Alles läuft lokal auf deinem Mac: keine Cloud, kein Konto, keine Daten verlassen den Rechner.
 
-TRANSKRIBIEREN
-• Spracherkennung mit whisper.cpp, Modell large-v3-turbo mitgeliefert — Deutsch, Englisch, Französisch, Italienisch und viele weitere Sprachen
-• Sprechertrennung auf der Neural Engine: Zahl der Sprechenden je Aufnahme vorgeben oder erkennen lassen
-• Mehrere Dateien in die Warteliste ziehen, Sprecherzahl je Datei wählen, starten — die Liste übersteht einen Neustart
-• Video (MP4, MOV mit H.264 oder HEVC) als Quelle: der Ton wird gelesen, das Bild läuft im Editor stumm mit
-• Eigene whisper.cpp-Modelle, etwa ein Feintuning für Schweizerdeutsch, einfach in den Modelle-Ordner legen
+KI-TRANSKRIPT
+• Spracherkennung mit whisper.cpp, Modell large-v3-turbo mitgeliefert: Deutsch, Englisch, Französisch, Italienisch und viele weitere Sprachen
+• Sprechertrennung mit SpeakerKit und pyannote-Modellen: Zahl der Sprechenden vorgeben oder erkennen lassen
+• Mehrere Dateien in die Warteliste ziehen, Sprecherzahl je Datei wählen, starten
+• Video (MP4, MOV) als Quelle: der Ton wird gelesen, das Bild läuft im Editor stumm mit
+• Eigene whisper.cpp-Modelle verwenden, etwa ein Feintuning für Schweizerdeutsch
 
-KORRIGIEREN
-• Editor mit Wellenform in den Farben der Sprechenden, zoombar, mit Abspielposition
-• Ganz per Tastatur: Turn wechseln, abspielen und anhalten mitten im Tippen, Turn am Cursor teilen, mit dem vorigen verbinden
-• Zwischenrufe an der Abspielposition einfügen — für Stellen, an denen durcheinander geredet wird
-• Timecodes von Hand setzen, Sprechende umbenennen, umfärben, zusammenführen
-• Suchen und Ersetzen über das ganze Transkript, Hörprobe je Stimme
-• Jede Änderung wird gesichert; frühere Stände bleiben als Verlauf erhalten
+DER MENSCH PRÜFT: DER EDITOR
+• Hören und korrigieren ganz per Tastatur, auch mitten im Tippen; Fusspedal möglich
+• Wellenform in den Farben der Sprechenden, zoombar, Timecodes auf die Hundertstelsekunde
+• Turns teilen, verbinden, einfügen; Zwischenrufe an der Abspielposition setzen
+• Sprechende benennen, umfärben, zusammenführen; Hörprobe je Stimme
+• Suchen und Ersetzen über das ganze Transkript, etwa für Pseudonyme
+• Memos je Zeile, getrennt vom Wortlaut
+• Jede Änderung wird gesichert; Verlauf und Journal halten fest, was von Hand geändert wurde
 
-WEITERGEBEN
-• WebVTT, CSV und Text
-• REFI-QDA (.qdpx) für ATLAS.ti, MAXQDA und NVivo — mit Audio, Zeitmarken und Sprechenden als Codes
-• enrich-Dossier mit Änderungsjournal
-• Auf Wunsch Metadaten aus der lokalen Zotero-Bibliothek: Titel, Datum, Interviewende, Citekey
+FÜR DIE FORSCHUNG
+• REFI-QDA (.qdpx) für ATLAS.ti, MAXQDA und NVivo: Text, Audio, Zeitmarken, Sprechende als Codes, Memos
+• Dokumentationspaket je Transkript: Transkriptionsprotokoll, fertiger Absatz für den Methodenteil, Bausteine für Datenschutz und Ethikantrag, Datenblatt für Zenodo und Facharchive, Zitierdatei für Zotero
+• Die App misst, wie stark das KI-Transkript von Hand bearbeitet wurde: Korrekturrate und neu zugeordnete Sprechzeit
+• Weitere Exporte: WebVTT, CSV, Text, Markdown, Word, enrich-Dossier
+• Metadaten aus der lokalen Zotero-Bibliothek, nur lesend
+• Handbuch in der App, durchsuchbar, in vier Sprachen
 
-DATENSCHUTZ
-Die App erhebt keine Daten, hat keine Telemetrie und öffnet keine Netzverbindung. Alle Modelle sind enthalten, nichts wird nachgeladen. Für Verfahrensverzeichnis, Datenschutz-Folgenabschätzung, Ethikantrag und Methodenteil liegen fertige Textbausteine auf der Website.
+QUELLENSCHUTZ: KEINE DATEN VERLASSEN DEN RECHNER
+Wer Interviews führt, schuldet den Befragten Vertraulichkeit. Aufnahmen und Transkripte bleiben in dem Ordner, den du wählst. Die App erhebt keine Daten, hat keine Telemetrie und lädt nichts nach; alle Modelle sind enthalten. Sie läuft in der App Sandbox von macOS.
 
-FREIE SOFTWARE
-ResearchTranscript ist Open Source unter der AGPL; der Quellcode liegt auf GitHub. Entwickelt am B/IAS – Basel Institut für angewandte Stadtforschung.
+OPEN SOURCE
+ResearchTranscript ist freie Software unter der AGPL. Der Quellcode liegt offen auf GitHub und lässt sich prüfen. Entwickelt am B/IAS – Basel Institut für angewandte Stadtforschung.
 
 VORAUSSETZUNGEN
 Mac mit Apple Silicon, macOS 14 oder neuer, rund 2 GB freier Speicher.
