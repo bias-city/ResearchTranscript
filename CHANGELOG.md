@@ -3,15 +3,61 @@
 All notable changes to LocalTranscript. The GitHub release notes for
 a version are the corresponding section of this file.
 
-## 0.6.0 — unreleased
+## 0.6.0 — 2026-09-18
 
-- Einstellungen: Schriftart des Turn-Texts wählbar — serifenlos (Systemschrift) oder mit Serifen (New York von macOS). Die App liefert keine Schriftdatei mit; ein toter Recursive-Verweis in den Styles ist entfernt.
+First version prepared for the Mac App Store; the same code is published
+here as a signed and notarised DMG. It includes 0.5.0, which was never
+published on its own.
 
-- Dokumentation für Forschende, aus den echten Werten erzeugt (Editor › Export): Transkript als Markdown und Word, und ein Dokumentationspaket (.zip) je Transkript — Transkriptionsprotokoll, Methodenbaustein mit Absatz für den Methodenteil, Repositoriums-Datenblatt (Zenodo/DataCite, Facharchive, vorausgefüllt aus Zotero), Verfahrensbaustein, Zitierdatei für Zotero; jedes Dokument als .md und .docx. Eingriffsmass gegen den gesicherten Maschinenstand (`ausgang.json`): Korrekturrate auf Wortebene, neu zugeordnete Sprechzeit. Viersprachig. Grundlagen: `docs/begleitdokumente.md`. `CITATION.cff` im Repo.
+### Added
 
-- Handbuch in der App: Menü «Help» (⌘?) und Fragezeichen im Hauptfenster öffnen ein eigenes Fenster mit 14 Kapiteln, Volltextsuche, allen Tastenkürzeln und Bildern in Hell und Dunkel — viersprachig, folgt der Oberflächen-Sprache. Bilder: `node scripts/appstore-screenshots.mjs --hilfe`.
+- **Documentation for researchers, generated from the real values of a
+  transcript** (Editor › Export › "Documentation package (.zip) …"): nine
+  short Word documents in three folders — a transcription record (app and
+  model of the run, editing by hand from the journal, files with
+  checksums), a paragraph for the methods section in a short and a long
+  form, facts about the app for records of processing, impact assessment
+  and ethics applications, a form for what only the institution knows, a
+  repository data sheet following the Zenodo form and DataCite, an ethics
+  checklist, repositories and funder requirements, and a citation file
+  for Zotero. The app states nothing it cannot know; open fields are
+  marked `[ … ]`. Background and sources: `docs/begleitdokumente.md`.
+- **How much the human changed.** On creation the app keeps the machine
+  result (`ausgang.json`). Against it the record reports a word-level
+  correction rate (counted like a word error rate with the final version
+  as reference, normalised and orthographic) and the share of reassigned
+  speech time. A second measure from the journal — share of segments with
+  changed wording or speaker — is always available, also for transcripts
+  made by earlier versions. These measure intervention, not accuracy.
+- **Transcript export as Markdown and Word**, written without a third-party
+  library.
+- **Manual inside the app**: Help menu (⌘?) or the Help pill at the bottom
+  left open a second window with 15 chapters, full-text search, every
+  keyboard shortcut and pictures in light and dark — in German, English,
+  French and Italian.
+- **Editor**: timecodes to the hundredth of a second (editable per line,
+  running in the active line, footer, header and playhead; CSV and
+  REFI-QDA labels write `hh:mm:ss.hh`); memos per line with markers in the
+  waveform, exported to CSV and REFI-QDA; zoomable waveform in the
+  speakers' colours; speaker colours; turn editing from the keyboard
+  (Enter, ⌫, ⌥Enter for interjections); foot-pedal keys (Page Up/Down);
+  playback speed 0.75–2×; the app reopens where it was closed.
+- **Appearance**: dark mode following macOS, uniform pill buttons, transcript
+  text in sans-serif or serif (system fonts only — no font file is
+  bundled), adjustable text size.
+- `CITATION.cff`; `LICENSE-EXCEPTION` (additional permission under AGPL §7
+  for App Store distribution); complete third-party licence list inside
+  the app.
 
-- Timecodes im Editor in Hundertstelsekunden (Zeile editierbar und mitlaufend, Fusszeile, Kopfzeile, Playhead); CSV-Export und QDPX-Beschriftungen schreiben `hh:mm:ss.hh`, damit der CSV-Rundlauf nichts verliert.
+### Privacy and packaging
+
+- **App Sandbox in both channels.** Folders are reached through the system
+  dialog and kept as security-scoped bookmarks; Zotero needs its folder to
+  be chosen once.
+- **French addresses the reader with «tu» throughout**, like German «du»
+  and Italian «tu».
+- The website and its template documents describe 0.6.0: there is no
+  internal service and no open port any more.
 
 ### Changed
 
@@ -45,7 +91,7 @@ a version are the corresponding section of this file.
   (PyO3), Cargo feature `motoren` (default). `scripts/baue-lame.sh`.
   Parity report: spike/motoren-swift/BEFUND.md.
 
-## 0.5.0 — unreleased
+## 0.5.0 — 2026-09-17 (not published on its own; part of 0.6.0)
 
 ### Changed
 

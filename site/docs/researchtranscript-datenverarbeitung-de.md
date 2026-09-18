@@ -2,7 +2,7 @@
 
 Textbaustein zum Einfügen in ein Verfahrensverzeichnis, eine
 Datenschutz-Folgenabschätzung, einen Ethikantrag oder einen
-Datenmanagementplan. Stand 16. September 2026, ResearchTranscript 0.4.0.
+Datenmanagementplan. Stand 18. September 2026, ResearchTranscript 0.6.0.
 Angaben in `[eckigen Klammern]` ergänzt die verantwortliche Stelle.
 
 Der Text beschreibt, was die Software tut und was sie nicht tut. Die
@@ -10,16 +10,26 @@ rechtliche Einordnung der eigenen Verarbeitung — nach DSGVO oder
 revidiertem Schweizer DSG — nimmt die verantwortliche Stelle vor; der
 Text ersetzt keine Rechtsberatung.
 
+Dieser Text ist die allgemeine Vorlage. Seit 0.6.0 erzeugt die App
+selbst die Fassung zum einzelnen Transkript (Editor › Export ›
+«Dokumentationspaket (.zip) …»): Transkriptionsprotokoll mit dem
+tatsächlich verwendeten Modell samt Version und dem gemessenen Mass der
+Bearbeitung von Hand, Methodenabsatz, Tatsachen für den Datenschutz,
+Datenblatt für das Repositorium und Zitierdatei.
+
 ---
 
 ## 1. Eingesetzte Software
 
-ResearchTranscript, Version `[0.4.0]`. Freie Software unter
-AGPL-3.0-or-later, entwickelt am B/IAS – Basel Institut für angewandte
+ResearchTranscript, Version `[0.6.0]`. Freie Software unter
+AGPL-3.0-or-later (mit einer Zusatzerlaubnis für den Vertrieb über den
+App Store), entwickelt am B/IAS – Basel Institut für angewandte
 Stadtforschung. Quellcode öffentlich unter
-<https://github.com/bias-city/ResearchTranscript>. Die Software läuft
-als lokale Anwendung auf macOS (Apple Silicon) und wird von der
-verantwortlichen Stelle selbst installiert und betrieben.
+<https://github.com/bias-city/ResearchTranscript>; das signierte und
+notarisierte Installationspaket (DMG) liegt dort bei den Releases. Die
+Software läuft als lokale Anwendung auf macOS (Apple Silicon) in der
+App Sandbox von macOS und wird von der verantwortlichen Stelle selbst
+installiert und betrieben.
 
 ## 2. Zweck der Verarbeitung
 
@@ -42,47 +52,66 @@ betroffen sein `[ja / nein: …]`.
 1. **Eingabe.** Die Audio- oder Videodatei wird vom lokalen Dateisystem
    des Endgeräts eingelesen (Audio: MP3, WAV, M4A, OGG, FLAC; Video:
    MP4, MOV, M4V mit H.264/HEVC — aus Video wird nur die Tonspur
-   gelesen, das Video wird nie umgewandelt).
-2. **Verarbeitung.** Spracherkennung (whisper.cpp, Modell
-   large-v3-turbo) und Sprechertrennung (silero-vad, pyannote community-1)
-   laufen als Bestandteile der Anwendung auf dem Endgerät, auf
-   Grafikeinheit und Neural Engine. Sämtliche Modelle sind im Programmpaket enthalten; beim
-   ersten Start wird nichts nachgeladen. Eigene whisper.cpp-Modelle
-   kann die Anwenderin nur von Hand in den Ordner «Modelle» der
-   Bibliothek legen — die Anwendung lädt nie selbst.
-3. **Ablage.** Je Transkript entsteht ein Ordner am gewählten
-   Speicherort `[Pfad, z. B. ~/Documents/ResearchTranscript]` mit einer
-   Kopie des Audios (bei Video: der Tonspur als MP3 und der
-   unveränderten Videodatei), der kanonischen Transkriptdatei (JSON),
-   Verlaufsschnappschüssen bei jedem Speichern und den abgeleiteten
-   Exporten. Temporäre Arbeitsdateien werden nach jedem Lauf entfernt.
-4. **Netz.** Die Software baut keine ausgehenden Netzverbindungen auf:
-   keine Telemetrie, keine Nutzungsstatistik, keine Update-Prüfung,
-   keine eigenen Absturzberichte. Der interne Dienst der Anwendung
-   bindet ausschliesslich an die Loopback-Adresse `127.0.0.1` und weist
-   Anfragen anderer Hosts ab (HTTP 421). Diagnosedaten des
-   Betriebssystems macOS unterliegen dessen Systemeinstellungen, nicht
-   der Software.
-5. **Ausgabe.** Exportdateien (WebVTT, CSV, Text, REFI-QDA `.qdpx.zip`,
-   enrich-Dossier `.enrich`) werden dorthin geschrieben, wo die
-   bedienende Person sie speichert. **REFI-QDA- und enrich-Exporte
-   enthalten die Audioaufnahme.** Ihre Weitergabe ist eine Weitergabe
-   der Aufnahme. Ein enrich-Dossier enthält zudem das Änderungsjournal
-   mit der freiwillig in den Einstellungen hinterlegten E-Mail-Adresse
-   und, wenn das Transkript mit Zotero verknüpft ist, die übernommenen
-   Metadaten (Titel, Datum, Personen nach gewählten Rollen, Citekey).
-   Mit Zotero-Einwilligung liest die Anwendung die lokale
-   `zotero.sqlite` nur lesend und nur auf Anfrage. Bei einer
+   gelesen, das Video wird nie umgewandelt). Den Ton liest macOS
+   AVFoundation. Die App Sandbox von macOS erlaubt den Zugriff nur auf
+   Ordner, die die Person im Dialog wählt, und auf hineingezogene
+   Dateien.
+2. **Verarbeitung.** Die Anwendungslogik läuft eingebettet in der App.
+   Die Spracherkennung (whisper.cpp 1.8.2, Modell large-v3-turbo) läuft
+   als Hilfsprogramm aus dem App-Paket auf der Grafikeinheit (Metal).
+   Die Sprechertrennung (SpeakerKit von Argmax mit den Modellen
+   pyannote segmentation-3.0, WeSpeaker ResNet34 und pyannote
+   community-1, von Argmax nach Core ML umgewandelt) läuft in der App
+   über Core ML und ist abschaltbar. Die Sprachaktivitätserkennung
+   (Silero VAD 5.1.2 in whisper.cpp) wird nur verwendet, wenn die
+   Sprechertrennung ausgeschaltet ist; sonst schneidet die
+   Sprechertrennung die Blöcke. Sämtliche Modelle sind im Programmpaket
+   enthalten; die Anwendung lädt weder Modelle noch Programmteile nach.
+   Eigene whisper.cpp-Modelle kann die Anwenderin nur von Hand in den
+   Ordner «Modelle» der Bibliothek legen. Die Modelle lernen nicht aus
+   den Aufnahmen. Die Anwendung fasst nichts zusammen und formuliert
+   nichts um; die Spracherkennung ist ein KI-Modell und kann Wörter
+   setzen, die nicht gesagt wurden, darum ist das Transkript gegen die
+   Aufnahme zu prüfen.
+3. **Ablage.** Je Transkript entsteht ein Unterordner im gewählten
+   Bibliotheksordner `[Pfad]` mit `transkript.json` (Wortlaut, Sprecher,
+   Memos, Journal, Zotero-Angaben), einer Kopie der Aufnahme (bei Video
+   auch der unveränderten Videodatei) und `wellenform.json`.
+   `ausgang.json` hält den Stand fest, wie ihn die Maschine oder eine
+   importierte Datei lieferte; `history/` hält die letzten 30 Stände.
+   **Beide enthalten den Wortlaut vor einer Pseudonymisierung.**
+   Einstellungen und App-Protokoll liegen im App-Container des
+   Benutzerkontos. Das Journal vermerkt eine Kennung der Installation
+   und, freiwillig, eine E-Mail-Adresse der bearbeitenden Person.
+4. **Netz.** Die Software überträgt keine Aufnahmen, Texte oder
+   Nutzungsdaten: kein Konto, keine Telemetrie, keine Update-Prüfung,
+   keine eigenen Absturzberichte, kein Nachladen von Modellen. Es gibt
+   keinen internen Dienst, keinen Server und keinen offenen Port. Die
+   Netzberechtigung von macOS ist nur gesetzt, weil die eingebaute
+   Web-Ansicht sie verlangt; eine Firewall oder `nettop` zeigt, dass
+   keine Verbindung entsteht. Absturzberichte des Betriebssystems macOS
+   unterliegen dessen Systemeinstellungen, nicht der Software.
+5. **Ausgabe.** Exportdateien werden dorthin geschrieben, wo die
+   bedienende Person sie speichert. Alle Textformate (VTT, CSV, TXT,
+   Markdown, Word) enthalten Wortlaut, Sprechernamen und Zeitmarken;
+   CSV, Markdown und Word zusätzlich die Memos; Markdown und Word bei
+   Zotero-Verknüpfung einen Kopf mit Titel, Datum, Citekey und den
+   Personen, deren Rollen gewählt wurden. **REFI-QDA (`.qdpx.zip`)
+   enthält Text, Memos und die Tonaufnahme, also die Stimme, auf Wunsch
+   die Videodatei; das enrich-Dossier (`.enrich`) Text, Tonaufnahme als
+   MP3 (über LAME), Journal mit Kennung der Installation und E-Mail
+   sowie Zotero-Angaben, keine Memos.** Ihre Weitergabe ist eine
+   Weitergabe der Aufnahme. Mit Zotero-Einwilligung liest die Anwendung
+   die lokale `zotero.sqlite` nur lesend und nur auf Anfrage. Bei einer
    Videoaufnahme liegt die Videodatei unverändert im Ordner des
    Transkripts (Gesichter sind personenbezogene, bei Identifizierbarkeit
-   biometrische Daten); der enrich-Export enthält nur den Ton, der
-   REFI-QDA-Export das Video nur auf ausdrückliche Wahl.
+   biometrische Daten).
 
 ## 5. Ort der Verarbeitung
 
 Ausschliesslich auf dem Endgerät `[Gerät, Standort]` in der Sitzung der
-angemeldeten Person. Es gibt keinen Server, keinen Cloud-Dienst und kein
-Benutzerkonto.
+angemeldeten Person. Es gibt keinen Server, keinen offenen Port, keinen
+Cloud-Dienst und kein Benutzerkonto.
 
 ## 6. Empfänger, Auftragsverarbeitung, Drittlandübermittlung
 
@@ -96,10 +125,11 @@ Exportdateien selbst weitergibt `[an …, auf dem Weg …]`.
 Aufbewahrung der Aufnahmen und Transkripte: `[Frist, Grundlage]`.
 Löschen in der Anwendung verschiebt einen Eintrag in einen
 Papierkorb-Ordner innerhalb der Bibliothek (`_papierkorb`); endgültig
-entfernt wird er erst durch Leeren dieses Ordners `[durch wen, wann]`.
-Verlaufsschnappschüsse liegen im Ordner des jeweiligen Transkripts und
-werden mit ihm gelöscht. Sicherungskopien des Endgeräts `[Time Machine,
-…]` unterliegen der Löschregel der Stelle.
+entfernt wird er erst durch Leeren dieses Ordners im Finder `[durch wen,
+wann]`. `ausgang.json` und die Stände in `history/` liegen im Ordner des
+jeweiligen Transkripts und werden mit ihm gelöscht. Sicherungskopien
+des Endgeräts `[Time Machine, …]` unterliegen der Löschregel der
+Stelle.
 
 ## 8. Technische und organisatorische Massnahmen
 
@@ -123,12 +153,12 @@ Informationsschreiben vom …]`. Die Software trägt hierzu nichts bei.
 
 ## 10. Nachprüfbarkeit
 
-Die Aussagen in Abschnitt 4 lassen sich am Quellcode prüfen: Die
-Bindung des internen Dienstes an `127.0.0.1` und die Abweisung fremder
-Hosts stehen in `backend/src/researchtranscript/main.py`. Das Repository
-enthält die vollständige Build-Kette bis zum signierten Installations-
-paket; wer der ausgelieferten Binärdatei nicht traut, kann sie selbst
-erzeugen.
+Die Aussagen in Abschnitt 4 lassen sich am Quellcode prüfen: Die Shell
+`frontend/src-tauri/src/lib.rs` startet keinen Server und öffnet keinen
+Port; die Sandbox-Berechtigungen stehen in
+`frontend/src-tauri/entitlements.plist`. Das Repository enthält die
+vollständige Build-Kette bis zum signierten Installationspaket; wer der
+ausgelieferten Binärdatei nicht traut, kann sie selbst erzeugen.
 
 ---
 
