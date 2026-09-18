@@ -77,8 +77,10 @@ def _guid(ns: uuid.UUID, schluessel: str) -> str:
 
 
 def _hms(sekunden: float) -> str:
-    s = max(0, int(sekunden))
-    return f"{s // 3600:02d}:{s % 3600 // 60:02d}:{s % 60:02d}"
+    """hh:mm:ss.hh für die Beschriftungen (User 2026-09-18) — die
+    SyncPoints selbst stehen ohnehin in Millisekunden."""
+    from .ausgabe import format_hms_h
+    return format_hms_h(sekunden)
 
 
 def text_und_marken(segmente: list[dict]) -> tuple[str, list[dict]]:

@@ -5,6 +5,8 @@ a version are the corresponding section of this file.
 
 ## 0.6.0 — unreleased
 
+- Timecodes im Editor in Hundertstelsekunden (Zeile editierbar und mitlaufend, Fusszeile, Kopfzeile, Playhead); CSV-Export und QDPX-Beschriftungen schreiben `hh:mm:ss.hh`, damit der CSV-Rundlauf nichts verliert.
+
 ### Changed
 
 - **Audio and speaker separation run inside the app.** Decoding,

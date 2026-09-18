@@ -29,7 +29,20 @@ def test_csv_immer_hhmmss(client, eintrag):
         "utf-8-sig")
     zeilen = text.strip().splitlines()
     assert zeilen[0] == '"Time-in","Time-out","Speaker","Text","Memo"'
-    assert '"00:00:00"' in zeilen[1]  # hh:mm:ss auch unter 1 h
+    # hh:mm:ss auch unter 1 h, seit 0.6.0 mit Hundertsteln
+    assert zeilen[1].startswith('"00:00:00.00","00:00:04.00"')
+
+
+def test_csv_hundertstel_rundlauf():
+    """Im Editor gesetzte Hundertstel überleben Export → Import."""
+    from researchtranscript import ausgabe
+    from researchtranscript.enrich_export.turns import parse_transkript_csv
+    assert ausgabe.format_hms_h(1150.45) == "00:19:10.45"
+    assert ausgabe.format_hms_h(3599.999) == "00:59:59.99"   # abgeschnitten
+    seg = [{"start": 1150.45, "end": 1154.2, "sprecher": "Anna", "text": "Ja."}]
+    turns = parse_transkript_csv(ausgabe.build_csv(seg).encode("utf-8-sig"))
+    assert abs(turns[0]["t0_s"] - 1150.45) < 1e-6
+    assert abs(turns[0]["t1_s"] - 1154.2) < 1e-6
 
 
 def test_txt(client, eintrag):

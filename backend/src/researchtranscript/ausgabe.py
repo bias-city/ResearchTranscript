@@ -36,6 +36,14 @@ def format_hms(seconds: float) -> str:
     return f"{h:02d}:{m:02d}:{sek:02d}"
 
 
+def format_hms_h(seconds: float) -> str:
+    """hh:mm:ss.hh — Hundertstelsekunden, abgeschnitten wie im Editor
+    (User 2026-09-18: die im Editor gesetzten Hundertstel dürfen im
+    CSV-Rundlauf nicht verloren gehen; der Import liest sie bereits)."""
+    h = max(0, int(float(seconds) * 100 + 1e-6))
+    return f"{format_hms(h // 100)}.{h % 100:02d}"
+
+
 def normalize_vtt_cues(cues: list[dict], min_duration: float = 2.0, max_duration: float = 7.0) -> list[dict]:
     """
     Normalize VTT cues for optimal subtitle display.
@@ -216,7 +224,7 @@ def build_csv(segmente: list[dict]) -> str:
     # die Spalten am Kopf und überliest sie
     w.writerow(["Time-in", "Time-out", "Speaker", "Text", "Memo"])
     for t in _turns(segmente):
-        w.writerow([format_hms(t["start"]), format_hms(t["end"]),
+        w.writerow([format_hms_h(t["start"]), format_hms_h(t["end"]),
                     t["sprecher"], " ".join(t["text"].split()),
                     t.get("memo") or ""])
     return buf.getvalue()
