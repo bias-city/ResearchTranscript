@@ -250,6 +250,7 @@ cd frontend && npm install
 npm run dev                                      # browser dev (proxy :5628)
 uv run uvicorn researchtranscript.main:app --port 5628    # in backend/ (dev server only)
 node scripts/bundle-resources.mjs                # once: runtime + python/site-packages
+node ../scripts/pyo3-config.mjs   # writes src-tauri/pyo3-config.txt for this machine (also done by bundle-resources.mjs)
 PYO3_CONFIG_FILE=$PWD/src-tauri/pyo3-config.txt npx tauri dev   # app dev (Python in-process)
 ```
 

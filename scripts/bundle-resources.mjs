@@ -12,6 +12,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { schreibePyo3Config } from "./pyo3-config.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const RES = path.join(ROOT, "frontend/src-tauri/resources");
@@ -160,6 +161,9 @@ const py = path.join(RES, "python-runtime/bin/python3");
 
 // 2b. Lizenzliste erzeugen (kommt über tauri.conf.json → Resources/licenses)
 execFileSync("python3", [path.join(ROOT, "scripts/gen-licenses.py")], { stdio: "inherit" });
+
+// 2c. pyo3-config.txt mit den Pfaden dieses Rechners (nicht eingecheckt)
+console.log("✓", schreibePyo3Config());
 
 // 3. Marker
 fs.writeFileSync(path.join(RES, "BUNDLED"),

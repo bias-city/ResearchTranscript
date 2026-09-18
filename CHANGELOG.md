@@ -15,6 +15,11 @@ a version are the corresponding section of this file.
 - **Authorship and AI assistance** stated in the README, on the website
   and on Zenodo.
 - README: ffmpeg is no longer listed as bundled (gone since 0.6.0).
+- Source archives: `pyo3-config.txt` is generated per machine
+  (`scripts/pyo3-config.mjs`) and no longer checked in, so no local path
+  ends up in an archive; `BACKLOG.md`, `CLAUDE.md` and `spike/` are
+  left out of source archives (`.gitattributes`). The Zenodo copy of
+  0.6.0 is restricted for that reason; the code is public on GitHub.
 
 ## 0.6.0 — 2026-09-18
 

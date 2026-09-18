@@ -1,0 +1,5 @@
+# Nicht ins Quellarchiv (git archive, GitHub-Quellpakete, Zenodo):
+# Arbeitsnotizen und Versuchsaufbauten. Im Repo bleiben sie.
+BACKLOG.md   export-ignore
+CLAUDE.md    export-ignore
+spike/       export-ignore

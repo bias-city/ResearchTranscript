@@ -38,3 +38,7 @@ frontend/src-tauri/binaries/
 frontend/src-tauri/profiles/
 appstore/screenshots/
 appstore/upload/
+
+# erzeugt von scripts/pyo3-config.mjs — enthält absolute Pfade dieses Rechners
+frontend/src-tauri/pyo3-config.txt
+spike/pyo3/pyo3-config.txt
