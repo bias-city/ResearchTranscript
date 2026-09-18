@@ -304,9 +304,9 @@ ResearchTranscript
 KI-Transkription für Forschung
 ```
 
-**Werbetext** (161/170) — lässt sich später ohne neue Version ändern
+**Werbetext** (167/170) — lässt sich später ohne neue Version ändern
 ```text
-KI-Transkript mit Sprechern, von dir im Editor geprüft. REFI-QDA und Methodenabsatz für die Forschung. Quellenschutz: Keine Daten verlassen den Mac. Open Source.
+Vom Interview zum zitierfähigen Transkript, in Minuten statt Tagen. Die KI schreibt, du behältst das letzte Wort. Für die Forschung gebaut. Nichts verlässt deinen Mac.
 ```
 
 **Schlagwörter** (95/100)
@@ -369,9 +369,9 @@ ResearchTranscript
 AI transcripts for research
 ```
 
-**Werbetext** (162/170) — lässt sich später ohne neue Version ändern
+**Werbetext** (148/170) — lässt sich später ohne neue Version ändern
 ```text
-AI transcript with speakers, checked by you in the editor. REFI-QDA and a methods paragraph for research. Source protection: no data leaves your Mac. Open source.
+From interview to citable transcript in minutes, not days. The AI writes, you have the final word. Built for research. Nothing ever leaves your Mac.
 ```
 
 **Schlagwörter** (88/100)
@@ -434,9 +434,9 @@ ResearchTranscript
 Transcription IA, recherche
 ```
 
-**Werbetext** (166/170) — lässt sich später ohne neue Version ändern
+**Werbetext** (160/170) — lässt sich später ohne neue Version ändern
 ```text
-Transcription IA avec locuteurs, vérifiée par toi. REFI-QDA et paragraphe de méthodes pour la recherche. Protection des sources : rien ne quitte ton Mac. Open source.
+De l’entretien à la transcription citable, en minutes plutôt qu’en jours. L’IA écrit, tu gardes le dernier mot. Conçu pour la recherche. Rien ne quitte ton Mac.
 ```
 
 **Schlagwörter** (93/100)
@@ -499,9 +499,9 @@ ResearchTranscript
 Trascrizione IA per ricerca
 ```
 
-**Werbetext** (157/170) — lässt sich später ohne neue Version ändern
+**Werbetext** (160/170) — lässt sich später ohne neue Version ändern
 ```text
-Trascrizione IA con i parlanti, verificata da te. REFI-QDA e paragrafo metodi per la ricerca. Tutela delle fonti: nessun dato lascia il tuo Mac. Open source.
+Dall’intervista alla trascrizione citabile, in minuti invece che in giorni. L’IA scrive, l’ultima parola è tua. Pensato per la ricerca. Nulla lascia il tuo Mac.
 ```
 
 **Schlagwörter** (87/100)

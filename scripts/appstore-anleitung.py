@@ -33,7 +33,7 @@ T: dict[str, dict[str, str]] = {
     "de": {
         "name": "ResearchTranscript",
         "untertitel": "KI-Transkription für Forschung",
-        "werbetext": "KI-Transkript mit Sprechern, von dir im Editor geprüft. REFI-QDA und Methodenabsatz für die Forschung. Quellenschutz: Keine Daten verlassen den Mac. Open Source.",
+        "werbetext": "Vom Interview zum zitierfähigen Transkript, in Minuten statt Tagen. Die KI schreibt, du behältst das letzte Wort. Für die Forschung gebaut. Nichts verlässt deinen Mac.",
         "schlagwoerter": "Transkription,Interview,KI,Whisper,Sprecher,qualitativ,Forschung,QDA,qdpx,offline,Quellenschutz",
         "neu": "Erste Fassung im Mac App Store.",
         "beschreibung": """ResearchTranscript macht aus Interviews, Gruppengesprächen und Feldaufnahmen Transkripte für die qualitative Forschung. Die KI schreibt den Rohtext, du prüfst und korrigierst ihn im Editor, und die App dokumentiert, wie das Transkript entstand. Alles läuft lokal auf deinem Mac: keine Cloud, kein Konto, keine Daten verlassen den Rechner.
@@ -74,7 +74,7 @@ Mac mit Apple Silicon, macOS 14 oder neuer, rund 2 GB freier Speicher.""",
     "en": {
         "name": "ResearchTranscript",
         "untertitel": "AI transcripts for research",
-        "werbetext": "AI transcript with speakers, checked by you in the editor. REFI-QDA and a methods paragraph for research. Source protection: no data leaves your Mac. Open source.",
+        "werbetext": "From interview to citable transcript in minutes, not days. The AI writes, you have the final word. Built for research. Nothing ever leaves your Mac.",
         "schlagwoerter": "transcription,interview,AI,whisper,speaker,qualitative,research,QDA,qdpx,offline,methods",
         "neu": "First release on the Mac App Store.",
         "beschreibung": """ResearchTranscript turns interviews, group discussions and field recordings into transcripts for qualitative research. The AI writes the raw text, you check and correct it in the editor, and the app documents how the transcript came about. Everything runs locally on your Mac: no cloud, no account, and no data leaves the computer.
@@ -115,7 +115,7 @@ Mac with Apple silicon, macOS 14 or later, about 2 GB of free space.""",
     "fr": {
         "name": "ResearchTranscript",
         "untertitel": "Transcription IA, recherche",
-        "werbetext": "Transcription IA avec locuteurs, vérifiée par toi. REFI-QDA et paragraphe de méthodes pour la recherche. Protection des sources : rien ne quitte ton Mac. Open source.",
+        "werbetext": "De l’entretien à la transcription citable, en minutes plutôt qu’en jours. L’IA écrit, tu gardes le dernier mot. Conçu pour la recherche. Rien ne quitte ton Mac.",
         "schlagwoerter": "transcription,entretien,IA,whisper,locuteur,qualitatif,recherche,QDA,qdpx,hors ligne,méthodes",
         "neu": "Première version sur le Mac App Store.",
         "beschreibung": """ResearchTranscript transforme entretiens, discussions de groupe et enregistrements de terrain en transcriptions pour la recherche qualitative. L’IA écrit le texte brut, tu le vérifies et le corriges dans l’éditeur, et l’app documente comment la transcription a été produite. Tout se passe en local sur ton Mac : pas de cloud, pas de compte, aucune donnée ne quitte l’ordinateur.
@@ -156,7 +156,7 @@ Mac avec puce Apple, macOS 14 ou plus récent, environ 2 Go d’espace libre."""
     "it": {
         "name": "ResearchTranscript",
         "untertitel": "Trascrizione IA per ricerca",
-        "werbetext": "Trascrizione IA con i parlanti, verificata da te. REFI-QDA e paragrafo metodi per la ricerca. Tutela delle fonti: nessun dato lascia il tuo Mac. Open source.",
+        "werbetext": "Dall’intervista alla trascrizione citabile, in minuti invece che in giorni. L’IA scrive, l’ultima parola è tua. Pensato per la ricerca. Nulla lascia il tuo Mac.",
         "schlagwoerter": "trascrizione,intervista,IA,whisper,parlante,qualitativo,ricerca,QDA,qdpx,offline,metodi",
         "neu": "Prima versione sul Mac App Store.",
         "beschreibung": """ResearchTranscript trasforma interviste, discussioni di gruppo e registrazioni sul campo in trascrizioni per la ricerca qualitativa. L’IA scrive il testo grezzo, tu lo verifichi e lo correggi nell’editor, e l’app documenta come è nata la trascrizione. Tutto avviene in locale sul tuo Mac: niente cloud, nessun account, nessun dato lascia il computer.
