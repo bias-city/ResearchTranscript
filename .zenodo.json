@@ -1,0 +1,17 @@
+{
+  "title": "ResearchTranscript",
+  "upload_type": "software",
+  "description": "<p>ResearchTranscript turns interviews, group discussions and field recordings into transcripts for qualitative research. Speech recognition (whisper.cpp) and speaker diarisation (SpeakerKit with pyannote models) run locally on the Mac; no recording or text leaves the computer. The transcript is checked and corrected in an editor with waveform, keyboard control and memos, and exported as WebVTT, CSV, text, Markdown, Word, REFI-QDA (.qdpx) or an enrich dossier.</p><p>For each transcript the app generates a documentation package for researchers: a transcription record with the models used and the measured degree of manual editing, a paragraph for the methods section, facts for records of processing and ethics applications, and a repository data sheet following the Zenodo form and DataCite.</p><p>macOS 14 or later, Apple silicon. Interface in German, English, French and Italian.</p>",
+  "creators": [
+    { "name": "Pohl, Ben", "affiliation": "B/IAS – Basel Institut für angewandte Stadtforschung" }
+  ],
+  "license": "AGPL-3.0-or-later",
+  "access_right": "open",
+  "keywords": ["transcription", "qualitative research", "interviews", "speech recognition", "whisper", "speaker diarization", "REFI-QDA", "research data management", "macOS", "open source"],
+  "language": "eng",
+  "related_identifiers": [
+    { "identifier": "https://github.com/bias-city/ResearchTranscript", "relation": "isSupplementTo", "resource_type": "software", "scheme": "url" },
+    { "identifier": "https://bias.city/researchtranscript/", "relation": "isDocumentedBy", "scheme": "url" }
+  ],
+  "notes": "Source code under AGPL-3.0-or-later with an additional permission under section 7 for distribution through the Apple App Store (see LICENSE-EXCEPTION). Developed at B/IAS – Basel Institut für angewandte Stadtforschung."
+}
