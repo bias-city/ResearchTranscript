@@ -843,7 +843,7 @@ export default function EditorModule({ id, onExit }: {
         <div ref={listRef}
              onMouseDown={fokusLoesen}
              style={{ flex: 1, overflowY: "auto", minHeight: 0,
-                      padding: "8px 16px 96px" }}>
+                      padding: "8px 22px 96px 16px" }}>
           {ladeN > 0 && (
             <Flex align="center" gap="2" py="4">
               <Spinner size="2" />
@@ -1345,7 +1345,9 @@ const SegmentZeile = memo(function SegmentZeile({
          onMouseDown={fokusLoesen}
          style={{
            display: "grid",
-           gridTemplateColumns: "26px 74px 130px 1fr 100px",
+           // Aktionsspalte so breit wie ihre Icons, rechtsbündig — mit dem
+           // Listenrand ergibt das ~32 px bis zur Spaltenkante (User 2026-09-18)
+           gridTemplateColumns: "26px 74px 130px 1fr auto",
            gap: 8, alignItems: "start", padding: "5px 4px",
            borderRadius: 8,
            background: aktiv ? "var(--accent-a3)" : undefined,
@@ -1438,7 +1440,7 @@ const SegmentZeile = memo(function SegmentZeile({
                   onText(seg.id, e.currentTarget.value);
                 }}
                 className="seg-text" />
-      <Flex gap="1" style={SEG_SLOT}>
+      <Flex gap="1" justify="end" style={SEG_SLOT}>
         {/* Memo (User 2026-09-17): roter Punkt = Memo vorhanden, der
             Tooltip zeigt den Text, Klick öffnet den Dialog */}
         <IconButton title={seg.memo ? seg.memo : tr("ed.memo")}
