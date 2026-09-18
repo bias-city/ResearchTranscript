@@ -28,7 +28,7 @@ def test_csv_immer_hhmmss(client, eintrag):
         f"/api/transcripts/{eintrag}/export/csv").content.decode(
         "utf-8-sig")
     zeilen = text.strip().splitlines()
-    assert zeilen[0] == '"Time-in","Time-out","Speaker","Text"'
+    assert zeilen[0] == '"Time-in","Time-out","Speaker","Text","Memo"'
     assert '"00:00:00"' in zeilen[1]  # hh:mm:ss auch unter 1 h
 
 

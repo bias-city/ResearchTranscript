@@ -54,6 +54,7 @@ _NS_QUELLE = uuid.uuid5(uuid.NAMESPACE_URL, "localtranscript:refi-source")
 _NS_CODE = uuid.uuid5(uuid.NAMESPACE_URL, "localtranscript:refi-code")
 _NS_SEL = uuid.uuid5(uuid.NAMESPACE_URL, "localtranscript:refi-selection")
 _NS_USER = uuid.uuid5(uuid.NAMESPACE_URL, "localtranscript:refi-user")
+_NS_NOTE = uuid.uuid5(uuid.NAMESPACE_URL, "researchtranscript:refi-note")
 
 #: Sprecher-Palette in der Reihenfolge des Frontends
 #: (lib/api.ts SPRECHER_FARBEN) — die Codes tragen im QDA-Programm
@@ -107,6 +108,7 @@ def text_und_marken(segmente: list[dict]) -> tuple[str, list[dict]]:
                        "start": float(s["start"]),
                        "end": float(s["end"]),
                        "sprecher": s.get("sprecher") or "",
+                       "memo": " ".join((s.get("memo") or "").split()),
                        "laenge": len(zeile)})
         zeilen.append(zeile)
         offset += len(zeile) + 1          # + "\n"
@@ -173,10 +175,15 @@ def baue_projekt(name: str, segmente: list[dict], sprecher: list[dict],
         "plainTextPath": f"internal://{txt_guid}.txt",
         "creatingUser": user_guid, "creationDateTime": jetzt,
         "modifyingUser": user_guid, "modifiedDateTime": jetzt})
-    if code_guid:
+    # Memos (User 2026-09-17): je Zeile mit Memo eine <Note>, an der
+    # Stelle verknüpft (<NoteRef> in der Selection) — im QDA-Programm ein
+    # Memo an dem mit dem Sprecher codierten Zitat. Eine Zeile ohne
+    # Sprecher-Code bekommt dafür eine Selection ohne Coding.
+    notizen: list[tuple[str, dict]] = []
+    if code_guid or any(m["memo"] for m in marken):
         for m in marken:
             g = code_guid.get(m["sprecher"])
-            if not g:
+            if not g and not m["memo"]:
                 continue
             sel = ET.SubElement(txt_quelle, "PlainTextSelection", {
                 "guid": _guid(_NS_SEL, f"{txt_guid}:{m['pos']}"),
@@ -185,10 +192,15 @@ def baue_projekt(name: str, segmente: list[dict], sprecher: list[dict],
                 "endPosition": str(m["pos"] + m["laenge"]),
                 "creatingUser": user_guid, "creationDateTime": jetzt,
                 "modifyingUser": user_guid, "modifiedDateTime": jetzt})
-            cod = ET.SubElement(sel, "Coding", {
-                "guid": _guid(_NS_SEL, f"c:{txt_guid}:{m['pos']}"),
-                "creatingUser": user_guid, "creationDateTime": jetzt})
-            ET.SubElement(cod, "CodeRef", {"targetGUID": g})
+            if g:
+                cod = ET.SubElement(sel, "Coding", {
+                    "guid": _guid(_NS_SEL, f"c:{txt_guid}:{m['pos']}"),
+                    "creatingUser": user_guid, "creationDateTime": jetzt})
+                ET.SubElement(cod, "CodeRef", {"targetGUID": g})
+            if m["memo"]:
+                ng = _guid(_NS_NOTE, f"{txt_guid}:{m['pos']}")
+                ET.SubElement(sel, "NoteRef", {"targetGUID": ng})
+                notizen.append((ng, m))
 
     # ---------- AudioSource + Transcript: dieselbe Textdatei ----------
     # Mit Video (BACKLOG 8, «Video mitgeben»): dieselbe Struktur als
@@ -209,6 +221,16 @@ def baue_projekt(name: str, segmente: list[dict], sprecher: list[dict],
             ET.SubElement(tr, "SyncPoint", {
                 "guid": _guid(_NS_SEL, f"sp:{m['pos']}"),
                 "position": str(m["pos"]), "timeStamp": str(m["ms"])})
+
+    # <Notes> steht im Schema NACH <Sources>
+    if notizen:
+        notes = ET.SubElement(wurzel, "Notes")
+        for ng, m in notizen:
+            n = ET.SubElement(notes, "Note", {
+                "guid": ng, "name": f"Memo {_hms(m['start'])}",
+                "creatingUser": user_guid, "creationDateTime": jetzt,
+                "modifyingUser": user_guid, "modifiedDateTime": jetzt})
+            ET.SubElement(n, "PlainTextContent").text = m["memo"]
 
     ET.indent(wurzel)
     xml = ET.tostring(wurzel, encoding="utf-8", xml_declaration=True)

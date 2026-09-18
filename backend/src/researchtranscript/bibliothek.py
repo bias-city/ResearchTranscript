@@ -406,5 +406,5 @@ def export_segmente(daten: dict) -> list[dict]:
     """Kanonisch → Export-Form (Anzeigenamen aufgelöst)."""
     return [{"start": s["start"], "end": s["end"],
              "sprecher": sprecher_name(daten, s.get("sprecher")),
-             "text": s["text"]}
+             "text": s["text"], "memo": s.get("memo") or ""}
             for s in daten.get("segmente", [])]

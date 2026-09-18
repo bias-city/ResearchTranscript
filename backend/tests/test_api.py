@@ -159,6 +159,40 @@ def test_sprecherfarbe_wird_gespeichert_und_geprueft(client, eintrag):
     assert e.value.status == 422
 
 
+# ---------- Memo je Zeile (User 2026-09-17) ----------
+
+def test_memo_speichern_csv_und_qdpx(client, eintrag):
+    import io
+    import zipfile
+
+    from researchtranscript import api, exporte
+    d = api.transcript_get(eintrag)
+    seg = [dict(s) for s in d["segmente"]]
+    origin_vorher = seg[0].get("origin")
+    journal_vorher = len(d.get("journal") or [])
+    seg[0]["memo"] = "  Hier lacht Anna —\nIronie?  "
+    seg[1]["memo"] = ""
+    api.transcript_put(eintrag, {"sprecher": d["sprecher"], "segmente": seg})
+    d2 = api.transcript_get(eintrag)
+    assert d2["segmente"][0]["memo"] == "Hier lacht Anna —\nIronie?"
+    assert "memo" not in d2["segmente"][1]
+    # ein Memo ist kein Eingriff in den Wortlaut: origin und Journal bleiben
+    assert d2["segmente"][0].get("origin") == origin_vorher
+    assert len(d2.get("journal") or []) == journal_vorher
+    csv_text = exporte.export_bytes(eintrag, "csv")[0].decode("utf-8-sig")
+    kopf, erste = csv_text.splitlines()[0], csv_text.splitlines()[1]
+    assert kopf.endswith('"Memo"') and "Hier lacht Anna — Ironie?" in erste
+    # REFI-QDA: Note + NoteRef an der Selection
+    z = zipfile.ZipFile(io.BytesIO(exporte.export_bytes(eintrag, "qdpx")[0]))
+    innen = next(n for n in z.namelist() if n.endswith(".qdpx"))
+    qdpx = zipfile.ZipFile(io.BytesIO(z.read(innen)))
+    qde = qdpx.read(next(n for n in qdpx.namelist() if n.endswith(".qde"))).decode()
+    assert "<Notes>" in qde and "Hier lacht Anna — Ironie?" in qde
+    assert qde.count("<NoteRef") == 1 and qde.index("<Sources>") < qde.index("<Notes>")
+    # enrich-Dossier: baut weiter (Memo geht dort nicht mit, Format 0.1.0)
+    assert exporte.export_bytes(eintrag, "enrich")[0][:2] == b"PK"
+
+
 # ---------- Warteliste (R2) ----------
 
 def test_warteliste_ueberlebt_und_vergisst_verschwundene(tmp_path, monkeypatch):

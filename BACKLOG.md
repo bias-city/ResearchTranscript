@@ -305,3 +305,17 @@ hervorgehen. Erledigtes wandert ins CHANGELOG.
   Äusserung (Untertitel-Stil der Trainingsdaten — für den Editor evtl.
   beim Import strippen, wenn das Modell in Gebrauch kommt). Der echte
   Nutzen zeigt sich erst auf Mundart-Aufnahmen — noch nicht gemessen.
+
+## 15. Memos im enrich-Dossier (2026-09-18)
+
+Memos je Zeile (seit 0.6.0) gehen in CSV (Spalte «Memo») und REFI-QDA
+(`<Note>` + `<NoteRef>` an der Selection) mit — **nicht** ins
+enrich-Dossier. Grund ist nicht das fehlende PDF: die Transkript-Schicht
+von enrich-core 0.1.0 (`schemas/transcript.py`, `Segment` ist ein
+`StrictModel`) kennt kein Memo-Feld und lehnt fremde Felder ab. Memos
+sind in enrich eigene Records (`m-<ULID>`, ids.py), die an Codierungen
+und Knoten hängen. Sauberer Weg: in enrich-core einen Memo-Record mit
+Anker `segment:<sg-id>` (oder `Segment.note`) einführen, Version 0.2.0,
+hier neu pinnen, `format2.transkript_schicht` reicht die Memos durch;
+enrich setzt sie beim Import zwischen Textstelle und Code/Label.
+Bis dahin: `transkript.json` in der Bibliothek trägt die Memos.

@@ -22,6 +22,9 @@ export type Sprecher = { id: string; name: string;
 export type Segment = {
   id: string; start: number; end: number;
   sprecher: string | null; text: string;
+  /** Memo der forschenden Person zu dieser Zeile — kein Teil des
+      Wortlauts; geht in CSV und REFI-QDA mit */
+  memo?: string | null;
 };
 export type Transkript = {
   schema: number; id: string; name: string; created: string;

@@ -7,7 +7,7 @@
 import {
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
   Download, FileText,
-  FolderOpen, Import, Library, Merge, Pause, Pencil, Play, Plus,
+  FolderOpen, Import, Library, Merge, NotepadText, Pause, Pencil, Play, Plus,
   Repeat, Search, Settings, Split, Trash2, Users, Volume2, X,
   type LucideIcon,
 } from "lucide-react";
@@ -16,7 +16,7 @@ export type IconName =
   | "library" | "settings" | "play" | "pause" | "download" | "import"
   | "text" | "edit" | "trash" | "split" | "speakers" | "plus"
   | "back" | "folder" | "close" | "sample" | "rewind" | "forward"
-  | "loop" | "merge" | "search" | "next";
+  | "loop" | "merge" | "search" | "next" | "memo";
 
 const ICONS: Record<IconName, LucideIcon> = {
   library: Library,
@@ -26,6 +26,7 @@ const ICONS: Record<IconName, LucideIcon> = {
   download: Download,
   import: Import,
   text: FileText,
+  memo: NotepadText,
   edit: Pencil,
   trash: Trash2,
   split: Split,

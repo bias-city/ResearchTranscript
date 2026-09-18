@@ -5,7 +5,7 @@
 import { memo, useCallback, useEffect, useMemo, useRef, useState,
   type MouseEvent as ReactMouseEvent } from "react";
 import {
-  Badge, Button, Checkbox, ErrorNote, Flex, IconButton,
+  Badge, Button, Checkbox, ErrorNote, Flex, IconButton, ModalDialog,
   SearchField, SegTabs, Select, SidePanel, Spinner, Text, TextField,
 } from "../components/ui";
 import { Icon } from "../components/icons";
@@ -389,6 +389,20 @@ export default function EditorModule({ id, onExit }: {
   const turnBeiZeitRef = useRef(turnBeiZeit);
   turnBeiZeitRef.current = turnBeiZeit;
 
+  // Memo je Zeile: EIN Dialog für alle Zeilen (wie das Sprecher-Menü)
+  const [memoOffen, setMemoOffen] = useState<{ id: string; text: string } | null>(null);
+  const memoOeffnen = useCallback((sid: string) => {
+    const seg = zustand.current.segmente.find((x) => x.id === sid);
+    if (seg) setMemoOffen({ id: sid, text: seg.memo ?? "" });
+  }, []);
+  const memoSichern = useCallback((sid: string, text: string) => {
+    const t = text.trim();
+    // gleiche id: der Wortlaut ändert sich nicht, das Textfeld bleibt stehen
+    setSegmente((s) => s.map((x) => x.id === sid ? { ...x, memo: t || null } : x));
+    setMemoOffen(null);
+    dirty();
+  }, [dirty]);
+
   /** Startzeit von Hand (Klick auf den Timecode, User 2026-09-17):
       Ende bleibt, rutscht aber mit, wenn es vor dem neuen Start läge;
       die Liste bleibt chronologisch (stabil sortiert). */
@@ -662,6 +676,8 @@ export default function EditorModule({ id, onExit }: {
       const ziel = e.target as HTMLElement | null;
       const tippt = ziel?.tagName === "TEXTAREA"
         || ziel?.tagName === "INPUT";
+      // In einem Dialog (Memo) gehören alle Tasten dem Dialog
+      if (ziel?.closest("[role='dialog']")) return;
       const a = audioRef.current;
       if (!a) return;
       // Kürzel enden hier: preventDefault UND stopPropagation, sonst
@@ -851,6 +867,7 @@ export default function EditorModule({ id, onExit }: {
               onZeit={zeitSetzen}
               onSpringe={springe}
               onText={textAendern} onMenue={menueOeffnen}
+              onMemo={memoOeffnen}
               onTeilen={teilen} onNeu={neuerTurn} onVerbinden={verbinden}
               onEntfernen={entfernen} />
           ))}
@@ -921,6 +938,39 @@ export default function EditorModule({ id, onExit }: {
         </Flex>
       </Flex>
 
+      <ModalDialog open={memoOffen !== null} width={520}
+                   onOpenChange={(o) => { if (!o) setMemoOffen(null); }}
+                   title={tr("ed.memo")}
+                   footer={<>
+                     {memoOffen?.text.trim() === "" ? null : (
+                       <Button size="1" variant="soft" color="red"
+                               onClick={() => memoOffen && memoSichern(memoOffen.id, "")}>
+                         {tr("ed.memo.loeschen")}</Button>
+                     )}
+                     <div style={{ flex: 1 }} />
+                     <Button size="1" variant="soft" color="gray" highContrast
+                             onClick={() => setMemoOffen(null)}>
+                       {tr("allg.abbrechen")}</Button>
+                     <Button size="1" variant="soft" color="gray" highContrast
+                             onClick={() => memoOffen && memoSichern(memoOffen.id, memoOffen.text)}>
+                       {tr("ed.memo.sichern")}</Button>
+                   </>}>
+        {memoOffen && (
+          <Flex direction="column" gap="2">
+            <Text size="1" color="gray">{tr("ed.memo.hinweis")}</Text>
+            <textarea autoFocus value={memoOffen.text} rows={6}
+                      onChange={(e) => setMemoOffen({ id: memoOffen.id, text: e.target.value })}
+                      onKeyDown={(e) => {
+                        // ⌘Enter sichert
+                        if (e.key === "Enter" && e.metaKey) memoSichern(memoOffen.id, memoOffen.text);
+                      }}
+                      style={{ width: "100%", boxSizing: "border-box", resize: "vertical",
+                               font: "inherit", fontSize: 14, lineHeight: 1.5, padding: 8,
+                               borderRadius: 6, border: "1px solid var(--gray-a7)",
+                               background: "var(--color-panel-solid)", color: "var(--gray-12)" }} />
+          </Flex>
+        )}
+      </ModalDialog>
       {menue && (
         <div data-sprecher-menue
              style={{ position: "fixed", left: menue.x,
@@ -1250,8 +1300,10 @@ function planeWachsen(el: HTMLTextAreaElement) {
 const SegmentZeile = memo(function SegmentZeile({
   seg, index, aktiv, treffer, name, farbe, hatAudio, laufzeit, spielt,
   onPause, onZeit, onSpringe, onText, onMenue, onTeilen, onNeu,
-  onVerbinden, onEntfernen,
+  onVerbinden, onEntfernen, onMemo,
 }: {
+  /** Memo-Dialog für diese Zeile öffnen */
+  onMemo: (id: string) => void;
   /** diese Zeile spielt gerade — der Play-Knopf wird zum Pause-Knopf */
   spielt: boolean;
   onPause: () => void;
@@ -1293,7 +1345,7 @@ const SegmentZeile = memo(function SegmentZeile({
          onMouseDown={fokusLoesen}
          style={{
            display: "grid",
-           gridTemplateColumns: "26px 74px 130px 1fr 76px",
+           gridTemplateColumns: "26px 74px 130px 1fr 100px",
            gap: 8, alignItems: "start", padding: "5px 4px",
            borderRadius: 8,
            background: aktiv ? "var(--accent-a3)" : undefined,
@@ -1387,6 +1439,19 @@ const SegmentZeile = memo(function SegmentZeile({
                 }}
                 className="seg-text" />
       <Flex gap="1" style={SEG_SLOT}>
+        {/* Memo (User 2026-09-17): roter Punkt = Memo vorhanden, der
+            Tooltip zeigt den Text, Klick öffnet den Dialog */}
+        <IconButton title={seg.memo ? seg.memo : tr("ed.memo")}
+                    onClick={() => onMemo(seg.id)}>
+          <span style={{ position: "relative", display: "flex" }}>
+            <Icon name="memo" size={14} />
+            {seg.memo && (
+              <span style={{ position: "absolute", top: -2, right: -3,
+                             width: 6, height: 6, borderRadius: "50%",
+                             background: "var(--red-9)" }} />
+            )}
+          </span>
+        </IconButton>
         <IconButton title={tr("ed.teilen")} onClick={() => {
           const pos = taRef.current?.selectionStart ?? 0;
           onTeilen(seg.id, pos);

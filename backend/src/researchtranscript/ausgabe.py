@@ -175,13 +175,16 @@ def _turns(segmente: list[dict]) -> list[dict]:
     for s in segmente:
         if not s["text"].strip():
             continue
+        memo = " ".join((s.get("memo") or "").split())
         if turns and turns[-1]["sprecher"] == (s.get("sprecher") or ""):
             turns[-1]["text"] += " " + s["text"].strip()
             turns[-1]["end"] = s["end"]
+            if memo:                       # Memos eines Turns: mit « | » gereiht
+                turns[-1]["memo"] = " | ".join(filter(None, [turns[-1]["memo"], memo]))
         else:
             turns.append({"start": s["start"], "end": s["end"],
                           "sprecher": s.get("sprecher") or "",
-                          "text": s["text"].strip()})
+                          "text": s["text"].strip(), "memo": memo})
     return turns
 
 
@@ -209,10 +212,13 @@ def build_vtt(segmente: list[dict]) -> str:
 def build_csv(segmente: list[dict]) -> str:
     buf = io.StringIO()
     w = csv.writer(buf, quoting=csv.QUOTE_ALL)
-    w.writerow(["Time-in", "Time-out", "Speaker", "Text"])
+    # Spalte «Memo» immer vorhanden (stabiles Schema); der Import liest
+    # die Spalten am Kopf und überliest sie
+    w.writerow(["Time-in", "Time-out", "Speaker", "Text", "Memo"])
     for t in _turns(segmente):
         w.writerow([format_hms(t["start"]), format_hms(t["end"]),
-                    t["sprecher"], " ".join(t["text"].split())])
+                    t["sprecher"], " ".join(t["text"].split()),
+                    t.get("memo") or ""])
     return buf.getvalue()
 
 

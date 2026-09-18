@@ -544,6 +544,10 @@ class SegmentReq(ApiModel):
     end: float
     sprecher: str | None = None
     text: str
+    #: Memo der forschenden Person zu dieser Zeile (User 2026-09-17).
+    #: Kein Teil des Wortlauts: ändert weder `origin` noch das Journal;
+    #: geht in CSV (Spalte) und REFI-QDA (Notiz an der Stelle) mit.
+    memo: str | None = None
     origin: str | None = None
 
 
@@ -575,6 +579,11 @@ def transcript_put(eid: str, args: dict) -> dict:
                      for s in req.sprecher]
     d["segmente"] = [{**alt_seg.get(s.id, {}), **s.model_dump(exclude={"origin"})}
                      for s in req.segmente]
+    for seg in d["segmente"]:                      # leeres Memo = kein Memo
+        if not (seg.get("memo") or "").strip():
+            seg.pop("memo", None)
+        else:
+            seg["memo"] = seg["memo"].strip()
     d = bibliothek.schreibe(eid, d)
     return {"status": "saved", "updated": d["updated"]}
 
