@@ -49,7 +49,7 @@ sh("node", [path.join(ROOT, "scripts/bundle-resources.mjs")]);
 console.log("2/6 Teile signieren (Apple Distribution)");
 sh("node", [path.join(ROOT, "scripts/sign-resources.mjs"), "--identity", DIST]);
 console.log("3/6 App bauen (Store-Konfiguration, ohne Devtools)");
-sh("npx", ["tauri", "build", "--bundles", "app", "--config", "tauri.macos-appstore.conf.json", "--", "--no-default-features", "--features", "motoren,mas"],
+sh("npx", ["tauri", "build", "--bundles", "app", "--config", path.join(TAURI, "tauri.macos-appstore.conf.json"), "--", "--no-default-features", "--features", "motoren,mas"],
    { cwd: path.join(ROOT, "frontend"), env: { ...process.env, PYO3_CONFIG_FILE: path.join(TAURI, "pyo3-config.txt"),
      APPLE_ID: undefined, APPLE_PASSWORD: undefined, APPLE_TEAM_ID: undefined } });
 sh("node", [path.join(ROOT, "scripts/nachsignieren.mjs"), APP, "--mas", "--identity", DIST]);
@@ -62,7 +62,9 @@ for (const k of ["com.apple.security.app-sandbox", "com.apple.application-identi
 if (!fs.existsSync(path.join(APP, "Contents/embedded.provisionprofile"))) { console.error("ABBRUCH: embedded.provisionprofile fehlt im Bundle"); process.exit(1); }
 const kind = out("/usr/bin/codesign", ["-d", "--entitlements", "-", "--xml", path.join(APP, "Contents/MacOS/whisper-cli")]);
 if (!kind.includes("com.apple.security.inherit")) { console.error("ABBRUCH: whisper-cli ohne inherit-Entitlement"); process.exit(1); }
-const otool = out("/usr/bin/otool", ["-L", path.join(APP, "Contents/MacOS/ResearchTranscript")]);
+// Name des Programms aus der Info.plist (heisst researchtranscript-app, nicht wie die App)
+const programm = out("/usr/libexec/PlistBuddy", ["-c", "Print :CFBundleExecutable", path.join(APP, "Contents/Info.plist")]).trim();
+const otool = out("/usr/bin/otool", ["-L", path.join(APP, "Contents/MacOS", programm)]);
 if (/\t\/(opt|usr\/local|Users)\//.test(otool)) { console.error("ABBRUCH: Hülle hängt an einem absoluten Fremdpfad:\n" + otool); process.exit(1); }
 console.log("5/6 Installer-Paket");
 fs.rmSync(PKG, { force: true });

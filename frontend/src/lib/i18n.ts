@@ -394,7 +394,7 @@ const W: Record<string, Eintrag> = {
     fr: "Aucun segment.", it: "Nessun segmento." },
 
   "st.agpl": {
-    de: "AGPL §13 verlangt, Fernnutzern den Quellcode anzubieten. ResearchTranscript ist kein Netzwerkdienst: die Verarbeitung läuft im Prozess der App, es gibt keinen Server und keine Fernnutzung. Der Quellcode liegt zudem offen auf GitHub.",
+    de: "AGPL §13 verlangt, Fernnutzern den Quellcode anzubieten. ResearchTranscript ist kein Netzwerkdienst: die Verarbeitung läuft lokal in der App, es gibt keinen Server und keine Fernnutzung. Der Quellcode liegt zudem offen auf GitHub.",
     en: "AGPL §13 requires offering the source to remote users. ResearchTranscript is not a network service: processing runs inside the app process, there is no server and no remote use. The source is public on GitHub anyway.",
     fr: "L'AGPL §13 exige d'offrir le code source aux utilisateurs distants. ResearchTranscript n'est pas un service réseau : le traitement s'exécute dans le processus de l'application, sans serveur ni usage distant. Le code est de toute façon public sur GitHub.",
     it: "L'AGPL §13 richiede di offrire il codice agli utenti remoti. ResearchTranscript non è un servizio di rete: l'elaborazione avviene nel processo dell'app, senza server e senza uso remoto. Il codice è comunque pubblico su GitHub." },
@@ -563,6 +563,10 @@ const W: Record<string, Eintrag> = {
   // Lesefassung selbst). 0.6.0: ffmpeg ist weg (AVFoundation + LAME) —
   // die AGPL bleibt als eigene Wahl, kein mitgeliefertes Werkzeug
   // verlangt sie mehr.
+  "st.app.sub.mas": { de: "Freie Software — AGPL-3.0-or-later mit Zusatzerlaubnis für den App Store · BIAS.City",
+    en: "Free software — AGPL-3.0-or-later with an additional permission for the App Store · BIAS.City",
+    fr: "Logiciel libre — AGPL-3.0-or-later avec permission additionnelle pour l’App Store · BIAS.City",
+    it: "Software libero — AGPL-3.0-or-later con permesso aggiuntivo per l’App Store · BIAS.City" },
   "st.app.text": {
     de: "Quellcode, Lizenztext und Releases auf GitHub. Die App steht bewusst unter der AGPL — kein mitgeliefertes Werkzeug verlangt sie, das strengste ist LAME (LGPL, dynamisch gelinkt). Die Netzwerkklausel ist erfüllt, bevor sie greift: die App öffnet keine Netzwerkverbindung.",
     en: "Source code, license text and releases on GitHub. The app is deliberately under the AGPL — no bundled tool requires it; the strictest is LAME (LGPL, dynamically linked). The network clause is satisfied before it applies: the app opens no network connection.",

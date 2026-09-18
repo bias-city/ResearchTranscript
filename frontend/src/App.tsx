@@ -237,11 +237,11 @@ function UeberDialog({ open, onClose }: {
           <Heading size="4">{tr("app.titel")}</Heading>
           <Text size="1" color="gray">
             {tr("ueber.version", { v: version })}</Text>
-          <Text size="2" color="gray">{tr("st.app.sub")}</Text>
+          <Text size="2" color="gray">{tr(kanal === "mas" ? "st.app.sub.mas" : "st.app.sub")}</Text>
           <Text size="1" color="gray">{tr("ueber.copyright")}</Text>
         </Flex>
         <Text size="2">{tr("ueber.herkunft")}</Text>
-        <Text size="2">{tr("st.app.text")}</Text>
+        {kanal === "dmg" && <Text size="2">{tr("st.app.text")}</Text>}
         <Text size="2">{tr(kanal === "mas" ? "ueber.store" : "ueber.erlaubnis")}</Text>
         <Flex gap="2" wrap="wrap">
           {link(tr("st.link.repo"), REPO)}
@@ -257,7 +257,7 @@ function UeberDialog({ open, onClose }: {
           {link("BIAS.City", BIAS)}
         </Flex>
         <Text size="1" color="gray">{tr("st.lizenzen.text")}</Text>
-        <Text size="1" color="gray">{tr("st.agpl")}</Text>
+        {kanal === "dmg" && <Text size="1" color="gray">{tr("st.agpl")}</Text>}
         <Flex gap="2" wrap="wrap">
           {link(tr("st.link.lamesrc"), "https://lame.sourceforge.io/")}
           {link(tr("st.link.lamekopie"), "https://bias.city/researchtranscript/quellen/lame-4.0.tar.gz")}

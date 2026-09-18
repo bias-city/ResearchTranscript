@@ -248,7 +248,7 @@ export default function EinstellungenModule({ settings, onChange }: {
       <Karte titel={tr("st.lizenzen")}>
         <Flex direction="column" gap="2">
           <Text size="1" color="gray">{tr("st.lizenzen.text")}</Text>
-          <Text size="1" color="gray">{tr("st.agpl")}</Text>
+          {kanal === "dmg" && <Text size="1" color="gray">{tr("st.agpl")}</Text>}
           <Flex gap="2" wrap="wrap">
             <Button size="1" variant="soft" color="gray" highContrast onClick={() =>
               void ordnerOeffnen(
@@ -276,9 +276,9 @@ export default function EinstellungenModule({ settings, onChange }: {
       </Karte>
 
       <Karte titel={tr("st.app")}
-             subline={tr("st.app.sub")}>
+             subline={tr(kanal === "mas" ? "st.app.sub.mas" : "st.app.sub")}>
         <Flex direction="column" gap="2">
-          <Text size="1" color="gray">{tr("st.app.text")}</Text>
+          <Text size="1" color="gray">{tr(kanal === "mas" ? "ueber.store" : "st.app.text")}</Text>
           <Flex gap="2">
             <Button size="1" variant="soft" color="gray" highContrast onClick={() =>
               void ordnerOeffnen(
