@@ -191,17 +191,6 @@ for (const sprache of SPRACHEN) {
       await oeffne({ "lt.ui.tab": "editor", "lt.ui.editor": "" });
       await warte(300);
       await bild("03-bibliothek.png");
-      if (HILFE) {
-        // 12 Dokumentation für Forschende: zwei Transkripte angekreuzt, Dialog offen
-        const kaestchen = page.locator(".ui-row button[role='checkbox']");
-        for (const k of [0, 1]) if (await kaestchen.count() > k) await kaestchen.nth(k).click();
-        await page.locator("button:has(.lucide-download)").first().click();
-        await page.waitForSelector("[role='dialog']");
-        await warte(400);
-        await knips("12-dokumentation.png");
-        await page.keyboard.press("Escape");
-        await warte(200);
-      }
 
       // 04 Suchen und Ersetzen
       await oeffne({ ...editor, "lt.editor.seitentab": "suchen" });

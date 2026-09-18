@@ -265,4 +265,10 @@ T = {
                         "SNF, Open Research Data: <https://www.snf.ch/de/FAiWVH4WvpKvohw9/thema/forschungsdaten>\n"
                         "DFG, Umgang mit Forschungsdaten: <https://www.dfg.de/de/grundlagen-themen/grundlagen-und-prinzipien-der-foerderung/forschungsdaten>\n"
                         "README-Vorlage der Cornell University (CC0): <https://data.research.cornell.edu/data-management/sharing/readme/>",
+    # ---- Methodenbaustein für EIN Transkript (der Regelfall) ----
+    'm.einleitung.eins': 'Dieser Baustein beschreibt, wie dieses eine Transkript entstand und wie stark das maschinelle Rohtranskript von Hand bearbeitet wurde. Die Aussagen gelten für dieses Dokument. Darunter steht ein Absatz zum Übernehmen und eine Liste dessen, was nur die Forschenden wissen.',
+    'm.korpus.eins': 'Transkript',
+    'm.mass.fehlt': 'Für dieses Transkript ist kein Ausgangsstand mehr vorhanden; das Eingriffsmass lässt sich nicht berechnen (siehe Transkriptionsprotokoll).',
+    'm.absatz.text.eins': 'Die Aufnahme (Dauer {gesamt}) wurde mit ResearchTranscript {version} (B/IAS Basel, AGPL-3.0) vollständig lokal [ auf einem Rechner der Forschungsgruppe ] transkribiert; die App übermittelt dabei nichts an externe Dienste. Die Spracherkennung nutzte whisper.cpp {whisper} mit dem Modell {modell} (Radford et al., 2022).{diar} Das Rohtranskript wurde anschliessend von [ wem ] [ vollständig / stichprobenweise ] gegen die Aufnahme geprüft, nach [ Transkriptionsregeln ] korrigiert [ und im Text pseudonymisiert ]. Die Korrekturrate auf Wortebene (berechnet wie die Wortfehlerrate, Endfassung als Referenz, normalisiert) betrug {norm}. Die Rate misst den Eingriff einschliesslich Pseudonymisierung, nicht die Genauigkeit.',
+    'm.absatz.diar.eins': ' Die Sprecher wurden mit SpeakerKit und dem Modell pyannote community-1 getrennt (Plaquet & Bredin, 2023); von Hand neu zugeordnet wurden {sprechzeit} der Sprechzeit.',
 }

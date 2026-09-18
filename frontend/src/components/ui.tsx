@@ -56,7 +56,7 @@ export function ModalDialog({ open, onOpenChange, title, children, footer,
         <Box style={fullscreen
           ? { flex: 1, minHeight: 0, display: "flex",
               flexDirection: "column", overflow: "hidden" }
-          : { maxHeight: "55vh", overflowY: "auto" }}>{children}</Box>
+          : { maxHeight: "66vh", overflowY: "auto" }}>{children}</Box>
         {footer && <Flex gap="2" mt="3" justify="end" align="center">{footer}</Flex>}
       </Dialog.Content>
     </Dialog.Root>

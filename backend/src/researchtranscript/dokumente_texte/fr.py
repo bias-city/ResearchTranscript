@@ -260,4 +260,10 @@ T = {
                         "FNS, Open Research Data : <https://www.snf.ch/de/FAiWVH4WvpKvohw9/thema/forschungsdaten>\n"
                         "DFG, gestion des données de recherche : <https://www.dfg.de/de/grundlagen-themen/grundlagen-und-prinzipien-der-foerderung/forschungsdaten>\n"
                         "Modèle de README de l'université Cornell (CC0) : <https://data.research.cornell.edu/data-management/sharing/readme/>",
+    # ---- Methodenbaustein für EIN Transkript (der Regelfall) ----
+    'm.einleitung.eins': "Ce module décrit comment cette transcription a été produite et dans quelle mesure la transcription brute automatique a été révisée à la main. Les énoncés valent pour ce document. Suivent un paragraphe à reprendre et la liste de ce que seule l'équipe de recherche sait.",
+    'm.korpus.eins': 'Transcription',
+    'm.mass.fehlt': "Aucun état initial n'est plus disponible pour cette transcription ; la mesure d'intervention ne peut pas être calculée (voir le protocole de transcription).",
+    'm.absatz.text.eins': "L'enregistrement (durée {gesamt}) a été transcrit entièrement en local [ sur un ordinateur de l'équipe de recherche ] avec ResearchTranscript {version} (B/IAS Bâle, AGPL-3.0) ; l'application ne transmet rien à des services externes. La reconnaissance vocale a utilisé whisper.cpp {whisper} avec le modèle {modell} (Radford et al., 2022).{diar} La transcription brute a ensuite été vérifiée par rapport à l'enregistrement [ par qui ] [ intégralement / par sondage ], corrigée selon [ règles de transcription ] [ et pseudonymisée dans le texte ]. Le taux de correction au niveau des mots (calculé comme le taux d'erreur de mots, version finale comme référence, normalisé) était de {norm}. Ce taux mesure l'intervention, pseudonymisation comprise, et non l'exactitude.",
+    'm.absatz.diar.eins': ' Les locuteurs ont été séparés avec SpeakerKit et le modèle pyannote community-1 (Plaquet & Bredin, 2023) ; {sprechzeit} du temps de parole ont été réattribués à la main.',
 }

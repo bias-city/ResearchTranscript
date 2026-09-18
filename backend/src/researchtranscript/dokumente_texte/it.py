@@ -261,4 +261,10 @@ T = {
                         "FNS, Open Research Data: <https://www.snf.ch/de/FAiWVH4WvpKvohw9/thema/forschungsdaten>\n"
                         "DFG, gestione dei dati di ricerca: <https://www.dfg.de/de/grundlagen-themen/grundlagen-und-prinzipien-der-foerderung/forschungsdaten>\n"
                         "Modello di README della Cornell University (CC0): <https://data.research.cornell.edu/data-management/sharing/readme/>",
+    # ---- Methodenbaustein für EIN Transkript (der Regelfall) ----
+    'm.einleitung.eins': "Questo modulo descrive come è nata questa trascrizione e quanto la trascrizione grezza automatica è stata rivista a mano. Le affermazioni valgono per questo documento. Seguono un paragrafo da riprendere e l'elenco di ciò che solo il gruppo di ricerca sa.",
+    'm.korpus.eins': 'Trascrizione',
+    'm.mass.fehlt': "Per questa trascrizione non è più disponibile uno stato iniziale; la misura dell'intervento non può essere calcolata (vedi il protocollo di trascrizione).",
+    'm.absatz.text.eins': "La registrazione (durata {gesamt}) è stata trascritta interamente in locale [ su un computer del gruppo di ricerca ] con ResearchTranscript {version} (B/IAS Basilea, AGPL-3.0); l'app non trasmette nulla a servizi esterni. Il riconoscimento vocale ha usato whisper.cpp {whisper} con il modello {modell} (Radford et al., 2022).{diar} La trascrizione grezza è stata poi verificata sulla registrazione [ da chi ] [ integralmente / a campione ], corretta secondo [ regole di trascrizione ] [ e pseudonimizzata nel testo ]. Il tasso di correzione a livello di parola (calcolato come il tasso di errore sulle parole, versione finale come riferimento, normalizzato) è stato di {norm}. Il tasso misura l'intervento, pseudonimizzazione compresa, non l'accuratezza.",
+    'm.absatz.diar.eins': ' I parlanti sono stati separati con SpeakerKit e il modello pyannote community-1 (Plaquet & Bredin, 2023); il {sprechzeit} del tempo di parola è stato riassegnato a mano.',
 }

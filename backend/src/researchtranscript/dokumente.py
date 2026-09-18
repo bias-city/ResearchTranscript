@@ -299,12 +299,15 @@ def methoden(ids: list[str], sprache: str) -> str:
     eigen = any(f["modell_quelle"] == "eigen" for f in fs)
     mittel = format_hms(statistics.mean(dauern))
 
-    z = _kopf(t, t["m.titel"], t["m.einleitung"], sprache)
-    z += [f"## {t['m.korpus']}", ""]
-    z += _tabelle([t["feld"], t["wert"]], [
+    eines = len(fs) == 1            # der Regelfall: das Paket gilt EINEM Transkript
+    ms = _median_spanne if not eines else (lambda w, sp: _prozent(w[0], sp) if w else "–")
+    z = _kopf(t, t["m.titel"], t["m.einleitung.eins" if eines else "m.einleitung"], sprache)
+    z += [f"## {t['m.korpus.eins' if eines else 'm.korpus']}", ""]
+    z += _tabelle([t["feld"], t["wert"]], ([
+        [t["f.name"], fs[0]["name"]], [t["f.dauer"], format_hms(dauern[0])]] if eines else [
         [t["m.n"], str(len(fs)) + (f" ({t['m.importiert'].format(n=importiert)})" if importiert else "")],
         [t["m.gesamt"], format_hms(sum(dauern))],
-        [t["m.mittel"], f"{mittel} ({_spanne(dauern, format_hms)})"],
+        [t["m.mittel"], f"{mittel} ({_spanne(dauern, format_hms)})"]]) + [
         [t["f.sprache"], ", ".join(sprachen) or "–"],
         [t["f.app"], ", ".join(f"ResearchTranscript {v}" for v in versionen) or t["nicht_aufgezeichnet"]],
         [t["f.erkennung"], f"whisper.cpp {WHISPER_CPP}, {t['f.modell.satz']} " + (", ".join(f"`{m}`" for m in modelle) or "–")
@@ -312,23 +315,29 @@ def methoden(ids: list[str], sprache: str) -> str:
         [t["f.trennung"], t["m.diar"].format(n=sum(1 for f in fs if f["diarize"]), gesamt=len(fs))],
         [t["m.zeitraum"], _spanne(laeufe, str) if laeufe else "–"]])
 
-    z += [f"## {t['m.mass']}", "", t["m.mass.text"].format(n=len(mit), gesamt=len(fs)), ""]
-    z += _tabelle([t["mass.kopf.mass"], t["m.median"]], [
-        [t["mass.norm"], _median_spanne(norm, sprache)], [t["mass.orth"], _median_spanne(orth, sprache)],
-        [t["mass.sprechzeit"], _median_spanne(spz, sprache)]])
+    z += [f"## {t['p.mass' if eines else 'm.mass']}", ""]
+    if not eines:
+        z += [t["m.mass.text"].format(n=len(mit), gesamt=len(fs)), ""]
+    elif not mit:
+        z += [t["m.mass.fehlt"], ""]
+    z += _tabelle([t["mass.kopf.mass"], t["wert" if eines else "m.median"]], [
+        [t["mass.norm"], ms(norm, sprache)], [t["mass.orth"], ms(orth, sprache)],
+        [t["mass.sprechzeit"], ms(spz, sprache)]])
     z += [t["mass.definition"], "", f"> {t['mass.vorbehalt']}", ""]
 
     z += [f"## {t['m.absatz']}", "", t["m.absatz.hinweis"], ""]
-    absatz = t["m.absatz.text"].format(
+    absatz = t["m.absatz.text.eins" if eines else "m.absatz.text"].format(
         n=len(fs), gesamt=format_hms(sum(dauern)), mittel=mittel, spanne=_spanne(dauern, format_hms),
         version=", ".join(versionen) or "[ … ]", whisper=WHISPER_CPP,
-        modell=", ".join(modelle) or "[ … ]", norm=_median_spanne(norm, sprache),
-        diar=t["m.absatz.diar"].format(sprechzeit=_median_spanne(spz, sprache))
+        modell=", ".join(modelle) or "[ … ]", norm=ms(norm, sprache),
+        diar=t["m.absatz.diar.eins" if eines else "m.absatz.diar"].format(sprechzeit=ms(spz, sprache))
         if any(f["diarize"] for f in fs) else "")
     z += [f"> {' '.join(absatz.split())}", ""]
 
     z += [f"## {t['m.offen']}", ""] + [f"- {t[k]}" for k in ("m.offen.wer", "m.offen.regeln",
                                                              "m.offen.pseudonym", "m.offen.einwilligung")] + [""]
+    if eines:
+        return "\n".join(z + _nachweise(t))
     z += [f"## {t['m.je']}", ""]
     z += _tabelle([t["f.name"], t["f.dauer"], t["f.modell"], t["mass.norm"], t["mass.orth"], t["mass.sprechzeit"]], [
         [f["name"], format_hms(f["dauer"]), f["modell"] or "–",

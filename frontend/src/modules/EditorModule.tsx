@@ -823,19 +823,30 @@ export default function EditorModule({ id, onExit }: {
   const [exportNote, setExportNote] = useState("");
   const exportiere = useCallback(async (format: string) => {
     setExportNote("");
+    // Dokumentationspaket (User 2026-09-18): EIN Zip zu DIESEM Transkript —
+    // Protokoll, Methodenbaustein, Datenblatt, Verfahrensbaustein, Zitierdatei.
+    // Aussagen gelten für das einzelne Dokument, darum kein Korpus-Dialog.
+    if (format === "dokumentation") {
+      try {
+        if (isTauri()) {
+          const p = await savePath(`${name || "transkript"}-${tr("dok.datei.paket")}.zip`, "zip");
+          if (!p) return;
+          await apiSend("/api/dokument", { art: "paket", format: "zip", ids: [id], path: p });
+          setExportNote(tr("ed.exportiert", { p }));
+        } else {
+          window.open(`/api/dokument/paket?format=zip&ids=${id}`, "_blank");
+        }
+      } catch (e) { setExportNote(tr("ed.exportfehler", { e: errMsg(e) })); }
+      return;
+    }
     // .enrich ist EINE Datei (ein Zip, wie .docx) und heisst nach dem,
     // was drin ist. .qdpx.zip bleibt: darin liegt das .qdpx UND daneben
     // der Media-Ordner mit dem Audio, wie ATLAS.ti es exportiert.
-    // «protokoll-md»/«protokoll-docx»: das Transkriptionsprotokoll, die
-    // Endung steht hinter dem Bindestrich
-    const protokoll = format.startsWith("protokoll-");
-    const endung = format.startsWith("qdpx") ? "qdpx.zip"
-      : protokoll ? format.slice(10) : format;
+    const endung = format.startsWith("qdpx") ? "qdpx.zip" : format;
     try {
       if (isTauri()) {
-        const stamm = `${name || "transkript"}${protokoll ? `-${tr("ed.export.protokoll.datei")}` : ""}`;
-        const p = await savePath(`${stamm}.${endung}`,
-                                 format.startsWith("qdpx") ? "zip" : endung);
+        const p = await savePath(`${name || "transkript"}.${endung}`,
+                                 format.startsWith("qdpx") ? "zip" : format);
         if (!p) return;
         await apiSend(`/api/transcripts/${id}/export`,
                       { format, path: p });
@@ -1284,8 +1295,7 @@ function ExportMenu({ onExport, hatVideo }: {
           </Select.Item>
         )}
         <Select.Separator />
-        <Select.Item value="protokoll-md">{tr("ed.export.protokoll")} (.md)</Select.Item>
-        <Select.Item value="protokoll-docx">{tr("ed.export.protokoll")} (.docx)</Select.Item>
+        <Select.Item value="dokumentation">{tr("dok.knopf")}</Select.Item>
       </Select.Content>
     </Select.Root>
   );

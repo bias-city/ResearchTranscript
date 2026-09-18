@@ -261,4 +261,10 @@ T = {
                         "SNSF, Open Research Data: <https://www.snf.ch/de/FAiWVH4WvpKvohw9/thema/forschungsdaten>\n"
                         "DFG, handling of research data: <https://www.dfg.de/de/grundlagen-themen/grundlagen-und-prinzipien-der-foerderung/forschungsdaten>\n"
                         "README template of Cornell University (CC0): <https://data.research.cornell.edu/data-management/sharing/readme/>",
+    # ---- Methodenbaustein für EIN Transkript (der Regelfall) ----
+    'm.einleitung.eins': 'This building block describes how this one transcript came about and how much the machine-generated raw transcript was edited by hand. The statements apply to this document. Below are a paragraph to adopt and a list of what only the researchers know.',
+    'm.korpus.eins': 'Transcript',
+    'm.mass.fehlt': 'No baseline is available for this transcript any more; the measure of intervention cannot be calculated (see the transcription record).',
+    'm.absatz.text.eins': 'The recording (duration {gesamt}) was transcribed entirely locally [ on a computer of the research group ] with ResearchTranscript {version} (B/IAS Basel, AGPL-3.0); the app transmits nothing to external services in the process. Speech recognition used whisper.cpp {whisper} with the model {modell} (Radford et al., 2022).{diar} The raw transcript was then checked against the recording [ by whom ] [ in full / on a sample basis ], corrected according to [ transcription conventions ] [ and pseudonymised in the text ]. The correction rate at word level (calculated like the word error rate, final version as reference, normalised) was {norm}. The rate measures the intervention including pseudonymisation, not accuracy.',
+    'm.absatz.diar.eins': ' Speakers were separated with SpeakerKit and the model pyannote community-1 (Plaquet & Bredin, 2023); {sprechzeit} of the speech time was reassigned by hand.',
 }

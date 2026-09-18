@@ -85,3 +85,9 @@ def test_api_schreibt_nur_passende_endung(client, tmp_path):
     assert r.status_code == 200 and (tmp_path / "p.zip").stat().st_size > 1000
     r = client.get(f"/api/transcripts/{eid}/export/protokoll-md")
     assert r.status_code == 200 and r.content.decode().startswith("# Transkriptionsprotokoll")
+
+
+def test_methodenbaustein_fuer_ein_transkript_ohne_median(client):
+    md = dokumente.methoden([_eintrag()], "de")
+    assert "Median" not in md and "Die Aufnahme (Dauer 00:00:15)" in md
+    assert "Je Transkript" not in md and "| Korrekturrate Wortebene, normalisiert | 23,1 % |" in md

@@ -6,18 +6,27 @@ Stand 18.9.2026, ResearchTranscript 0.6.0. Gehört zu BACKLOG 16. Code:
 
 ## Was die App erzeugt
 
-| Dokument | Ebene | Wo in der App | Warum diese Ebene |
-|---|---|---|---|
-| Transkript als `.md` / `.docx` | je Transkript | Editor › Export | Lesefassung mit Kopf (Kennung, Datum, Kontext), wie CESSDA und UK Data Service ihn je Transkript verlangen |
-| Transkriptionsprotokoll | je Transkript | Editor › Export | Provenienz ist Objektebene der Datendokumentation (CESSDA DMEG) |
-| Methodenbaustein | Auswahl 1…n | Bibliothek › Dokumentation | Ein Methodenteil beschreibt das Korpus; JARS-Qual verlangt Mittelwert und Spanne der Dauer |
-| Verfahrensbaustein | Projekt | Bibliothek › Dokumentation | DSGVO Art. 30 und DSG Art. 12 führen Tätigkeiten, nicht Aufnahmen; Art. 22 DSG erlaubt eine gemeinsame DSFA für ähnliche Vorgänge |
-| Repositoriums-Datenblatt | Auswahl 1…n | Bibliothek › Dokumentation | Ein Datensatz mit DOI umfasst meist mehrere Interviews |
-| Zitierdatei `.bib` | App | Bibliothek › Dokumentation | Software als zitierbarer Eintrag (Zotero «Software»); dazu `CITATION.cff` im Repo |
-| Dokumentationspaket `.zip` | Auswahl | Bibliothek › Dokumentation | alles oben, je `.md` und `.docx` |
+Ein Zugang: **Editor › Export › «Dokumentationspaket (.zip) …»** — ein Zip
+zum offenen Transkript, jedes Dokument als `.md` und `.docx`, ohne
+Transkript und ohne Aufnahme. Dazu im selben Menü das Transkript selbst als
+`.md` / `.docx`.
 
-Verworfen: eine «Verfahrensbeschreibung» je Transkript (erste Idee) — sie
-passt zu keiner der Stellen, die solche Texte verlangen.
+| Im Paket | Inhalt |
+|---|---|
+| Transkriptionsprotokoll | Provenienz: Modell, Version, Datum, Bearbeitung von Hand, Eingriffsmass, Dateien mit Prüfsummen |
+| Methodenbaustein | Eckdaten, Verfahren, Eingriffsmass dieses Transkripts; Absatz für den Methodenteil mit Nachweisen |
+| Repositoriums-Datenblatt | Felder nach Zenodo/DataCite und Facharchiven, vorausgefüllt aus Zotero und Transkript; Ethik-Checkliste |
+| Verfahrensbaustein | Tatsachen über die App für Verzeichnis der Bearbeitungstätigkeiten, DSFA, Ethikantrag; offene Felder |
+| `researchtranscript.bib` | Software-Eintrag für Zotero samt Whisper, pyannote und den übrigen Quellen (`CITATION.cff` liegt im Repo) |
+
+**Entscheid des Users (18.9.2026): je Transkript, nicht je Korpus.** Die
+Recherche legte einen Korpus-Baustein nahe (JARS-Qual verlangt Mittelwert
+und Spanne über alle Interviews); ein erster Bau hatte dafür eine Auswahl in
+der Bibliothek. Verworfen: eine belastbare Aussage lässt sich nur für das
+einzelne Dokument treffen — welches Modell lief, wie stark bearbeitet wurde.
+Mittelwerte über ein Korpus bilden die Forschenden selbst aus den
+Protokollen. Das Backend kann mehrere ids (`dokumente.methoden`,
+`dokumente.paket`), die Oberfläche nutzt genau eine.
 
 ## Eingriffsmass
 
