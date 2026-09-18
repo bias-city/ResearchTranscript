@@ -1,0 +1,31 @@
+ResearchTranscript trascrive interviste, discussioni di gruppo e registrazioni sul campo interamente sul tuo Mac. La registrazione non lascia mai il computer: niente cloud, niente account, nessuna connessione di rete.
+
+TRASCRIVERE
+• Riconoscimento vocale con whisper.cpp, modello large-v3-turbo incluso — italiano, tedesco, inglese, francese e molte altre lingue
+• Separazione dei parlanti sul Neural Engine: indica il numero di persone per registrazione o lascialo rilevare all’app
+• Trascina più file nella lista d’attesa, scegli il numero di parlanti per file, avvia — la lista sopravvive a un riavvio
+• Video (MP4, MOV in H.264 o HEVC) come sorgente: viene letto l’audio, l’immagine segue muta nell’editor
+• I tuoi modelli whisper.cpp, per esempio un modello affinato per lo svizzero tedesco, vanno semplicemente nella cartella dei modelli
+
+CORREGGERE
+• Editor con forma d’onda zoomabile nei colori dei parlanti e indicatore di riproduzione
+• Tutto da tastiera: passare da un turno all’altro, riprodurre e mettere in pausa mentre scrivi, dividere un turno al cursore, unirlo al precedente
+• Inserire interventi alla posizione di riproduzione — per i passaggi in cui si parla uno sull’altro
+• Impostare a mano i timecode; rinominare, ricolorare e unire i parlanti
+• Cerca e sostituisci in tutta la trascrizione, campione vocale per parlante
+• Ogni modifica viene salvata; gli stati precedenti restano nella cronologia
+
+CONDIVIDERE
+• WebVTT, CSV e testo
+• REFI-QDA (.qdpx) per ATLAS.ti, MAXQDA e NVivo — con audio, marche temporali e parlanti come codici
+• Dossier enrich con registro delle modifiche
+• Su richiesta, metadati dalla tua biblioteca Zotero locale: titolo, data, intervistatori, citekey
+
+PRIVACY
+L’app non raccoglie dati, non ha telemetria e non apre connessioni di rete. Tutti i modelli sono inclusi; nulla viene scaricato. Sul sito trovi testi pronti per il registro dei trattamenti, la valutazione d’impatto, le richieste etiche e la sezione metodologica.
+
+SOFTWARE LIBERO
+ResearchTranscript è open source con licenza AGPL; il codice sorgente è su GitHub. Sviluppato al B/IAS – Basel Institut für angewandte Stadtforschung.
+
+REQUISITI
+Mac con chip Apple, macOS 14 o successivo, circa 2 GB di spazio libero.

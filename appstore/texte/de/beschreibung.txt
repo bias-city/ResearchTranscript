@@ -1,0 +1,31 @@
+ResearchTranscript transkribiert Interviews, Gruppengespräche und Feldaufnahmen vollständig auf deinem Mac. Die Aufnahme verlässt den Rechner nie: keine Cloud, kein Konto, keine Netzverbindung.
+
+TRANSKRIBIEREN
+• Spracherkennung mit whisper.cpp, Modell large-v3-turbo mitgeliefert — Deutsch, Englisch, Französisch, Italienisch und viele weitere Sprachen
+• Sprechertrennung auf der Neural Engine: Zahl der Sprechenden je Aufnahme vorgeben oder erkennen lassen
+• Mehrere Dateien in die Warteliste ziehen, Sprecherzahl je Datei wählen, starten — die Liste übersteht einen Neustart
+• Video (MP4, MOV mit H.264 oder HEVC) als Quelle: der Ton wird gelesen, das Bild läuft im Editor stumm mit
+• Eigene whisper.cpp-Modelle, etwa ein Feintuning für Schweizerdeutsch, einfach in den Modelle-Ordner legen
+
+KORRIGIEREN
+• Editor mit Wellenform in den Farben der Sprechenden, zoombar, mit Abspielposition
+• Ganz per Tastatur: Turn wechseln, abspielen und anhalten mitten im Tippen, Turn am Cursor teilen, mit dem vorigen verbinden
+• Zwischenrufe an der Abspielposition einfügen — für Stellen, an denen durcheinander geredet wird
+• Timecodes von Hand setzen, Sprechende umbenennen, umfärben, zusammenführen
+• Suchen und Ersetzen über das ganze Transkript, Hörprobe je Stimme
+• Jede Änderung wird gesichert; frühere Stände bleiben als Verlauf erhalten
+
+WEITERGEBEN
+• WebVTT, CSV und Text
+• REFI-QDA (.qdpx) für ATLAS.ti, MAXQDA und NVivo — mit Audio, Zeitmarken und Sprechenden als Codes
+• enrich-Dossier mit Änderungsjournal
+• Auf Wunsch Metadaten aus der lokalen Zotero-Bibliothek: Titel, Datum, Interviewende, Citekey
+
+DATENSCHUTZ
+Die App erhebt keine Daten, hat keine Telemetrie und öffnet keine Netzverbindung. Alle Modelle sind enthalten, nichts wird nachgeladen. Für Verfahrensverzeichnis, Datenschutz-Folgenabschätzung, Ethikantrag und Methodenteil liegen fertige Textbausteine auf der Website.
+
+FREIE SOFTWARE
+ResearchTranscript ist Open Source unter der AGPL; der Quellcode liegt auf GitHub. Entwickelt am B/IAS – Basel Institut für angewandte Stadtforschung.
+
+VORAUSSETZUNGEN
+Mac mit Apple Silicon, macOS 14 oder neuer, rund 2 GB freier Speicher.

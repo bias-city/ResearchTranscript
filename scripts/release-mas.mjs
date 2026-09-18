@@ -32,11 +32,15 @@ function identitaet(name) {
   return m.trim().split(" ")[1];
 }
 const DIST = process.argv.includes("--identity") ? process.argv[process.argv.indexOf("--identity") + 1]
-  : identitaet("Apple Distribution: ben pohl");
+  : identitaet("Apple Distribution:");
 const INSTALLER = (() => {
-  // Installer-Zertifikate sind keine codesigning-Identitäten — über security find-certificate
-  try { out("/usr/bin/security", ["find-certificate", "-c", "Mac Installer Distribution: ben pohl"]); return "Mac Installer Distribution: ben pohl (CCRJ4A42D3)"; }
-  catch { console.error("ABBRUCH: «Mac Installer Distribution»-Zertifikat fehlt."); process.exit(1); }
+  // Das Portal nennt es «Mac Installer Distribution», im Schlüsselbund heisst
+  // es «3rd Party Mac Developer Installer: …». Keine codesigning-Identität —
+  // deshalb über find-identity OHNE -p codesigning suchen.
+  const alle = out("/usr/bin/security", ["find-identity", "-v"]);
+  const z = alle.split("\n").find((l) => l.includes("3rd Party Mac Developer Installer") || l.includes("Mac Installer Distribution"));
+  if (!z) { console.error("ABBRUCH: Installer-Zertifikat fehlt («Mac Installer Distribution» im Portal, im Schlüsselbund «3rd Party Mac Developer Installer»)."); process.exit(1); }
+  return z.match(/"([^"]+)"/)[1];
 })();
 if (!fs.existsSync(PROFIL)) { console.error(`ABBRUCH: Provisioning-Profil fehlt: ${PROFIL}`); process.exit(1); }
 

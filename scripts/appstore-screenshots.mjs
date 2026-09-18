@@ -1,0 +1,211 @@
+#!/usr/bin/env node
+// App-Store-Screenshots: 7 Motive × 4 Sprachen × hell/dunkel × 4 Grössen.
+//
+// Aufgenommen wird die echte Oberfläche (frontend/dist) im Browser-Betrieb
+// gegen ein Demo-Backend (uvicorn, Kind-Motor) mit dem ERFUNDENEN Interview
+// aus docs/demo — nie echtes Forschungsmaterial. Playwright-WebKit, weil die
+// App in WKWebView läuft (gleiche Schrift- und Formulardarstellung).
+//
+// Ablauf: Backend starten → Demo transkribieren (≈ 30 s, whisper-cli/ffmpeg
+// aus Homebrew, argmax-cli + SpeakerKit-Modelle aus dem Haupt-Checkout) →
+// Sprecher benennen, zwei weitere Einträge importieren → je Sprache, Modus
+// und Grösse die Motive aufnehmen. Pfade in den Einstellungen werden im DOM
+// neutralisiert (/Users/nora/…).
+//
+// Grössen (Apple, Mac, 16:10): 1280×800, 1440×900, 2560×1600, 2880×1800.
+// Ausgabe: appstore/screenshots/<sprache>/<hell|dunkel>/<BxH>/NN-motiv.png
+//
+// Aufruf: node scripts/appstore-screenshots.mjs [--nur de] [--schnell]
+//   --schnell: nur 2880×1800
+import { spawn } from "node:child_process";
+import fs from "node:fs";
+import os from "node:os";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
+
+const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
+const require = createRequire(path.join(ROOT, "frontend/package.json"));
+const { webkit } = require("playwright");
+
+const PORT = 5631;
+const B = `http://127.0.0.1:${PORT}`;
+const AUS = path.join(ROOT, "appstore/screenshots");
+const SCRATCH = fs.mkdtempSync(path.join(os.tmpdir(), "rt-shots-"));
+const LIB = path.join(SCRATCH, "lib");
+const DEMO = path.join(ROOT, "docs/demo/housing-cooperatives-interview.mp3");
+const HAUPT = path.resolve(ROOT, "../enrich-transcript");   // argmax-cli + models/speakerkit
+const arg = (n) => { const i = process.argv.indexOf(n); return i >= 0 ? process.argv[i + 1] ?? true : null; };
+const SPRACHEN = arg("--nur") ? [arg("--nur")] : ["de", "en", "fr", "it"];
+const GROESSEN = (arg("--schnell") ? [[1440, 900, 2]] : [[1280, 800, 1], [1440, 900, 1], [1280, 800, 2], [1440, 900, 2]]);
+const MODI = [["hell", "light"], ["dunkel", "dark"]];
+
+const warte = (ms) => new Promise((r) => setTimeout(r, ms));
+async function api(pfad, init) {
+  const r = await fetch(B + pfad, init);
+  if (!r.ok) throw new Error(`${pfad}: ${r.status} ${await r.text()}`);
+  return r;
+}
+const json = (body, method = "POST") => ({ method, headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
+
+// ---------- Backend ----------
+fs.mkdirSync(LIB, { recursive: true });
+fs.mkdirSync(path.join(SCRATCH, "cfg"), { recursive: true });
+fs.writeFileSync(path.join(SCRATCH, "cfg/config.json"), JSON.stringify({ library_root: LIB, zotero_consent: false }));
+const server = spawn("uv", ["run", "uvicorn", "researchtranscript.main:app", "--port", String(PORT)], {
+  cwd: path.join(ROOT, "backend"),
+  env: { ...process.env, LT_SERVE_PORT: String(PORT), LT_CONFIG_DIR: path.join(SCRATCH, "cfg"),
+         LT_MODELS_DIR: path.join(ROOT, "frontend/src-tauri/resources/models"), LT_APP_ROOT: HAUPT, LT_MOTOR: "kind" },
+  stdio: ["ignore", "ignore", "inherit"],
+});
+const ende = () => { try { server.kill(); } catch { /* schon weg */ } };
+process.on("exit", ende); process.on("SIGINT", () => { ende(); process.exit(1); });
+
+for (let i = 0; i < 60; i++) { try { await api("/api/health"); break; } catch { await warte(500); } }
+console.log("Backend bereit");
+
+// ---------- Demo-Material ----------
+const { job_id } = await (await api("/api/transcribe-path", json({ path: DEMO, language: "en", speaker_range: "2-2" }))).json();
+let job;
+for (let i = 0; i < 400; i++) {
+  job = await (await api(`/api/jobs/${job_id}`)).json();
+  if (["completed", "failed", "cancelled"].includes(job.status)) break;
+  await warte(500);
+}
+if (job.status !== "completed") throw new Error(`Demo-Transkription: ${job.status} ${job.error ?? ""}`);
+let eid = job.eintrag;
+let t = await (await api(`/api/transcripts/${eid}`)).json();
+// erste Stimme = Nora (Interviewerin), zweite = Julian
+const erste = t.segmente[0].sprecher;
+t.sprecher = t.sprecher.map((s) => ({ id: s.id, name: s.id === erste ? "Nora" : "Julian" }));
+await api(`/api/transcripts/${eid}`, json({ sprecher: t.sprecher, segmente: t.segmente.map(({ id, start, end, sprecher, text }) => ({ id, start, end, sprecher, text })) }, "PUT"));
+await api(`/api/transcripts/${eid}/rename`, json({ name: "Interview_01_Julian" }));
+const vtt = await (await api(`/api/transcripts/${eid}/export/vtt`)).arrayBuffer();
+for (const name of ["Interview_02_Mara", "Interview_03_Workshop"]) {
+  const fd = new FormData();
+  fd.append("datei", new Blob([vtt], { type: "text/vtt" }), `${name}.vtt`);
+  fd.append("audio", new Blob([fs.readFileSync(DEMO)], { type: "audio/mpeg" }), `${name}.mp3`);
+  await api("/api/import", { method: "POST", body: fd });
+}
+const liste = (await (await api("/api/transcripts")).json()).transcripts;
+eid = liste.find((e) => e.name === "Interview_01_Julian").id;
+// Wellenform-Cache vorab bauen
+await api(`/api/transcripts/${eid}/wellenform?t0=0&t1=0&buckets=1`);
+console.log(`Demo bereit: ${liste.length} Einträge, Editor-Eintrag ${eid}, ${t.segmente.length} Segmente`);
+
+// ---------- Aufnahme ----------
+const NEUTRAL = [
+  [LIB, "/Users/nora/Documents/ResearchTranscript"],
+  [path.join(ROOT, "frontend/src-tauri/resources/models"), "/Applications/ResearchTranscript.app/Contents/Resources/models"],
+  [SCRATCH, "/Users/nora"], [os.homedir(), "/Users/nora"],
+];
+async function neutralisiere(page) {
+  await page.evaluate((paare) => {
+    const w = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
+    for (let n = w.nextNode(); n; n = w.nextNode()) {
+      for (const [von, nach] of paare) if (n.nodeValue.includes(von)) n.nodeValue = n.nodeValue.split(von).join(nach);
+    }
+    for (const el of document.querySelectorAll("input")) {
+      for (const [von, nach] of paare) if (el.value.includes(von)) el.value = el.value.split(von).join(nach);
+    }
+  }, NEUTRAL);
+}
+
+const browser = await webkit.launch();
+let zahl = 0;
+for (const sprache of SPRACHEN) {
+  await api("/api/settings", json({ ui_language: sprache }));
+  for (const [modus, schema] of MODI) {
+    for (const [b, h, dpr] of GROESSEN) {
+      const ordner = path.join(AUS, sprache, modus, `${b * dpr}x${h * dpr}`);
+      fs.mkdirSync(ordner, { recursive: true });
+      const ctx = await browser.newContext({ viewport: { width: b, height: h }, deviceScaleFactor: dpr, colorScheme: schema, locale: sprache });
+      const page = await ctx.newPage();
+      const oeffne = async (speicher) => {
+        await page.goto(B + "/", { waitUntil: "networkidle" });
+        await page.evaluate((s) => { localStorage.clear(); for (const [k, v] of Object.entries(s)) localStorage.setItem(k, v); }, speicher);
+        await page.goto(B + "/", { waitUntil: "networkidle" });
+        await warte(400);
+      };
+      const bild = async (name) => {
+        await page.mouse.move(b - 4, h / 2);          // kein Hover-Zustand im Bild
+        await warte(150);
+        await page.screenshot({ path: path.join(ordner, name) });
+        zahl += 1;
+      };
+      const editor = { "lt.ui.tab": "editor", "lt.ui.editor": eid, [`lt.editor.aktiv.${eid}`]: "7", "lt.editor.schrift": "14" };
+
+      // 01 Editor: Transkript, Sprecher-Panel, Wellenform
+      await oeffne({ ...editor, "lt.editor.seitentab": "sprecher" });
+      await page.waitForSelector("[data-seg='7']");
+      await warte(1200);                               // Wellenform + Höhenmessung
+      await bild("01-editor.png");
+
+      // 02 AI-Transkript: fertiger Lauf + Warteliste mit Sprecherzahl je Datei
+      await oeffne({ "lt.ui.tab": "ai" });
+      await page.setInputFiles("input[type=file][multiple]", ["Interview_04_Lea.m4a", "Interview_05_Tom.wav", "Gruppengespraech_Quartier.mp4"]
+        .map((name) => ({ name, mimeType: "application/octet-stream", buffer: Buffer.from("demo") })));
+      await warte(500);
+      // zwei der drei Dateien bekommen ihre Sprecherzahl — die dritte zeigt
+      // den Hinweis «Sprecherzahl wählen»
+      try {
+        const wahl = page.locator(".rt-SelectTrigger").filter({ hasText: /wählen|Choose|Choisir|Scegli|nombre|numero|speaker count/i });
+        for (const [i, wert] of [[0, "2"], [0, "4"]]) {     // nach der ersten Wahl rückt die nächste auf Index 0
+          await wahl.nth(i).click();
+          await page.locator(".rt-SelectItem").filter({ hasText: new RegExp(`^${wert}$`) }).first().click();
+          await warte(200);
+        }
+      } catch (e) { console.log("  (Sprecherzahl nicht gesetzt:", String(e).split("\n")[0], ")"); }
+      await bild("02-ai-transkript.png");
+
+      // 03 Bibliothek (Human-Editor)
+      await oeffne({ "lt.ui.tab": "editor", "lt.ui.editor": "" });
+      await warte(300);
+      await bild("03-bibliothek.png");
+
+      // 04 Suchen und Ersetzen
+      await oeffne({ ...editor, "lt.editor.seitentab": "suchen" });
+      await page.waitForSelector("[data-seg='7']");
+      const felder = page.locator(".ui-sidepanel input[type=text], .ui-sidepanel input:not([type])");
+      if (await felder.count() >= 2) {
+        await felder.nth(0).fill("cooperative");
+        await felder.nth(1).fill("co-operative");
+      } else {
+        await page.locator("input").nth(0).fill("cooperative");
+      }
+      await warte(900);
+      await bild("04-suchen-ersetzen.png");
+
+      // 05 Sprecherfarbe wählen
+      await oeffne({ ...editor, "lt.editor.seitentab": "sprecher" });
+      await page.waitForSelector("[data-farbwahl] button");
+      await warte(900);
+      await page.locator("[data-farbwahl] button").first().click();
+      await warte(300);
+      await page.screenshot({ path: path.join(ordner, "05-sprecherfarbe.png") }); zahl += 1;
+      await page.keyboard.press("Escape");
+
+      // 06 Export-Formate
+      await page.mouse.click(10, h - 10);
+      await page.locator(".rt-SelectTrigger.rt-variant-soft").first().click();
+      await warte(400);
+      await page.screenshot({ path: path.join(ordner, "06-export.png") }); zahl += 1;
+      await page.keyboard.press("Escape");
+
+      // 07 Einstellungen
+      await oeffne({ "lt.ui.tab": "einstellungen" });
+      await warte(500);
+      await neutralisiere(page);
+      await bild("07-einstellungen.png");
+
+      await ctx.close();
+      console.log(`${sprache} ${modus} ${b * dpr}×${h * dpr} ✓`);
+    }
+  }
+}
+await browser.close();
+await api("/api/settings", json({ ui_language: "de" }));
+ende();
+fs.rmSync(SCRATCH, { recursive: true, force: true });
+console.log(`${zahl} Bilder unter ${AUS}`);
+process.exit(0);

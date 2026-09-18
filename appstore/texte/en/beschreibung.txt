@@ -1,0 +1,31 @@
+ResearchTranscript transcribes interviews, group discussions and field recordings entirely on your Mac. The recording never leaves your computer: no cloud, no account, no network connection.
+
+TRANSCRIBE
+• Speech recognition with whisper.cpp, large-v3-turbo model included — English, German, French, Italian and many more languages
+• Speaker separation on the Neural Engine: set the number of speakers per recording or let the app detect it
+• Drop several files into the waiting list, choose the speaker count per file, start — the list survives a restart
+• Video (MP4, MOV with H.264 or HEVC) as a source: the audio is read, the picture follows silently in the editor
+• Your own whisper.cpp models, for example a Swiss German fine-tune, go straight into the model folder
+
+CORRECT
+• Editor with a zoomable waveform in the speakers' colours and a playhead
+• Fully keyboard-driven: move between turns, play and pause while typing, split a turn at the cursor, merge with the previous one
+• Insert interjections at the playhead — for passages where people talk over each other
+• Set timecodes by hand; rename, recolour and merge speakers
+• Find and replace across the whole transcript, voice sample per speaker
+• Every change is saved; earlier states are kept as history
+
+SHARE
+• WebVTT, CSV and plain text
+• REFI-QDA (.qdpx) for ATLAS.ti, MAXQDA and NVivo — with audio, timestamps and speakers as codes
+• enrich dossier with a change journal
+• Optional metadata from your local Zotero library: title, date, interviewers, citekey
+
+PRIVACY
+The app collects no data, has no telemetry and opens no network connection. All models are included; nothing is downloaded. Ready-made text for records of processing, data protection impact assessments, ethics applications and methods sections is available on the website.
+
+FREE SOFTWARE
+ResearchTranscript is open source under the AGPL; the source code is on GitHub. Developed at B/IAS – Basel Institut für angewandte Stadtforschung.
+
+REQUIREMENTS
+Mac with Apple silicon, macOS 14 or later, about 2 GB of free space.

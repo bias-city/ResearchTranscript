@@ -36,3 +36,4 @@ frontend/node_modules
 frontend/src-tauri/swift/RTMotoren/.build/
 frontend/src-tauri/binaries/
 frontend/src-tauri/profiles/
+appstore/screenshots/
