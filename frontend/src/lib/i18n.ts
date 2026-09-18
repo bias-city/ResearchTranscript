@@ -591,6 +591,7 @@ const W: Record<string, Eintrag> = {
     fr: "Aide de ResearchTranscript", it: "Aiuto di ResearchTranscript" },
   "hilfe.knopf": { de: "Hilfe und Tastenkürzel (⌘?)", en: "Help and shortcuts (⌘?)",
     fr: "Aide et raccourcis (⌘?)", it: "Aiuto e scorciatoie (⌘?)" },
+  "hilfe.kurz": { de: "Hilfe", en: "Help", fr: "Aide", it: "Aiuto" },
   "hilfe.suchen": { de: "Hilfe durchsuchen", en: "Search help",
     fr: "Rechercher dans l’aide", it: "Cerca nell’aiuto" },
   "hilfe.treffer": { de: "{n} Treffer", en: "{n} matches", fr: "{n} résultats", it: "{n} risultati" },

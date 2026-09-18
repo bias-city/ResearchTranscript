@@ -4,7 +4,7 @@
 // gibt kein Backend mehr zu starten; der Herzschlag der Hülle meldet,
 // wenn die Verarbeitung hängt (Plan R4).
 import { useCallback, useEffect, useState } from "react";
-import { Badge, Busy, Button, ErrorNote, Flex, Heading, IconButton, ModalDialog,
+import { Badge, Busy, Button, ErrorNote, Flex, Heading, ModalDialog,
   SegTabs, Text } from "./components/ui";
 import { Icon } from "./components/icons";
 import { apiGet, apiSend, errMsg, type Settings } from "./lib/api";
@@ -169,8 +169,6 @@ export default function App() {
                    { value: "einstellungen",
                      label: tr("tab.einstellungen"),
                      icon: "settings" }]} />
-        <IconButton title={tr("hilfe.knopf")} onClick={() => void hilfeOeffnen()}>
-          <Icon name="help" size={16} /></IconButton>
       </Flex>
       {importFehler && <ErrorNote>{importFehler}</ErrorNote>}
       <div style={{ flex: 1, minHeight: 0 }}>
@@ -186,6 +184,13 @@ export default function App() {
                   onOpen={(id) => setEditorId(id)} />
               : <EinstellungenModule settings={settings}
                                      onChange={setSettings} />}
+      </div>
+      {/* Hilfe als Pille unten links (User 2026-09-18) — im Editor sitzt sie
+          in der linken, freien Zone der Steuerzeile */}
+      <div className="rt-hilfe-pille">
+        <Button size="1" variant="soft" color="gray" highContrast
+                title={tr("hilfe.knopf")} onClick={() => void hilfeOeffnen()}>
+          <Icon name="help" size={13} />{tr("hilfe.kurz")}</Button>
       </div>
       <UeberDialog open={ueber} onClose={() => setUeber(false)} />
     </Flex>

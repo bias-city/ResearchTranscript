@@ -760,3 +760,6 @@ body { margin: 0; background: var(--gray-1); }
 @media (max-width: 760px) { .hilfe-nav { width: 200px; } .hilfe-spalte { padding: 20px 18px 60px; } }
 .hilfe-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .88em;
   padding: 1px 4px; border-radius: 4px; background: var(--gray-a3); }
+
+/* Hilfe-Pille unten links im Hauptfenster; liegt unter Dialogen */
+.rt-hilfe-pille { position: fixed; left: 16px; bottom: 8px; z-index: 5; }

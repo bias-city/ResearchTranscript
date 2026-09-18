@@ -237,6 +237,55 @@ def _schnappschuss(eid: str) -> Path:
     return tj
 
 
+AUSGANG = "ausgang.json"
+
+
+def _ausgang_aus(daten: dict) -> dict:
+    """Der Ausgangsstand: nur, was der Vergleich braucht — Wortlaut, Zeiten,
+    Sprecherzuordnung. Keine Memos, kein Journal."""
+    return {"schema": 1, "created": daten.get("created") or _jetzt(),
+            "sprecher": [{"id": p["id"], "name": p.get("name", "")}
+                         for p in daten.get("sprecher", [])],
+            "segmente": [{"id": s["id"], "start": s["start"], "end": s["end"],
+                          "sprecher": s.get("sprecher"), "text": s.get("text", "")}
+                         for s in daten.get("segmente", [])]}
+
+
+def _unberuehrt(daten: dict) -> bool:
+    """Hat noch kein Mensch Wortlaut, Zeiten oder Sprecher angefasst?
+    (Zotero verknüpfen zählt nicht — das ändert das Transkript nicht.)"""
+    return not any(r.get("origin") == "human"
+                   and any(k != "zotero" for k in (r.get("changed") or {}))
+                   for r in daten.get("journal", []))
+
+
+def ausgangsstand(eid: str) -> tuple[dict | None, str]:
+    """(Ausgangsstand, Herkunft). Herkunft: «ausgang» = beim Anlegen
+    gesichert · «verlauf» = ältester Stand im Verlauf, den noch kein Mensch
+    angefasst hatte (Einträge von vor 0.6.0) · «fehlt» = nicht mehr
+    feststellbar (der Verlauf rotiert nach 30 Ständen)."""
+    ordner = eintrag_pfad(eid)
+    try:
+        return json.loads((ordner / AUSGANG).read_text("utf-8")), "ausgang"
+    except (OSError, ValueError):
+        pass
+    for fp in sorted((ordner / "history").glob("*.json")):
+        try:
+            alt = _ergaenze_schema1(json.loads(fp.read_text("utf-8")))
+        except (OSError, ValueError):
+            continue
+        if _unberuehrt(alt):
+            return _ausgang_aus(alt), "verlauf"
+        break                               # ab hier ist alles schon bearbeitet
+    try:
+        jetzt = lese(eid)
+    except BibliothekFehler:
+        return None, "fehlt"
+    if _unberuehrt(jetzt):
+        return _ausgang_aus(jetzt), "ausgang"
+    return None, "fehlt"
+
+
 def zotero_setzen(eid: str, meta: dict) -> dict:
     """Zotero-Schnappschuss ins Transkript — ein menschlicher Akt (die
     Person hat gewählt), der Schnappschuss selbst bleibt `source`."""
@@ -273,6 +322,10 @@ def schreibe(eid: str, daten: dict, *, did: str = "Im Editor bearbeitet",
     tj = _schnappschuss(eid)
     alt_stand = _ergaenze_schema1(json.loads(tj.read_text("utf-8")))
     daten = _ergaenze_schema1(daten)
+    # Einträge von vor 0.6.0 haben keinen gesicherten Ausgangsstand: beim
+    # ersten Eingriff nachholen, solange der alte Stand noch unberührt ist
+    if not (tj.parent / AUSGANG).exists() and _unberuehrt(alt_stand):
+        _atomar(tj.parent / AUSGANG, _ausgang_aus(alt_stand))
     daten["journal"] = alt_stand.get("journal", [])   # das Journal führt die Bibliothek
     if "zotero" in alt_stand:                           # der Editor kennt den Block nicht
         daten.setdefault("zotero", alt_stand["zotero"])
@@ -334,6 +387,9 @@ def anlegen(name: str, segmente: list[dict], sprecher: list[dict],
                     did=did, by=by,
                     result={"records": len(segmente) + len(sprecher)})
     _atomar(ordner / "transkript.json", daten)
+    # Ausgangsstand für «wie stark griff der Mensch ein» (eingriff.py) —
+    # einmal geschrieben, nie rotiert, nie vom Editor angefasst
+    _atomar(ordner / AUSGANG, _ausgang_aus(daten))
     return daten
 
 
