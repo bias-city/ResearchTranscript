@@ -1485,3 +1485,30 @@ export function Busy() {
   }, [busy]);
   return zeige ? <Spinner size="2" aria-label={tr("ui.laedt")} /> : null;
 }
+
+
+/** Pille mit Segmenten (User 2026-09-18): zusammengehörige Bedienelemente
+    in EINER Pille — Aktionen (Transport) oder unabhängige Schalter (Modi,
+    `active` = graue Fläche). Rand und Form wie die übrigen Pillen. */
+export function PillGroup({ items, label }: {
+  label?: string;
+  items: { key: string; title: string; content: ReactNode;
+           onClick: () => void; active?: boolean; disabled?: boolean;
+           /** Schalter (aria-pressed) statt Aktion */
+           toggle?: boolean; breit?: boolean }[];
+}) {
+  return (
+    <div className="ui-pillgroup" role="group" aria-label={label}>
+      {items.map((it) => (
+        <button key={it.key} type="button" title={it.title}
+                aria-label={it.title} disabled={it.disabled}
+                aria-pressed={it.toggle ? !!it.active : undefined}
+                data-active={it.active ? "" : undefined}
+                data-breit={it.breit ? "" : undefined}
+                onClick={it.onClick}>
+          {it.content}
+        </button>
+      ))}
+    </div>
+  );
+}

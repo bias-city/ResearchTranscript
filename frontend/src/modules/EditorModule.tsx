@@ -6,7 +6,7 @@ import { memo, useCallback, useEffect, useMemo, useRef, useState,
   type MouseEvent as ReactMouseEvent } from "react";
 import {
   Badge, Button, Checkbox, ErrorNote, Flex, IconButton, ModalDialog,
-  SearchField, SegTabs, Select, SidePanel, Spinner, Text, TextField,
+  PillGroup, SearchField, SegTabs, Select, SidePanel, Spinner, Text, TextField,
 } from "../components/ui";
 import { Icon } from "../components/icons";
 import Wellenform from "../components/Wellenform";
@@ -899,39 +899,44 @@ export default function EditorModule({ id, onExit }: {
                      onPlay={(e) => { setLaeuft(true);
                        e.currentTarget.playbackRate = speed; }}
                      onPause={() => setLaeuft(false)} />
-              <IconButton title={tr("ed.rueck5")} onClick={() => {
-                if (audioRef.current)
-                  audioRef.current.currentTime -= 5;
-              }}><Icon name="rewind" size={16} /></IconButton>
-              <IconButton title={laeuft ? tr("ed.pause") : tr("ed.play")}
-                          onClick={() => {
-                const a = audioRef.current;
-                if (!a) return;
-                if (a.paused) void a.play(); else a.pause();
-              }}><Icon name={laeuft ? "pause" : "play"} size={18} />
-              </IconButton>
-              <IconButton title={tr("ed.vor5")} onClick={() => {
-                if (audioRef.current)
-                  audioRef.current.currentTime += 5;
-              }}><Icon name="forward" size={16} /></IconButton>
-              <Button size="1" variant="soft" color="gray" highContrast
-                      title={tr("ed.speed")} onClick={() => {
-                const i = SPEEDS.indexOf(speed);
-                setSpeed(SPEEDS[(i + 1) % SPEEDS.length]);
-              }}>{speed.toFixed(2).replace(/0$/, "")}×</Button>
-              <IconButton title={tr("ed.loop")} onClick={() => setLoop(!loop)}>
-                <span style={{ opacity: loop ? 1 : 0.4 }}>
-                  <Icon name="loop" size={16} /></span>
-              </IconButton>
-              {/* «Folgen» als Pille wie Tabs und Knöpfe (User 2026-09-18):
-                  an = graue Fläche, aus = weiss — kein blaues Häkchen */}
-              <Button size="1" variant="soft" color="gray" highContrast
-                      aria-pressed={folgen}
-                      style={folgen ? { background: "var(--gray-a5)" } : undefined}
-                      onClick={() => {
-                        setFolgen((f) => { lset(KEYS.editorFolgen, f ? "0" : "1"); return !f; });
-                      }}>
-                {tr("ed.folgen")}</Button>
+              {/* Steuerzeile in drei Pillen (User 2026-09-18):
+                  Transport (drei Aktionen) · Tempo (langsamer / Wert =
+                  zurück auf 1× / schneller) · Modi (zwei unabhängige
+                  Schalter). Die Zeit rechts ist Anzeige, kein Knopf. */}
+              <PillGroup label={tr("ed.play")} items={[
+                { key: "rueck", title: tr("ed.rueck5"),
+                  content: <Icon name="rewind" size={14} />,
+                  onClick: () => { if (audioRef.current) audioRef.current.currentTime -= 5; } },
+                { key: "play", title: laeuft ? tr("ed.pause") : tr("ed.play"), breit: true,
+                  content: <Icon name={laeuft ? "pause" : "play"} size={14} />,
+                  onClick: () => {
+                    const a = audioRef.current;
+                    if (!a) return;
+                    if (a.paused) void a.play(); else a.pause();
+                  } },
+                { key: "vor", title: tr("ed.vor5"),
+                  content: <Icon name="forward" size={14} />,
+                  onClick: () => { if (audioRef.current) audioRef.current.currentTime += 5; } },
+              ]} />
+              <PillGroup label={tr("ed.speed")} items={[
+                { key: "langsamer", title: tr("ed.speed.langsamer"), content: "−",
+                  disabled: SPEEDS.indexOf(speed) <= 0,
+                  onClick: () => setSpeed((v) => SPEEDS[Math.max(0, SPEEDS.indexOf(v) - 1)]) },
+                { key: "wert", title: tr("ed.speed"), breit: true,
+                  content: `${speed.toFixed(2).replace(/0$/, "")}×`,
+                  onClick: () => setSpeed(1) },
+                { key: "schneller", title: tr("ed.speed.schneller"), content: "+",
+                  disabled: SPEEDS.indexOf(speed) >= SPEEDS.length - 1,
+                  onClick: () => setSpeed((v) => SPEEDS[Math.min(SPEEDS.length - 1, SPEEDS.indexOf(v) + 1)]) },
+              ]} />
+              <PillGroup label={tr("ed.modi")} items={[
+                { key: "loop", title: tr("ed.loop"), toggle: true, active: loop,
+                  content: <><Icon name="loop" size={13} />{tr("ed.loop.kurz")}</>,
+                  onClick: () => setLoop(!loop) },
+                { key: "folgen", title: tr("ed.folgen.titel"), toggle: true, active: folgen,
+                  content: tr("ed.folgen"),
+                  onClick: () => setFolgen((f) => { lset(KEYS.editorFolgen, f ? "0" : "1"); return !f; }) },
+              ]} />
               <Flex justify="end" align="center" style={{ flex: 1 }}>
                 <Text size="1" color="gray"
                       style={{ fontVariantNumeric: "tabular-nums" }}>

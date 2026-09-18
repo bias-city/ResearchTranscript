@@ -696,3 +696,23 @@ body { margin: 0; background: var(--gray-1); }
   background-color: var(--gray-12); color: var(--gray-1); }
 .rt-SelectItem:where([data-highlighted]) .rt-SelectItemIndicator,
 .rt-SelectItem:where([data-highlighted]) svg { color: var(--gray-1); }
+
+/* ---------- Pille mit Segmenten (Steuerzeile, User 2026-09-18) ---------- */
+.ui-pillgroup {
+  display: inline-flex; align-items: stretch; height: 24px;
+  border-radius: 9999px; overflow: hidden;
+  background: var(--color-panel-solid); color: var(--gray-12);
+  box-shadow: inset 0 0 0 1.5px currentColor;
+}
+.ui-pillgroup > button {
+  all: unset; box-sizing: border-box; cursor: pointer;
+  display: inline-flex; align-items: center; justify-content: center; gap: 5px;
+  min-width: 30px; padding: 0 9px; font-size: var(--font-size-1);
+  font-variant-numeric: tabular-nums; white-space: nowrap;
+}
+.ui-pillgroup > button[data-breit] { min-width: 40px; }
+.ui-pillgroup > button + button { box-shadow: inset 1px 0 0 var(--gray-a7); }
+.ui-pillgroup > button:hover { background: var(--gray-a3); }
+.ui-pillgroup > button[data-active] { background: var(--gray-a5); font-weight: 600; }
+.ui-pillgroup > button:disabled { opacity: .4; cursor: default; }
+.ui-pillgroup > button:focus-visible { outline: 2px solid var(--gray-a8); outline-offset: -3px; }
