@@ -1440,7 +1440,8 @@ const SegmentZeile = memo(function SegmentZeile({
                   onText(seg.id, e.currentTarget.value);
                 }}
                 className="seg-text" />
-      <Flex gap="1" justify="end" style={SEG_SLOT}>
+      {/* 8 px Rasterabstand + 8 px = 16 px zwischen Text und Icons */}
+      <Flex gap="1" justify="end" style={{ ...SEG_SLOT, marginLeft: 8 }}>
         {/* Memo (User 2026-09-17): roter Punkt = Memo vorhanden, der
             Tooltip zeigt den Text, Klick öffnet den Dialog */}
         <IconButton title={seg.memo ? seg.memo : tr("ed.memo")}
