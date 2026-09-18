@@ -49,7 +49,7 @@ sh("node", [path.join(ROOT, "scripts/bundle-resources.mjs")]);
 console.log("2/6 Teile signieren (Apple Distribution)");
 sh("node", [path.join(ROOT, "scripts/sign-resources.mjs"), "--identity", DIST]);
 console.log("3/6 App bauen (Store-Konfiguration, ohne Devtools)");
-sh("npx", ["tauri", "build", "--bundles", "app", "--config", "tauri.macos-appstore.conf.json", "--", "--no-default-features", "--features", "motoren"],
+sh("npx", ["tauri", "build", "--bundles", "app", "--config", "tauri.macos-appstore.conf.json", "--", "--no-default-features", "--features", "motoren,mas"],
    { cwd: path.join(ROOT, "frontend"), env: { ...process.env, PYO3_CONFIG_FILE: path.join(TAURI, "pyo3-config.txt"),
      APPLE_ID: undefined, APPLE_PASSWORD: undefined, APPLE_TEAM_ID: undefined } });
 sh("node", [path.join(ROOT, "scripts/nachsignieren.mjs"), APP, "--mas", "--identity", DIST]);

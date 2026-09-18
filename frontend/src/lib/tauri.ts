@@ -12,6 +12,14 @@ export async function protokollPfad(): Promise<string | null> {
   return invoke<string | null>("protokoll_pfad");
 }
 
+/** Vertriebskanal: «mas» = Mac App Store, sonst DMG/Browser. */
+export async function vertriebskanal(): Promise<"mas" | "dmg"> {
+  if (!isTauri()) return "dmg";
+  const { invoke } = await import("@tauri-apps/api/core");
+  try { return (await invoke<string>("kanal")) === "mas" ? "mas" : "dmg"; }
+  catch { return "dmg"; }
+}
+
 /** Pfad der Drittanbieter-Lizenzliste im Bundle. */
 export async function lizenzenPfad(): Promise<string | null> {
   if (!isTauri()) return null;

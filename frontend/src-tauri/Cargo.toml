@@ -24,6 +24,10 @@ swift-rs = { version = "1.0.8", features = ["build"], optional = true }
 # einzige Weg (Plan §5, Standard bis zur belegten Parität, E3).
 motoren = ["dep:swift-rs"]
 default = ["motoren"]
+# Mac-App-Store-Fassung (scripts/release-mas.mjs): die Oberfläche blendet
+# den Verweis auf GitHub-Releases aus (Aktualisierungen kommen über den
+# Store, Guideline 2.4.5) und nennt die Zusatzerlaubnis.
+mas = []
 
 [dependencies]
 # protocol-asset: Medien über asset:// (Phase 0, F2) statt HTTP

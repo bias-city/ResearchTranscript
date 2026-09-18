@@ -101,6 +101,10 @@ fn standard_ordner() -> String {
 #[tauri::command]
 fn ist_sandboxed() -> bool { bookmarks::sandboxed() }
 
+/// Vertriebskanal dieses Builds: "mas" (Mac App Store) oder "dmg".
+#[tauri::command]
+fn kanal() -> &'static str { if cfg!(feature = "mas") { "mas" } else { "dmg" } }
+
 /// Die Drittanbieter-Lizenzliste (THIRD_PARTY_LICENSES.md) — im Bundle
 /// unter Resources/licenses, im Checkout an der Repo-Wurzel.
 #[tauri::command]
@@ -278,7 +282,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![api, sprecher_probe, medien_pfad,
                                                  ordner_oeffnen, geoeffnete_dateien,
                                                  protokoll_pfad, neustart, ordner_merken,
-                                                 standard_ordner, ist_sandboxed, lizenzen_pfad])
+                                                 standard_ordner, ist_sandboxed, lizenzen_pfad, kanal])
         .build(tauri::generate_context!())
         .expect("ResearchTranscript konnte nicht starten");
 

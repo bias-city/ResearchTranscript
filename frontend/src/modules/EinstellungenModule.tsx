@@ -10,7 +10,7 @@ import {
 } from "../lib/api";
 import { setSprache, useT, type Sprache } from "../lib/i18n";
 import { isTauri, lizenzenPfad, ordnerMerken, ordnerOeffnen, pickOrdner,
-  protokollPfad, standardOrdner } from "../lib/tauri";
+  protokollPfad, standardOrdner, vertriebskanal } from "../lib/tauri";
 import { TURN_SCHRIFT_WAHL, turnSchrift, turnSchriftSetzen } from "../lib/storage";
 
 const BIAS_URL = "https://bias.city/researchtranscript/";
@@ -44,6 +44,8 @@ export default function EinstellungenModule({ settings, onChange }: {
             [settings?.user_email]);
   // Zotero: Verzeichnis ebenso; der Status (gefunden?) kommt vom
   // Backend und folgt jeder Änderung an Einwilligung oder Pfad
+  const [kanal, setKanal] = useState<"mas" | "dmg">("dmg");
+  useEffect(() => { void vertriebskanal().then(setKanal); }, []);
   const [zdir, setZdir] = useState(settings?.zotero_dir ?? "");
   // Schriftgrösse des Turn-Texts (lokal im Browser-Speicher, nicht in
   // der Backend-Config — eine Anzeige-Vorliebe dieses Rechners)
@@ -229,6 +231,11 @@ export default function EinstellungenModule({ settings, onChange }: {
 
       <Karte titel={tr("st.datenschutz")}>
         <Text size="1" color="gray">{tr("st.datenschutz.text")}</Text>
+        <Flex gap="2" mt="2">
+          <Button size="1" variant="soft" color="gray" highContrast onClick={() =>
+            void ordnerOeffnen("https://bias.city/researchtranscript/privacy.html")}>
+            {tr("st.link.datenschutz")}</Button>
+        </Flex>
       </Karte>
 
       <Karte titel={tr("st.lizenzen")}>
@@ -240,10 +247,12 @@ export default function EinstellungenModule({ settings, onChange }: {
               void ordnerOeffnen(
                 "https://github.com/bias-city/ResearchTranscript")}>
               {tr("st.link.repo")}</Button>
-            <Button size="1" variant="soft" color="gray" highContrast onClick={() =>
+            {kanal === "dmg" && (
+              <Button size="1" variant="soft" color="gray" highContrast onClick={() =>
               void ordnerOeffnen("https://github.com/bias-city/"
                 + "ResearchTranscript/releases")}>
               {tr("st.link.releases")}</Button>
+            )}
             <Button size="1" variant="soft" color="gray" highContrast onClick={() =>
               void ordnerOeffnen("https://lame.sourceforge.io/")}>
               {tr("st.link.lamesrc")}</Button>

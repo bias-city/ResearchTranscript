@@ -122,6 +122,7 @@ Anhang: `docs/demo/researchtranscript-demo.zip` (mp3 + Referenztext).
 
 - [ ] `LICENSE-EXCEPTION` im Repo, in README verlinkt
 - [ ] `THIRD_PARTY_LICENSES.md` erzeugt (`python3 scripts/gen-licenses.py`), im Bundle, Knopf «Lizenzen» in den Einstellungen
+- [ ] Über-Dialog in der Store-Fassung (Cargo-Feature `mas`, setzt `release-mas.mjs`): kein Knopf «Releases», dafür Datenschutzerklärung (Guideline 5.1.1), Zusatzerlaubnis, Lizenzliste, Quellcode-Links (AGPL/LGPL-Angebot)
 - [ ] `site/privacy.html` hochgeladen, URL im Portal eingetragen
 - [ ] LAME-Tarball unter bias.city/researchtranscript/quellen/ (LGPL-Angebot)
 - [ ] Zertifikate, Profil, API-Schlüssel vorhanden

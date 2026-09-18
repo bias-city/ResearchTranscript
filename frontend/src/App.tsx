@@ -10,8 +10,9 @@ import { Icon } from "./components/icons";
 import { apiGet, apiSend, errMsg, type Settings } from "./lib/api";
 import { setSprache, useT, type Sprache } from "./lib/i18n";
 import { KEYS, lget, lset } from "./lib/storage";
-import { geoeffneteDateien, isTauri, neustart, onBlockiert, onDateien,
-  onUeber, ordnerMerken, ordnerOeffnen, pickOrdner, standardOrdner } from "./lib/tauri";
+import { geoeffneteDateien, isTauri, lizenzenPfad, neustart, onBlockiert,
+  onDateien, onUeber, ordnerMerken, ordnerOeffnen, pickOrdner, standardOrdner,
+  vertriebskanal } from "./lib/tauri";
 import AiTranscriptModule from "./modules/AiTranscriptModule";
 import EditorModule from "./modules/EditorModule";
 import EinstellungenModule from "./modules/EinstellungenModule";
@@ -211,6 +212,10 @@ function UeberDialog({ open, onClose }: {
   const version = backend && backend !== __APP_VERSION__
     ? `${__APP_VERSION__} · Backend ${backend}`
     : __APP_VERSION__;
+  // Store-Fassung: kein Verweis auf GitHub-Releases (Aktualisierungen
+  // kommen über den App Store), dafür der Hinweis auf die Zusatzerlaubnis
+  const [kanal, setKanal] = useState<"mas" | "dmg">("dmg");
+  useEffect(() => { void vertriebskanal().then(setKanal); }, []);
   const link = (label: string, url: string) => (
     <Button size="1" variant="soft" color="gray" highContrast onClick={() => void ordnerOeffnen(url)}>
       {label}</Button>
@@ -226,13 +231,22 @@ function UeberDialog({ open, onClose }: {
           <Text size="1" color="gray">
             {tr("ueber.version", { v: version })}</Text>
           <Text size="2" color="gray">{tr("st.app.sub")}</Text>
+          <Text size="1" color="gray">{tr("ueber.copyright")}</Text>
         </Flex>
         <Text size="2">{tr("ueber.herkunft")}</Text>
         <Text size="2">{tr("st.app.text")}</Text>
+        <Text size="2">{tr(kanal === "mas" ? "ueber.store" : "ueber.erlaubnis")}</Text>
         <Flex gap="2" wrap="wrap">
           {link(tr("st.link.repo"), REPO)}
-          {link(tr("st.link.releases"), `${REPO}/releases`)}
+          {kanal === "dmg" && link(tr("st.link.releases"), `${REPO}/releases`)}
           {link(tr("st.link.lizenztext"), `${REPO}/blob/main/LICENSE`)}
+          {link(tr("st.link.erlaubnis"), `${REPO}/blob/main/LICENSE-EXCEPTION`)}
+          {link(tr("st.link.datenschutz"), `${BIAS}privacy.html`)}
+          {isTauri() && (
+            <Button size="1" variant="soft" color="gray" highContrast onClick={() =>
+              void lizenzenPfad().then((p) => { if (p) void ordnerOeffnen(p); })}>
+              {tr("st.link.lizenzliste")}</Button>
+          )}
           {link("BIAS.City", BIAS)}
         </Flex>
         <Text size="1" color="gray">{tr("st.lizenzen.text")}</Text>
