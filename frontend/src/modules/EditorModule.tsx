@@ -11,7 +11,7 @@ import {
 import { Icon } from "../components/icons";
 import Wellenform from "../components/Wellenform";
 import {
-  FARB_AUSWAHL, apiGet, apiSend, errMsg, hms, kuerze, medienUrl,
+  FARB_AUSWAHL, apiGet, apiSend, errMsg, hmsH, kuerze, medienUrl,
   sprecherFarbe, sprecherProbe, type Farbe, type Segment, type Sprecher,
   type Transkript, type ZoteroKandidat, type ZoteroMeta, type ZoteroStatus,
 } from "../lib/api";
@@ -22,13 +22,32 @@ import { isTauri, ordnerOeffnen, savePath } from "../lib/tauri";
 
 const SPEEDS = [0.75, 1, 1.25, 1.5, 1.75, 2];   // 0,75 für schnelle Sprecher (User 2026-09-17)
 
-let letzteZehntel = -1;
+// Abspielposition in Hundertsteln (User 2026-09-18). Zwei Ereignisse:
+// «rt-kopf» (fertiger Text für die Kopfzeile) und «rt-zeit» (Sekunden)
+// für LaufZeit und den Playhead der Wellenform — beide schreiben am
+// React-Baum vorbei, sonst rendert der Editor 60×/s.
+let letzteHundertstel = -1;
+let letzteZeit = 0;
 function zehntelMelden(sekunden: number): void {
-  const z = Math.floor(sekunden * 10);
-  if (z === letzteZehntel) return;
-  letzteZehntel = z;
-  window.dispatchEvent(new CustomEvent("rt-kopf", {
-    detail: `${hms(Math.floor(z / 10))}.${z % 10}` }));
+  const z = Math.floor(sekunden * 100 + 1e-6);
+  if (z === letzteHundertstel) return;
+  letzteHundertstel = z;
+  letzteZeit = sekunden;
+  window.dispatchEvent(new CustomEvent("rt-kopf", { detail: hmsH(sekunden) }));
+  window.dispatchEvent(new CustomEvent("rt-zeit", { detail: sekunden }));
+}
+
+/** Mitlaufender Timecode hh:mm:ss.hh — schreibt direkt ins DOM. */
+function LaufZeit() {
+  const ref = useRef<HTMLSpanElement>(null);
+  useEffect(() => {
+    const h = (e: Event) => {
+      if (ref.current) ref.current.textContent = hmsH((e as CustomEvent<number>).detail);
+    };
+    window.addEventListener("rt-zeit", h);
+    return () => window.removeEventListener("rt-zeit", h);
+  }, []);
+  return <span ref={ref}>{hmsH(letzteZeit)}</span>;
 }
 
 /** «hh:mm:ss», «mm:ss», «ss», optional «.mmm» → Sekunden; null, wenn
@@ -207,7 +226,7 @@ export default function EditorModule({ id, onExit }: {
   useEffect(() => { if (ladeN === 0) ende(); }, [ladeN]);
   // beim Verlassen: Kopfzeile leeren, nächste Meldung wieder frisch
   useEffect(() => () => {
-    letzteZehntel = -1;
+    letzteHundertstel = -1;
     window.dispatchEvent(new CustomEvent("rt-kopf", { detail: "" }));
   }, []);
 
@@ -568,7 +587,8 @@ export default function EditorModule({ id, onExit }: {
     setZeit((z) => (z === sek ? z : sek));
     // Kopfzeile mit Zehntelsekunden — beim Abspielen übernimmt die
     // rAF-Schleife unten, hier reicht die Meldung bei Sprüngen/Pause
-    if (a.paused) zehntelMelden(a.currentTime);
+    // (auch im Lauf: deckt Sprünge ab, bevor der nächste Frame kommt)
+    zehntelMelden(a.currentTime);
     if (loop && aktiv >= 0 && segmente[aktiv]
         && a.currentTime > segmente[aktiv].end - 0.04) {
       a.currentTime = segmente[aktiv].start;
@@ -867,7 +887,6 @@ export default function EditorModule({ id, onExit }: {
               name={sprecherName.get(seg.sprecher ?? "") ?? ""}
               farbe={sprecherFarbe(sprecher, seg.sprecher)}
               hatAudio={hatAudio}
-              laufzeit={i === aktiv ? zeit : undefined}
               spielt={i === aktiv && laeuft}
               onPause={pause}
               onZeit={zeitSetzen}
@@ -940,7 +959,7 @@ export default function EditorModule({ id, onExit }: {
               <Flex justify="end" align="center" style={{ flex: 1 }}>
                 <Text size="1" color="gray"
                       style={{ fontVariantNumeric: "tabular-nums" }}>
-                  {hms(zeit)}
+                  <LaufZeit />
                 </Text>
               </Flex>
             </>
@@ -1310,7 +1329,7 @@ function planeWachsen(el: HTMLTextAreaElement) {
 }
 
 const SegmentZeile = memo(function SegmentZeile({
-  seg, index, aktiv, treffer, name, farbe, hatAudio, laufzeit, spielt,
+  seg, index, aktiv, treffer, name, farbe, hatAudio, spielt,
   onPause, onZeit, onSpringe, onText, onMenue, onTeilen, onNeu,
   onVerbinden, onEntfernen, onMemo,
 }: {
@@ -1325,7 +1344,6 @@ const SegmentZeile = memo(function SegmentZeile({
   /** laufender Playhead, nur in der aktiven Zeile (User 2026-09-17:
       «der Timecode könnte bis zum nächsten mitlaufen»); sonst der
       Segment-Anfang */
-  laufzeit?: number;
   /** aktueller Suchtreffer — Ring statt Füllung, damit er
       von der Abspiel-Markierung unterscheidbar bleibt */
   treffer: boolean; name: string;
@@ -1359,7 +1377,7 @@ const SegmentZeile = memo(function SegmentZeile({
            display: "grid",
            // Aktionsspalte so breit wie ihre Icons, rechtsbündig — mit dem
            // Listenrand ergibt das ~32 px bis zur Spaltenkante (User 2026-09-18)
-           gridTemplateColumns: "26px 74px 98px 1fr auto",   // Sprecherspalte ¼ schmaler (User 2026-09-18)
+           gridTemplateColumns: "26px 88px 98px 1fr auto",   // Sprecherspalte ¼ schmaler (User 2026-09-18)
            gap: 8, alignItems: "start", padding: "5px 4px",
            borderRadius: 8,
            background: aktiv ? "var(--accent-a3)" : undefined,
@@ -1378,9 +1396,9 @@ const SegmentZeile = memo(function SegmentZeile({
       </div>
       <div style={SEG_SLOT}>
         {zeitEdit !== null ? (
-          <input value={zeitEdit} autoFocus size={9}
+          <input value={zeitEdit} autoFocus size={11}
                  style={{ font: "inherit", fontSize: "var(--font-size-1)",
-                          fontVariantNumeric: "tabular-nums", width: 84,
+                          fontVariantNumeric: "tabular-nums", width: 84, marginLeft: -5,
                           padding: "1px 4px", borderRadius: 4,
                           border: "1px solid var(--accent-8)" }}
                  onChange={(e) => setZeitEdit(e.target.value)}
@@ -1396,8 +1414,8 @@ const SegmentZeile = memo(function SegmentZeile({
         ) : (
           <Text size="1" color="gray" title={tr("ed.zeit.bearbeiten")} style={{
             cursor: "text", fontVariantNumeric: "tabular-nums" }}
-                onClick={() => setZeitEdit(hms(seg.start))}>
-            {hms(laufzeit ?? seg.start)}</Text>
+                onClick={() => setZeitEdit(hmsH(seg.start))}>
+            {aktiv && hatAudio ? <LaufZeit /> : hmsH(seg.start)}</Text>
         )}
       </div>
       {/* leichter Knopf statt Radix-Select je Zeile (PERF: ~6 ms ×
@@ -1485,7 +1503,7 @@ const SegmentZeile = memo(function SegmentZeile({
     </div>
   );
 }, (a, b) => a.seg === b.seg && a.aktiv === b.aktiv
-  && a.laufzeit === b.laufzeit && a.spielt === b.spielt
+  && a.spielt === b.spielt
   && a.treffer === b.treffer
   && a.index === b.index && a.name === b.name && a.farbe === b.farbe
   && a.hatAudio === b.hatAudio);

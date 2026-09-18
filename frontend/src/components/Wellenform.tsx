@@ -56,6 +56,14 @@ export default function Wellenform({ eid, segmente, sprecher, zeit, spielt,
   const tick = useCallback(() => neuZeichnen((n) => n + 1), []);
   const ladeTimer = useRef<number | undefined>(undefined);
   const zieht = useRef(false);
+  // Feine Abspielposition (Hundertstel) aus dem Ereignis «rt-zeit» —
+  // die Eigenschaft `zeit` kommt nur sekundenweise
+  const fein = useRef(zeit);
+  useEffect(() => {
+    const h = (e: Event) => { fein.current = (e as CustomEvent<number>).detail; tick(); };
+    window.addEventListener("rt-zeit", h);
+    return () => window.removeEventListener("rt-zeit", h);
+  }, [tick]);
 
   // Breite beobachten (responsiv) und Hell/Dunkel (html.dark → neu zeichnen)
   useEffect(() => {
@@ -181,7 +189,7 @@ export default function Wellenform({ eid, segmente, sprecher, zeit, spielt,
       ctx.fill();
     }
     // Playhead
-    const px = x(zeit);
+    const px = x(Math.abs(fein.current - zeit) < 1.05 ? fein.current : zeit);
     if (px >= 0 && px <= breite) {
       ctx.fillStyle = cssFarbe("gray", 12);
       ctx.fillRect(Math.round(px) - 1, 0, 2, HOEHE);

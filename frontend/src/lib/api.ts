@@ -292,6 +292,13 @@ export function kuerze(name: string, max = 56): string {
 }
 
 /** IMMER hh:mm:ss (User-Regel). */
+/** hh:mm:ss.hh — mit Hundertstelsekunden (User 2026-09-18: Editor-
+    Timecodes, Laufzeit und Playhead; abgeschnitten, nicht gerundet). */
+export function hmsH(sekunden: number): string {
+  const h = Math.max(0, Math.floor(sekunden * 100 + 1e-6));
+  return `${hms(Math.floor(h / 100))}.${String(h % 100).padStart(2, "0")}`;
+}
+
 export function hms(sekunden: number): string {
   const s = Math.max(0, Math.floor(sekunden));
   const h = Math.floor(s / 3600), m = Math.floor((s % 3600) / 60);
