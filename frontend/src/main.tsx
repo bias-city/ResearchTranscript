@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import { Theme } from "@radix-ui/themes";
 import "@radix-ui/themes/styles.css";
 import App from "./App";
+import HilfeModule from "./modules/HilfeModule";
 import "./styles.css";
 import { turnSchrift, turnSchriftSetzen } from "./lib/storage";
 
@@ -54,7 +55,8 @@ function ThemeWurzel({ children }: { children: React.ReactNode }) {
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     <ThemeWurzel>
-      <Fehlerfang><App /></Fehlerfang>
+      {/* index.html#hilfe = Handbuch im eigenen Fenster (ohne Backend) */}
+      <Fehlerfang>{location.hash === "#hilfe" ? <HilfeModule /> : <App />}</Fehlerfang>
     </ThemeWurzel>
   </React.StrictMode>,
 );

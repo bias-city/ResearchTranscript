@@ -15,8 +15,14 @@
 // Grössen (Apple, Mac, 16:10): 1280×800, 1440×900, 2560×1600, 2880×1800.
 // Ausgabe: appstore/screenshots/<sprache>/<hell|dunkel>/<BxH>/NN-motiv.png
 //
-// Aufruf: node scripts/appstore-screenshots.mjs [--nur de] [--schnell]
+// Aufruf: node scripts/appstore-screenshots.mjs [--nur de] [--schnell] [--hilfe]
 //   --schnell: nur 2880×1800
+//   --hilfe:   Bilder fürs Handbuch (modules/HilfeModule) statt für den Store:
+//              frontend/public/hilfe/<sprache>/<hell|dunkel>/NN-motiv.jpg,
+//              1440×912 (Fenster 1200×760 × 1,2 — das Handbuch zeigt sie
+//              höchstens 716 px breit, das reicht für Retina), JPEG, dazu
+//              drei Motive nur fürs Handbuch (Memo, Steuerzeile, Zeile).
+//              Danach `npm run build`, damit sie in dist landen.
 import { spawn } from "node:child_process";
 import fs from "node:fs";
 import os from "node:os";
@@ -30,14 +36,15 @@ const { webkit } = require("playwright");
 
 const PORT = 5631;
 const B = `http://127.0.0.1:${PORT}`;
-const AUS = path.join(ROOT, "appstore/screenshots");
+const HILFE = process.argv.includes("--hilfe");
+const AUS = HILFE ? path.join(ROOT, "frontend/public/hilfe") : path.join(ROOT, "appstore/screenshots");
 const SCRATCH = fs.mkdtempSync(path.join(os.tmpdir(), "rt-shots-"));
 const LIB = path.join(SCRATCH, "lib");
 const DEMO = path.join(ROOT, "docs/demo/housing-cooperatives-interview.mp3");
 const HAUPT = path.resolve(ROOT, "../enrich-transcript");   // argmax-cli + models/speakerkit
 const arg = (n) => { const i = process.argv.indexOf(n); return i >= 0 ? process.argv[i + 1] ?? true : null; };
 const SPRACHEN = arg("--nur") ? [arg("--nur")] : ["de", "en", "fr", "it"];
-const GROESSEN = (arg("--schnell") ? [[1440, 900, 2]] : [[1280, 800, 1], [1440, 900, 1], [1280, 800, 2], [1440, 900, 2]]);
+const GROESSEN = HILFE ? [[1200, 760, 1.2]] : (arg("--schnell") ? [[1440, 900, 2]] : [[1280, 800, 1], [1440, 900, 1], [1280, 800, 2], [1440, 900, 2]]);
 const MODI = [["hell", "light"], ["dunkel", "dark"]];
 
 const warte = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -119,7 +126,7 @@ for (const sprache of SPRACHEN) {
   await api("/api/settings", json({ ui_language: sprache }));
   for (const [modus, schema] of MODI) {
     for (const [b, h, dpr] of GROESSEN) {
-      const ordner = path.join(AUS, sprache, modus, `${b * dpr}x${h * dpr}`);
+      const ordner = HILFE ? path.join(AUS, sprache, modus) : path.join(AUS, sprache, modus, `${b * dpr}x${h * dpr}`);
       fs.mkdirSync(ordner, { recursive: true });
       const ctx = await browser.newContext({ viewport: { width: b, height: h }, deviceScaleFactor: dpr, colorScheme: schema, locale: sprache });
       const page = await ctx.newPage();
@@ -129,11 +136,16 @@ for (const sprache of SPRACHEN) {
         await page.goto(B + "/", { waitUntil: "networkidle" });
         await warte(400);
       };
-      const bild = async (name) => {
+      // Store: PNG in voller Grösse · Handbuch: JPEG, optional nur ein Ausschnitt
+      const knips = async (name, clip) => {
+        const datei = path.join(ordner, HILFE ? name.replace(/\.png$/, ".jpg") : name);
+        await page.screenshot(HILFE ? { path: datei, type: "jpeg", quality: 80, ...(clip ? { clip } : {}) } : { path: datei });
+        zahl += 1;
+      };
+      const bild = async (name, clip) => {
         await page.mouse.move(b - 4, h / 2);          // kein Hover-Zustand im Bild
         await warte(150);
-        await page.screenshot({ path: path.join(ordner, name) });
-        zahl += 1;
+        await knips(name, clip);
       };
       const editor = { "lt.ui.tab": "editor", "lt.ui.editor": eid, [`lt.editor.aktiv.${eid}`]: "7", "lt.editor.schrift": "14" };
 
@@ -142,6 +154,21 @@ for (const sprache of SPRACHEN) {
       await page.waitForSelector("[data-seg='7']");
       await warte(1200);                               // Wellenform + Höhenmessung
       await bild("01-editor.png");
+      if (HILFE) {
+        // 09 Wellenform + Steuerzeile, 11 drei Zeilen (Zeile 7 trägt ein Memo)
+        const welle = await page.locator("canvas").last().boundingBox();
+        if (welle) await bild("09-wiedergabe.png", { x: welle.x, y: welle.y - 6, width: welle.width, height: h - welle.y + 6 });
+        const z0 = await page.locator("[data-seg='6']").boundingBox();
+        const z1 = await page.locator("[data-seg='8']").boundingBox();
+        if (z0 && z1) await bild("11-zeile.png", { x: z0.x, y: z0.y - 4, width: z0.width, height: z1.y + z1.height - z0.y + 8 });
+        // 08 Memo-Dialog der Zeile 7
+        await page.locator("[data-seg='7'] .lucide-notepad-text").first().click();
+        await page.waitForSelector("[role='dialog'] textarea");
+        await warte(400);
+        await knips("08-memo.png");
+        await page.keyboard.press("Escape");
+        await warte(200);
+      }
 
       // 02 AI-Transkript: fertiger Lauf + Warteliste mit Sprecherzahl je Datei
       await oeffne({ "lt.ui.tab": "ai" });
@@ -184,14 +211,14 @@ for (const sprache of SPRACHEN) {
       await warte(900);
       await page.locator("[data-farbwahl] button").first().click();
       await warte(300);
-      await page.screenshot({ path: path.join(ordner, "05-sprecherfarbe.png") }); zahl += 1;
+      await knips("05-sprecherfarbe.png");
       await page.keyboard.press("Escape");
 
       // 06 Export-Formate
       await page.mouse.click(10, h - 10);
       await page.locator(".rt-SelectTrigger.rt-variant-soft").first().click();
       await warte(400);
-      await page.screenshot({ path: path.join(ordner, "06-export.png") }); zahl += 1;
+      await knips("06-export.png");
       await page.keyboard.press("Escape");
 
       // 07 Einstellungen

@@ -6,7 +6,7 @@
 // raus, sie war das einzige Gegenstands-Icon im Satz (2026-09-09).
 import {
   ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight,
-  Download, FileText,
+  CircleHelp, Download, FileText,
   FolderOpen, Import, Library, Merge, NotepadText, Pause, Pencil, Play, Plus,
   Repeat, Search, Settings, Split, Trash2, Users, Volume2, X,
   type LucideIcon,
@@ -16,7 +16,7 @@ export type IconName =
   | "library" | "settings" | "play" | "pause" | "download" | "import"
   | "text" | "edit" | "trash" | "split" | "speakers" | "plus"
   | "back" | "folder" | "close" | "sample" | "rewind" | "forward"
-  | "loop" | "merge" | "search" | "next" | "memo";
+  | "loop" | "merge" | "search" | "next" | "memo" | "help";
 
 const ICONS: Record<IconName, LucideIcon> = {
   library: Library,
@@ -42,6 +42,7 @@ const ICONS: Record<IconName, LucideIcon> = {
   loop: Repeat,
   merge: Merge,
   search: Search,
+  help: CircleHelp,
 };
 
 export function iconsEnabled(): boolean { return true; }

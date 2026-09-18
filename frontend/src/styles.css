@@ -716,3 +716,47 @@ body { margin: 0; background: var(--gray-1); }
 .ui-pillgroup > button[data-active] { background: var(--gray-a5); font-weight: 600; }
 .ui-pillgroup > button:disabled { opacity: .4; cursor: default; }
 .ui-pillgroup > button:focus-visible { outline: 2px solid var(--gray-a8); outline-offset: -3px; }
+
+/* ---------- Handbuch (eigenes Fenster, modules/HilfeModule) ---------- */
+.hilfe-nav { width: 264px; flex: none; border-right: 1px solid var(--gray-a5);
+  background: var(--gray-a2); }
+.hilfe-navpunkt { display: flex; align-items: baseline; gap: 8px; width: 100%;
+  padding: 5px 8px; border: 0; border-radius: 6px; background: none; cursor: pointer;
+  font: inherit; font-size: 13px; line-height: 1.35; text-align: left; color: var(--gray-12); }
+.hilfe-navpunkt:hover:not(:disabled) { background: var(--gray-a3); }
+.hilfe-navpunkt.aktiv { background: var(--gray-a5); font-weight: 600; }
+.hilfe-navpunkt:disabled { opacity: .35; cursor: default; }
+.hilfe-nr { width: 18px; flex: none; text-align: right; color: var(--gray-10);
+  font-variant-numeric: tabular-nums; font-weight: 400; }
+.hilfe-zahl { font-size: 11px; padding: 0 6px; border-radius: 9999px;
+  box-shadow: inset 0 0 0 1.5px currentColor; font-variant-numeric: tabular-nums; }
+.hilfe-inhalt { flex: 1; min-width: 0; overflow-y: auto; }
+.hilfe-spalte { max-width: 780px; margin: 0 auto; padding: 28px 32px 80px;
+  font-size: 14.5px; line-height: 1.6; color: var(--gray-12); }
+.hilfe-p { margin: 8px 0; }
+.hilfe-liste { margin: 8px 0; padding-left: 22px; }
+.hilfe-liste li { margin: 4px 0; }
+.hilfe-hinweis { margin: 12px 0; padding: 9px 12px; border-radius: 8px;
+  background: var(--gray-a3); border-left: 3px solid var(--gray-12); font-size: 13.5px; }
+.hilfe-kbd { display: inline-block; min-width: 1.5em; padding: 0 5px; margin: 0 1px;
+  border-radius: 5px; border: 1px solid var(--gray-a7); border-bottom-width: 2px;
+  background: var(--color-panel-solid); font: inherit; font-size: .86em; line-height: 1.5;
+  text-align: center; white-space: nowrap; }
+.hilfe-mark { background: var(--amber-a6); color: inherit; border-radius: 2px; }
+.hilfe-tabelle { width: 100%; border-collapse: collapse; margin: 10px 0; font-size: 13.5px; }
+.hilfe-tabelle th { text-align: left; font-weight: 600; border-bottom: 1.5px solid var(--gray-12);
+  padding: 5px 10px 5px 0; }
+.hilfe-tabelle td { vertical-align: top; border-bottom: 1px solid var(--gray-a4);
+  padding: 6px 10px 6px 0; }
+.hilfe-tasten td:first-child { white-space: nowrap; width: 1%; padding-right: 18px; }
+.hilfe-bild { margin: 16px 0 20px; }
+.hilfe-bild img { display: block; width: 100%; height: auto; border-radius: 8px;
+  border: 1px solid var(--gray-a5); }
+.hilfe-bild figcaption { margin-top: 6px; font-size: 12.5px; color: var(--gray-11); }
+.hilfe-treffer { padding: 0 0 18px; margin-bottom: 18px; border-bottom: 1px solid var(--gray-a4); }
+.hilfe-link { border: 0; background: none; padding: 0; cursor: pointer; font: inherit;
+  font-size: 13px; color: var(--gray-11); text-decoration: underline; text-underline-offset: 3px; }
+.hilfe-link:hover { color: var(--gray-12); }
+@media (max-width: 760px) { .hilfe-nav { width: 200px; } .hilfe-spalte { padding: 20px 18px 60px; } }
+.hilfe-code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: .88em;
+  padding: 1px 4px; border-radius: 4px; background: var(--gray-a3); }

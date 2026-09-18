@@ -14,6 +14,7 @@ export const KEYS = {
   editorAktiv: "lt.editor.aktiv.",
   // Schriftgrösse des Turn-Texts in px (User 2026-09-17), Standard 13
   editorSchrift: "lt.editor.schrift",
+  hilfeKapitel: "lt.hilfe.kapitel",
 } as const;
 
 export const TURN_SCHRIFT_STANDARD = 13;

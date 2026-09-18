@@ -12,6 +12,14 @@ export async function protokollPfad(): Promise<string | null> {
   return invoke<string | null>("protokoll_pfad");
 }
 
+/** Handbuch öffnen: in der App ein eigenes Fenster (bleibt neben der
+    Arbeit offen), im Browser ein neuer Tab. */
+export async function hilfeOeffnen(): Promise<void> {
+  if (!isTauri()) { window.open(`${location.pathname}#hilfe`, "rt-hilfe"); return; }
+  const { invoke } = await import("@tauri-apps/api/core");
+  await invoke("hilfe_oeffnen");
+}
+
 /** Vertriebskanal: «mas» = Mac App Store, sonst DMG/Browser. */
 export async function vertriebskanal(): Promise<"mas" | "dmg"> {
   if (!isTauri()) return "dmg";

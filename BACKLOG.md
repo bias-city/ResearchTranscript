@@ -319,3 +319,22 @@ Anker `segment:<sg-id>` (oder `Segment.note`) einführen, Version 0.2.0,
 hier neu pinnen, `format2.transkript_schicht` reicht die Memos durch;
 enrich setzt sie beim Import zwischen Textstelle und Code/Label.
 Bis dahin: `transkript.json` in der Bibliothek trägt die Memos.
+
+## 16. Export .md und .docx, dazu erzeugte Begleitblätter (User 2026-09-18)
+
+- **Transkript als Markdown (.md) und Word (.docx)** neben VTT/CSV/TXT.
+- **Dynamisch erzeugte Begleitdokumente je Transkript** (hier genügt .md):
+  - *Verfahrensbeschreibung* — was mit der Aufnahme geschah (lokal, welche
+    Schritte, welche Werkzeuge), für Verfahrensverzeichnis und Ethikantrag;
+  - *App-Blatt für Forschende* mit einem fertigen Absatz für den
+    **Methodenteil**.
+  Inhalt aus dem Journal des Transkripts, nicht aus festen Textbausteinen:
+  welches Whisper-Modell (mitgeliefert oder eigenes), welche Modelle der
+  Sprechertrennung, Sprache, Sprecherzahl/Trennung, App-Version — und
+  **wie stark der Human-Edit eingriff, in Prozent**: Anteil geänderter
+  Text (Zeichen- oder Wortebene gegen den Maschinenstand; `origin` je
+  Segment und die history/-Snapshots tragen das) und Anteil umgehängter
+  Sprecherzuordnungen (Segmente bzw. Redezeit).
+  Offen: Messgrösse für «% Text» festlegen (Levenshtein auf Wortebene
+  gegen den ersten Snapshot ist der naheliegende Kandidat); viersprachig;
+  die statischen Textbausteine der Website als Rahmen wiederverwenden.

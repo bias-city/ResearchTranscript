@@ -4,13 +4,13 @@
 // gibt kein Backend mehr zu starten; der Herzschlag der Hülle meldet,
 // wenn die Verarbeitung hängt (Plan R4).
 import { useCallback, useEffect, useState } from "react";
-import { Badge, Busy, Button, ErrorNote, Flex, Heading, ModalDialog,
+import { Badge, Busy, Button, ErrorNote, Flex, Heading, IconButton, ModalDialog,
   SegTabs, Text } from "./components/ui";
 import { Icon } from "./components/icons";
 import { apiGet, apiSend, errMsg, type Settings } from "./lib/api";
 import { setSprache, useT, type Sprache } from "./lib/i18n";
 import { KEYS, lget, lset } from "./lib/storage";
-import { geoeffneteDateien, isTauri, lizenzenPfad, neustart, onBlockiert,
+import { geoeffneteDateien, hilfeOeffnen, isTauri, lizenzenPfad, neustart, onBlockiert,
   onDateien, onUeber, ordnerMerken, ordnerOeffnen, pickOrdner, standardOrdner,
   vertriebskanal } from "./lib/tauri";
 import AiTranscriptModule from "./modules/AiTranscriptModule";
@@ -169,6 +169,8 @@ export default function App() {
                    { value: "einstellungen",
                      label: tr("tab.einstellungen"),
                      icon: "settings" }]} />
+        <IconButton title={tr("hilfe.knopf")} onClick={() => void hilfeOeffnen()}>
+          <Icon name="help" size={16} /></IconButton>
       </Flex>
       {importFehler && <ErrorNote>{importFehler}</ErrorNote>}
       <div style={{ flex: 1, minHeight: 0 }}>

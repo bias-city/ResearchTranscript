@@ -5,6 +5,8 @@ a version are the corresponding section of this file.
 
 ## 0.6.0 — unreleased
 
+- Handbuch in der App: Menü «Help» (⌘?) und Fragezeichen im Hauptfenster öffnen ein eigenes Fenster mit 14 Kapiteln, Volltextsuche, allen Tastenkürzeln und Bildern in Hell und Dunkel — viersprachig, folgt der Oberflächen-Sprache. Bilder: `node scripts/appstore-screenshots.mjs --hilfe`.
+
 - Timecodes im Editor in Hundertstelsekunden (Zeile editierbar und mitlaufend, Fusszeile, Kopfzeile, Playhead); CSV-Export und QDPX-Beschriftungen schreiben `hh:mm:ss.hh`, damit der CSV-Rundlauf nichts verliert.
 
 ### Changed

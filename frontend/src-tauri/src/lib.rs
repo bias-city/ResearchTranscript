@@ -216,7 +216,41 @@ fn menue(handle: &tauri::AppHandle) -> tauri::Result<tauri::menu::Menu<tauri::Wr
             &PredefinedMenuItem::close_window(handle, None)?,
         ],
     )?;
-    Menu::with_items(handle, &[&app, &text, &fenster])
+    // Hilfe (User 2026-09-18): eigenes Fenster mit dem durchsuchbaren
+    // Handbuch. Als Hilfemenü angemeldet, zeigt macOS darin sein Suchfeld
+    // für Menübefehle. Das Kürzel ⌘? ist Kür — scheitert es, dann ohne.
+    let eintrag = MenuItem::with_id(handle, "hilfe", "ResearchTranscript Help",
+                                    true, Some("Cmd+Shift+/"))
+        .or_else(|_| MenuItem::with_id(handle, "hilfe", "ResearchTranscript Help",
+                                       true, None::<&str>))?;
+    let hilfe = Submenu::with_items(handle, "Help", true, &[&eintrag])?;
+    let menu = Menu::with_items(handle, &[&app, &text, &fenster, &hilfe])?;
+    #[cfg(target_os = "macos")]
+    let _ = hilfe.set_as_help_menu_for_nsapp();
+    Ok(menu)
+}
+
+/// Hilfefenster öffnen oder nach vorn holen. Dieselbe Oberfläche
+/// (index.html), die Marke «#hilfe» schaltet sie aufs Handbuch.
+fn hilfe_fenster(handle: &tauri::AppHandle) {
+    if let Some(w) = handle.get_webview_window("hilfe") {
+        let _ = w.unminimize();
+        let _ = w.set_focus();
+        return;
+    }
+    let r = tauri::WebviewWindowBuilder::new(
+        handle, "hilfe", tauri::WebviewUrl::App("index.html#hilfe".into()))
+        .title("ResearchTranscript Help")
+        .inner_size(1000.0, 780.0)
+        .min_inner_size(640.0, 480.0)
+        .build();
+    if let Err(e) = r { protokoll::schreibe("hilfe", &format!("Fenster: {e}")); }
+}
+
+#[tauri::command]
+async fn hilfe_oeffnen(app: tauri::AppHandle) {
+    let h = app.clone();
+    let _ = app.run_on_main_thread(move || hilfe_fenster(&h));
 }
 
 /// Startfehler: Klartext-Dialog mit Protokollpfad, dann Ende — nie ein
@@ -239,6 +273,19 @@ pub fn run() {
         .on_menu_event(|handle, ereignis| {
             if ereignis.id() == "ueber" {
                 let _ = handle.emit("ueber", ());
+            } else if ereignis.id() == "hilfe" {
+                hilfe_fenster(handle);
+            }
+        })
+        // Das Hilfefenster hält die App nicht am Leben: schliesst das
+        // Hauptfenster, geht es mit.
+        .on_window_event(|fenster, ereignis| {
+            if fenster.label() == "main" {
+                if let tauri::WindowEvent::Destroyed = ereignis {
+                    if let Some(w) = fenster.app_handle().get_webview_window("hilfe") {
+                        let _ = w.close();
+                    }
+                }
             }
         })
         .plugin(tauri_plugin_dialog::init())
@@ -282,7 +329,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![api, sprecher_probe, medien_pfad,
                                                  ordner_oeffnen, geoeffnete_dateien,
                                                  protokoll_pfad, neustart, ordner_merken,
-                                                 standard_ordner, ist_sandboxed, lizenzen_pfad, kanal])
+                                                 standard_ordner, ist_sandboxed, lizenzen_pfad, kanal, hilfe_oeffnen])
         .build(tauri::generate_context!())
         .expect("ResearchTranscript konnte nicht starten");
 
