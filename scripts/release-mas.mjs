@@ -44,6 +44,9 @@ const INSTALLER = (() => {
 })();
 if (!fs.existsSync(PROFIL)) { console.error(`ABBRUCH: Provisioning-Profil fehlt: ${PROFIL}`); process.exit(1); }
 
+// --ab-signatur: die schon gebaute Store-App nur neu versiegeln, prüfen, paketieren
+const abSignatur = process.argv.includes("--ab-signatur");
+if (!abSignatur) {
 console.log("1/6 Ressourcen");
 sh("node", [path.join(ROOT, "scripts/bundle-resources.mjs")]);
 console.log("2/6 Teile signieren (Apple Distribution)");
@@ -52,6 +55,7 @@ console.log("3/6 App bauen (Store-Konfiguration, ohne Devtools)");
 sh("npx", ["tauri", "build", "--bundles", "app", "--config", path.join(TAURI, "tauri.macos-appstore.conf.json"), "--", "--no-default-features", "--features", "motoren,mas"],
    { cwd: path.join(ROOT, "frontend"), env: { ...process.env, PYO3_CONFIG_FILE: path.join(TAURI, "pyo3-config.txt"),
      APPLE_ID: undefined, APPLE_PASSWORD: undefined, APPLE_TEAM_ID: undefined } });
+}
 sh("node", [path.join(ROOT, "scripts/nachsignieren.mjs"), APP, "--mas", "--identity", DIST]);
 console.log("4/6 Prüfungen");
 sh("/usr/bin/codesign", ["--verify", "--deep", "--strict", "--verbose=2", APP]);
@@ -66,6 +70,13 @@ if (!kind.includes("com.apple.security.inherit")) { console.error("ABBRUCH: whis
 const programm = out("/usr/libexec/PlistBuddy", ["-c", "Print :CFBundleExecutable", path.join(APP, "Contents/Info.plist")]).trim();
 const otool = out("/usr/bin/otool", ["-L", path.join(APP, "Contents/MacOS", programm)]);
 if (/\t\/(opt|usr\/local|Users)\//.test(otool)) { console.error("ABBRUCH: Hülle hängt an einem absoluten Fremdpfad:\n" + otool); process.exit(1); }
+// Apple verlangt app-sandbox auf JEDEM ausführbaren Programm im Paket (90296)
+const programme = out("/bin/sh", ["-c", `find "${APP}" -type f -perm +111 -print0 | xargs -0 file | grep "Mach-O.*executable" | cut -d: -f1`]).trim().split("\n").filter(Boolean);
+for (const p of programme) {
+  const e = out("/usr/bin/codesign", ["-d", "--entitlements", "-", "--xml", p]);
+  if (!e.includes("com.apple.security.app-sandbox")) { console.error(`ABBRUCH: ausführbares Programm ohne Sandbox-Entitlement: ${p}`); process.exit(1); }
+}
+console.log(`${programme.length} ausführbare Programme, alle mit app-sandbox`);
 console.log("5/6 Installer-Paket");
 fs.rmSync(PKG, { force: true });
 sh("/usr/bin/xcrun", ["productbuild", "--sign", INSTALLER, "--component", APP, "/Applications", PKG]);

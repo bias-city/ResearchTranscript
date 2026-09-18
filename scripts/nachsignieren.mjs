@@ -25,6 +25,14 @@ const sidecar = path.join(app, "Contents/MacOS/whisper-cli");
 if (!fs.existsSync(sidecar)) { console.error(`Sidecar fehlt: ${sidecar}`); process.exit(1); }
 const sign = (ent, ziel) => execFileSync("/usr/bin/codesign",
   ["--force", "--sign", id, "--options", "runtime", "--timestamp", "--entitlements", ent, ziel], { stdio: "inherit" });
+// Die Python-Programme (python, python3, pip …) braucht nur der Bau: die App
+// bettet libpython ein und startet nie einen Interpreter als Kind. Im Bundle
+// wären sie ausführbare Programme OHNE Sandbox-Entitlement — App Store
+// Connect lehnt das ab (Fehler 90296, 18.9.2026), und mit dem Entitlement
+// signiert stürzen sie ab (SIGTRAP, Phase 3). Also heraus damit, in beiden
+// Kanälen; resources/python-runtime/bin bleibt für den nächsten Bau erhalten.
+const pybin = path.join(app, "Contents/Resources/python-runtime/bin");
+if (fs.existsSync(pybin)) { fs.rmSync(pybin, { recursive: true }); console.log("entfernt: python-runtime/bin (nur Bauwerkzeug)"); }
 sign(kind, sidecar);
 sign(huelle, app);
 execFileSync("/usr/bin/codesign", ["--verify", "--deep", "--strict", app], { stdio: "inherit" });
