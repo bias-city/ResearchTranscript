@@ -876,7 +876,7 @@ export default function EditorModule({ id, onExit }: {
         {hatAudio && (
           <Wellenform eid={id} segmente={segmente} sprecher={sprecher}
                       zeit={zeit} spielt={laeuft}
-                      onSeek={(t) => springe(t)} />
+                      onSeek={(t) => springe(t)} onMemo={memoOeffnen} />
         )}
         {/* Drei Zonen (User 2026-09-09): der Transport steht MITTIG in
             der Spalte, die Laufzeit rechts — die beiden Randzonen sind

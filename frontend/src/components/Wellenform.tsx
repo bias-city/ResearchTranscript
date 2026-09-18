@@ -10,6 +10,11 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { apiGet, sprecherFarbe, type Segment, type Sprecher } from "../lib/api";
 
 const HOEHE = 44;              // wie die Transportleiste (User 2026-09-17)
+// Oberes Drittel: Spur für Memo-Marker; die Welle nimmt die unteren zwei
+// Drittel (User 2026-09-18)
+const SPUR = Math.round(HOEHE / 3);
+const WELLE = HOEHE - SPUR;
+const MARKER_R = 4;
 const MIN_SICHT_S = 2;          // engster Zoom: 2 s über die Breite
 
 type Peaks = { t0: number; t1: number; daten: number[] };
@@ -31,12 +36,16 @@ function cssFarbe(name: string, stufe: number | string): string {
 }
 
 export default function Wellenform({ eid, segmente, sprecher, zeit, spielt,
-                                     onSeek }: {
+                                     onSeek, onMemo }: {
   eid: string; segmente: Segment[]; sprecher: Sprecher[];
   /** Playhead in Sekunden (sekundengenau vom Player) */
   zeit: number; spielt: boolean;
   onSeek: (t: number) => void;
+  /** Klick auf einen Memo-Marker: Memo dieser Zeile öffnen */
+  onMemo?: (segId: string) => void;
 }) {
+  // Memo unter dem Zeiger (Tooltip) — x in CSS-Pixeln
+  const [schwebt, setSchwebt] = useState<{ x: number; text: string } | null>(null);
   const canvas = useRef<HTMLCanvasElement>(null);
   const [dauer, setDauer] = useState(0);
   const [breite, setBreite] = useState(0);
@@ -142,24 +151,34 @@ export default function Wellenform({ eid, segmente, sprecher, zeit, spielt,
       // Farbschema der Sprecher-Badges (Radix «soft»): Hintergrund
       // Stufe a3, Welle in der Schriftfarbe a11 (User 2026-09-17)
       ctx.fillStyle = cssFarbe(farbe, "a3");
-      ctx.fillRect(Math.floor(a), 0, Math.max(1, Math.ceil(b) - Math.floor(a)), HOEHE);
+      ctx.fillRect(Math.floor(a), SPUR, Math.max(1, Math.ceil(b) - Math.floor(a)), WELLE);
       belegt.fill(farbe, Math.floor(a), Math.ceil(b));
     }
     // Welle (drawWave-Muster aus PrepareMedia: ein Balken je Pixel)
     const pk = peaks.current;
     if (pk && pk.daten.length && pk.t1 > pk.t0) {
-      const mid = HOEHE / 2, n = pk.daten.length;
+      const mid = SPUR + WELLE / 2, n = pk.daten.length;
       const frei = cssFarbe("gray", "a9");
       for (let px = 0; px < breite; px += 1) {
         const t = s.t0 + (px + 0.5) * s.spp;
         const i = Math.floor(((t - pk.t0) / (pk.t1 - pk.t0)) * n);
         if (i < 0 || i >= n) continue;
-        const amp = (pk.daten[i] / 255) * (HOEHE / 2 - 3);
+        const amp = (pk.daten[i] / 255) * (WELLE / 2 - 2);
         if (amp <= 0.3) continue;
         const f = belegt[px];
         ctx.fillStyle = f ? cssFarbe(f, "a11") : frei;
         ctx.fillRect(px, mid - amp, 1, amp * 2);
       }
+    }
+    // Memo-Marker in der oberen Spur: roter Punkt am Anfang der Zeile
+    ctx.fillStyle = cssFarbe("gray", "a4");
+    ctx.fillRect(0, SPUR - 0.5, breite, 0.5);
+    ctx.fillStyle = cssFarbe("red", 9);
+    for (const seg of segmente) {
+      if (!seg.memo || seg.start < s.t0 || seg.start > t1) continue;
+      ctx.beginPath();
+      ctx.arc(Math.max(MARKER_R, Math.min(breite - MARKER_R, x(seg.start))), SPUR / 2, MARKER_R, 0, Math.PI * 2);
+      ctx.fill();
     }
     // Playhead
     const px = x(zeit);
@@ -194,6 +213,24 @@ export default function Wellenform({ eid, segmente, sprecher, zeit, spielt,
     return () => el.removeEventListener("wheel", rad);
   }, [dauer, klemme, ladePeaks, tick]);
 
+  /** Memo-Marker unter dem Zeiger (nur in der oberen Spur) */
+  const markerBei = (clientX: number, clientY: number) => {
+    const el = canvas.current;
+    const s = sicht.current;
+    if (!el || !s.spp) return null;
+    const r = el.getBoundingClientRect();
+    const px = clientX - r.left, py = clientY - r.top;
+    if (py > SPUR + 2) return null;
+    let best: { seg: Segment; x: number; d: number } | null = null;
+    for (const seg of segmente) {
+      if (!seg.memo) continue;
+      const mx = (seg.start - s.t0) / s.spp;
+      const d = Math.abs(mx - px);
+      if (d <= MARKER_R + 3 && (!best || d < best.d)) best = { seg, x: mx, d };
+    }
+    return best;
+  };
+
   const zeitBei = (clientX: number) => {
     const el = canvas.current;
     const s = sicht.current;
@@ -203,11 +240,32 @@ export default function Wellenform({ eid, segmente, sprecher, zeit, spielt,
   };
 
   return (
+    <div style={{ position: "relative" }}>
+    {schwebt && (
+      <div style={{ position: "absolute", bottom: HOEHE + 4, zIndex: 50,
+                    left: Math.max(8, Math.min(breite - 328, schwebt.x - 160)),
+                    width: 320, maxHeight: 160, overflow: "hidden",
+                    padding: "6px 10px", borderRadius: 8, fontSize: 12, lineHeight: 1.45,
+                    whiteSpace: "pre-wrap", pointerEvents: "none",
+                    background: "var(--gray-12)", color: "var(--gray-1)",
+                    boxShadow: "var(--shadow-4)" }}>
+        {schwebt.text}
+      </div>
+    )}
     <canvas ref={canvas}
             style={{ width: "100%", height: HOEHE, display: "block",
-                     cursor: "crosshair", borderTop: "1px solid var(--gray-a4)",
+                     cursor: schwebt ? "pointer" : "crosshair",
+                     borderTop: "1px solid var(--gray-a4)",
                      background: "var(--color-panel-solid)" }}
+            onPointerLeave={() => setSchwebt(null)}
             onPointerDown={(e) => {
+              const m = markerBei(e.clientX, e.clientY);
+              if (m) {                       // Marker: hinspringen und Memo öffnen
+                onSeek(m.seg.start);
+                onMemo?.(m.seg.id);
+                setSchwebt(null);
+                return;
+              }
               const t = zeitBei(e.clientX);
               if (t === null) return;
               zieht.current = true;
@@ -215,7 +273,14 @@ export default function Wellenform({ eid, segmente, sprecher, zeit, spielt,
               onSeek(t);
             }}
             onPointerMove={(e) => {
-              if (!zieht.current) return;
+              if (!zieht.current) {
+                const m = markerBei(e.clientX, e.clientY);
+                setSchwebt((alt) => m
+                  ? (alt && alt.text === m.seg.memo && Math.abs(alt.x - m.x) < 1 ? alt
+                     : { x: m.x, text: m.seg.memo ?? "" })
+                  : (alt ? null : alt));
+                return;
+              }
               const t = zeitBei(e.clientX);
               if (t !== null) onSeek(t);
             }}
@@ -225,5 +290,6 @@ export default function Wellenform({ eid, segmente, sprecher, zeit, spielt,
               sicht.current = { t0: 0, spp: dauer / breite };
               ladePeaks(); tick();
             }} />
+    </div>
   );
 }

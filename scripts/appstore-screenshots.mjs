@@ -78,7 +78,9 @@ let t = await (await api(`/api/transcripts/${eid}`)).json();
 // erste Stimme = Nora (Interviewerin), zweite = Julian
 const erste = t.segmente[0].sprecher;
 t.sprecher = t.sprecher.map((s) => ({ id: s.id, name: s.id === erste ? "Nora" : "Julian" }));
-await api(`/api/transcripts/${eid}`, json({ sprecher: t.sprecher, segmente: t.segmente.map(({ id, start, end, sprecher, text }) => ({ id, start, end, sprecher, text })) }, "PUT"));
+// zwei Memos, damit Icon-Punkt und Marker in der Wellenform zu sehen sind
+const MEMOS = { 7: "Key tension: speed vs. participation — compare with interview 02.", 15: "Nine months on the kitchen: follow up on how the decision was finally taken." };
+await api(`/api/transcripts/${eid}`, json({ sprecher: t.sprecher, segmente: t.segmente.map(({ id, start, end, sprecher, text }, i) => ({ id, start, end, sprecher, text, memo: MEMOS[i] ?? null })) }, "PUT"));
 await api(`/api/transcripts/${eid}/rename`, json({ name: "Interview_01_Julian" }));
 const vtt = await (await api(`/api/transcripts/${eid}/export/vtt`)).arrayBuffer();
 for (const name of ["Interview_02_Mara", "Interview_03_Workshop"]) {
