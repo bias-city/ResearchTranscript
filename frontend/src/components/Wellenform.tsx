@@ -189,7 +189,9 @@ export default function Wellenform({ eid, segmente, sprecher, zeit, spielt,
       ctx.fill();
     }
     // Playhead
-    const px = x(Math.abs(fein.current - zeit) < 1.05 ? fein.current : zeit);
+    // nur die feine Position — der Rückfall auf `zeit` (sekundenweise,
+    // hinkt bis 1,25 s nach) liess den Playhead zurückspringen
+    const px = x(fein.current);
     if (px >= 0 && px <= breite) {
       ctx.fillStyle = cssFarbe("gray", 12);
       ctx.fillRect(Math.round(px) - 1, 0, 2, HOEHE);
