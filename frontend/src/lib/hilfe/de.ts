@@ -28,7 +28,7 @@ const kapitel: Kapitel[] = [
         "Wähle unter **Export** das Format, das du brauchst.",
       ] },
       { art: "bild", datei: "02-ai-transkript", text: "AI-Transkript: oben die Optionen, darunter die Dateien, die auf den Start warten, und die Batch-Liste der Läufe." },
-      { art: "hinweis", text: "Dieses Hilfefenster bleibt neben der Arbeit offen. Du öffnest es über das Menü **Help**, mit [[⌘]] [[?]] oder mit dem Knopf **Hilfe** unten links im Hauptfenster." },
+      { art: "hinweis", text: "Dieses Hilfefenster bleibt neben der Arbeit offen. Du öffnest es über das Menü **Help**, mit [[⌘]] [[?]] oder mit dem Button **Hilfe** unten links im Hauptfenster." },
     ],
   },
   {
@@ -79,7 +79,7 @@ const kapitel: Kapitel[] = [
     titel: "Editor: Text und Turns",
     kurz: "Text korrigieren, Turns teilen, verbinden, einfügen und löschen, Startzeiten setzen.",
     bloecke: [
-      { art: "p", text: "Der Editor zeigt je Zeile ein Segment: Abspielknopf, Startzeit, Sprecher, Text und rechts die Zeilenaktionen. Die aktive Zeile ist hervorgehoben; ihre Zeit läuft beim Abspielen in Hundertstelsekunden mit. Dieselbe Zeit steht gross oben links und klein unten rechts." },
+      { art: "p", text: "Der Editor zeigt je Zeile ein Segment: Abspiel-Button, Startzeit, Sprecher, Text und rechts die Zeilenaktionen. Die aktive Zeile ist hervorgehoben; ihre Zeit läuft beim Abspielen in Hundertstelsekunden mit. Dieselbe Zeit steht gross oben links und klein unten rechts." },
       { art: "bild", datei: "01-editor", text: "Der Editor: Transkript links, Seitenfeld rechts, unten Wellenform und Steuerzeile." },
       { art: "h", text: "Text bearbeiten" },
       { art: "p", text: "Klicke in den Text und schreibe. Die App speichert von selbst; oben steht **Speichert …** und danach **Gespeichert** mit der Uhrzeit. Vor jedem Speichern legt sie den alten Stand im Ordner `history` des Transkripts ab (die letzten 30)." },
@@ -92,7 +92,7 @@ const kapitel: Kapitel[] = [
         ["[[⌫]] im leeren Feld", "Löscht das Segment."],
       ] },
       { art: "p", text: "Dieselben Aktionen findest du als Symbole rechts in der Zeile: **Am Cursor teilen**, **Mit vorigem verbinden**, **Segment löschen** und **Memo zu dieser Zeile**." },
-      { art: "bild", datei: "11-zeile", text: "Eine Zeile: Abspielknopf, Startzeit, Sprecher, Text, Aktionen. Der rote Punkt zeigt ein Memo." },
+      { art: "bild", datei: "11-zeile", text: "Eine Zeile: Abspiel-Button, Startzeit, Sprecher, Text, Aktionen. Der rote Punkt zeigt ein Memo." },
       { art: "h", text: "Startzeit bearbeiten" },
       { art: "p", text: "Klicke auf die Zeit einer Zeile. Gib die neue Startzeit als hh:mm:ss.hh ein, zum Beispiel 00:19:10.45, und bestätige mit [[Enter]]. [[Esc]] bricht ab. Kürzere Eingaben wie 19:10 oder 75.5 gehen auch. Die Zeile ordnet sich nach ihrer neuen Zeit ein." },
       { art: "h", text: "Sprecher einer Zeile ändern" },
@@ -114,7 +114,7 @@ const kapitel: Kapitel[] = [
         ["**Schleife**", "Wiederholt das aktive Segment, bis du die Schleife ausschaltest."],
         ["**Folgen**", "Die Liste folgt der Wiedergabe: Die aktive Zeile bleibt im mittleren Bereich des Fensters."],
       ] },
-      { art: "p", text: "Der Abspielknopf vorn in jeder Zeile spielt **Ab hier** und hält beim zweiten Klick wieder an." },
+      { art: "p", text: "Der Abspiel-Button vorn in jeder Zeile spielt **Ab hier** und hält beim zweiten Klick wieder an." },
       { art: "h", text: "Wellenform" },
       { art: "p", text: "Die Wellenform zeigt die Aufnahme in den Farben der Sprecher. Die senkrechte Linie ist die Abspielposition." },
       { art: "liste", punkte: [
