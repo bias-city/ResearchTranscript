@@ -51,7 +51,7 @@ Die ersten drei sieht man im Store ohne Blättern.
 |---|---|---|
 | 1 | `01-editor.png` | Editor mit Transkript, zwei Sprechenden, Wellenform unten — **und eine Zeile offen in Bearbeitung**, Einfügepunkt im Text sichtbar. Der Titel verspricht das Korrigieren, also muss man es sehen. |
 | 2 | `08-einstellungen.png` | **neu** — Einstellungen, Karte Datenschutz und Lizenzen |
-| 3 | `02-ai-transkript.png` | Warteliste mit mehreren Dateien und Sprecherzahl — **im dunklen Erscheinungsbild**: die Liste ist kurz, im hellen Modus wirkt die freie Fläche darunter leer |
+| 3 | `02-ai-transkript.png` | **laufende** Transkription: Blockzähler, Fortschrittsbalken, mitlaufender Text — **im dunklen Erscheinungsbild**. Die reine Warteliste zeigte nur Dateinamen; dass die App gerade arbeitet, sieht man erst am Fortschritt. |
 | 4 | `03-export.png` | offenes Export-Menü mit allen Formaten |
 | 5 | `09-memo.png` | **neu** — Editor mit **offenem Memo-Dialog an einer Zeile**, Memo geschrieben (ein echter Analysegedanke, kein «Test»). Die Bibliothek zeigte nur einen Ordner mit Dateien; das sagt über die Arbeit nichts. |
 | 6 | `04-suchen-ersetzen.png` | Suchen und Ersetzen mit Treffern |
