@@ -22,7 +22,8 @@ appstore/
   ANLEITUNG.md                      diese Datei
   texte/<de|en|fr|it>/*.txt         jeder Text einzeln, zum Kopieren
   texte/review-notizen-en.txt       Review-Notizen (Englisch)
-  screenshots/<sprache>/<hell|dunkel>/<BxH>/01…07-*.png
+  upload/<sprache>/01…07-*.png        ← DIESE hochladen (2880×1800)
+  screenshots/<sprache>/<hell|dunkel>/<BxH>/…   Rohmaterial
 docs/demo/researchtranscript-demo.zip   Anhang für die Review
 site/privacy.html                   Datenschutzerklärung (4 Sprachen)
 LICENSE-EXCEPTION                   AGPL-§7-Zusatzerlaubnis für den Store
@@ -200,7 +201,7 @@ Einmal für alle Sprachen:
 |---|---|
 | Sign-in required | **Nein** (Haken entfernen) |
 | Contact | dein Name, Telefon, E-Mail |
-| Notes | `texte/review-notizen-en.txt` (Englisch, 2644/4000 Zeichen) |
+| Notes | `texte/review-notizen-en.txt` (Englisch; Länge prüfen mit `awk '{n+=length($0)+1} END {print n}'`) |
 | Attachment | `docs/demo/researchtranscript-demo.zip` |
 
 ### C6. Version Release
@@ -251,24 +252,29 @@ Apple verlangt für den Mac **eine** der Grössen 1280×800, 1440×900,
 **2880×1800** hochzuladen; Apple skaliert herunter. Die anderen Grössen
 liegen bereit, falls du sie lieber einzeln pflegst.
 
+**Hochgeladen wird der kuratierte Satz unter `appstore/upload/<sprache>/`** —
+sieben Bilder in 2880×1800, schon in der Reihenfolge nummeriert. Der volle
+Fundus (alle Motive, hell und dunkel, vier Grössen) liegt daneben unter
+`appstore/screenshots/` und ist nur Rohmaterial.
+
 ```
-appstore/screenshots/
+appstore/upload/
   de/ en/ fr/ it/
-    hell/ dunkel/
-      1280x800/ 1440x900/ 2560x1600/ 2880x1800/
-        01-editor.png             Transkript, Sprecher, Wellenform
-        02-ai-transkript.png      Warteliste mit Sprecherzahl je Datei
-        03-bibliothek.png         Bibliothek
-        04-suchen-ersetzen.png    Suchen und Ersetzen
-        05-sprecherfarbe.png      Farbe je Sprecher:in wählen
-        06-export.png             Exportformate
-        07-einstellungen.png      Einstellungen, Datenschutz, Lizenzen
+    01-editor.png             Transkript, Sprecher, Wellenform
+    02-ai-transkript.png      Warteliste mit Sprecherzahl je Datei
+    03-export.png             Exportformate
+    04-suchen-ersetzen.png    Suchen und Ersetzen
+    05-sprecherfarbe.png      Farbe je Sprecher:in wählen
+    06-bibliothek.png         Bibliothek
+    07-editor-dunkel.png      Editor im dunklen Erscheinungsbild
 ```
 
-**Vorschlag für die Reihenfolge** (die ersten drei sieht man ohne
-Blättern): `hell/01-editor`, `hell/02-ai-transkript`, `dunkel/01-editor`,
-`hell/06-export`, `hell/04-suchen-ersetzen`, `hell/05-sprecherfarbe`,
-`hell/03-bibliothek`, `dunkel/02-ai-transkript`, `hell/07-einstellungen`.
+Die Einstellungsseite ist seit 22.9.2026 **nicht** mehr dabei: die Aufnahme
+entsteht im Browser-Betrieb, und dort rendert die Oberfläche den Zweig für den
+Direktvertrieb — mit einem Knopf «Releases», den die Store-Fassung ausblendet.
+Ein Store-Bild, das auf Downloads ausserhalb des Stores zeigt, ist ein Befund
+nach Richtlinie 2.3.3. Wer das Motiv zurückholen will, muss es aus der
+gebauten Store-App aufnehmen, nicht aus dem Browser.
 
 Hochladen: auf der Versionsseite je Sprache die Bilder in das Feld
 ziehen; Reihenfolge per Ziehen ändern. Gezeigt wird das erfundene

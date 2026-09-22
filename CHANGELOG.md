@@ -1,6 +1,7 @@
 # Changelog
 
-All notable changes to LocalTranscript. The GitHub release notes for
+All notable changes to ResearchTranscript (LocalTranscript until 2.5.0,
+TurnScript in 3.0.0). The GitHub release notes for
 a version are the corresponding section of this file.
 
 ## 0.6.1 — not yet released

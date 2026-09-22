@@ -120,7 +120,7 @@ neuen Optik (Pillen, Wellenform) und im Hell-Modus, Fenster 1440×900 →
 >
 > Demo: the attached zip contains a 2-minute synthetic interview (two invented speakers, synthesised with macOS `say`). Steps: open the app → choose any folder as library → drag the mp3 into the "AI Transcript" tab → speakers: 2 → Start → about 30 seconds on Apple silicon → "Human Editor" shows the transcript.
 >
-> Requires Apple silicon, macOS 14+. Licence: AGPL-3.0 with an App Store additional permission (LICENSE-EXCEPTION in the repository). Contact: [Support-E-Mail].
+> Requires Apple silicon, macOS 14+. Licence: AGPL-3.0 with an App Store additional permission (LICENSE-EXCEPTION in the repository). Contact: see the support URL above (https://bias.city/researchtranscript/).
 
 Anhang: `docs/demo/researchtranscript-demo.zip` (mp3 + Referenztext).
 

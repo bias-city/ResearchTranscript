@@ -5,11 +5,11 @@
 
   Das enrich-Dossier in zwei Formen unter EINER Endung — genau wie
   Numbers/Pages: als Verzeichnis (macOS-Package, enrichs Arbeitsform)
-  und als flache Zip-Datei (die Weitergabeform, die LocalTranscript
-  exportiert). Die Package-UTI stammt von enrich.app; LocalTranscript
+  und als flache Zip-Datei (die Weitergabeform, die ResearchTranscript
+  exportiert). Die Package-UTI stammt von enrich.app; ResearchTranscript
   IMPORTIERT sie identisch, damit ein .enrich auch ohne enrich.app ein
   Package bleibt (2026-09-10). enrich bleibt Exporteur der UTI und damit
-  Vorzugs-Öffner; ist es nicht installiert, öffnet LocalTranscript.
+  Vorzugs-Öffner; ist es nicht installiert, öffnet ResearchTranscript.
 -->
 <plist version="1.0">
 <dict>
