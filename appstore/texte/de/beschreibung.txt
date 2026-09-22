@@ -17,7 +17,7 @@ DER MENSCH PRÜFT: DER EDITOR
 • Jede Änderung wird gesichert; Verlauf und Journal halten fest, was von Hand geändert wurde
 
 FÜR DIE FORSCHUNG
-• REFI-QDA (.qdpx) für ATLAS.ti, MAXQDA und NVivo: Text, Audio, Zeitmarken, Sprechende als Codes, Memos
+• REFI-QDA (.qdpx), der offene Austauschstandard für qualitative Analyse: Text, Audio, Zeitmarken, Sprechende als Codes, Memos
 • Dokumentationspaket je Transkript: Transkriptionsprotokoll, fertiger Absatz für den Methodenteil, Bausteine für Datenschutz und Ethikantrag, Datenblatt für Zenodo und Facharchive, Zitierdatei für Zotero
 • Die App misst, wie stark das KI-Transkript von Hand bearbeitet wurde: Korrekturrate und neu zugeordnete Sprechzeit
 • Weitere Exporte: WebVTT, CSV, Text, Markdown, Word, enrich-Dossier

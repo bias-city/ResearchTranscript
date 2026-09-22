@@ -117,6 +117,9 @@ def get_argmax_cli() -> str:
     p = get_app_root() / "bin" / "argmax-cli"
     if p.is_file() and os.access(p, os.X_OK):
         return str(p)
+    if is_bundled():
+        raise FileNotFoundError(
+            "Die Sprechertrennung ist in dieser Fassung nicht verfügbar.")
     raise FileNotFoundError(
         f"argmax-cli fehlt ({p}) — Sprechertrennung nicht möglich. "
         "Im Checkout einmal `node scripts/hole-argmax.mjs` laufen "
@@ -130,6 +133,9 @@ def get_speakerkit_dir() -> Path:
         return Path(env)
     p = get_app_root() / "models" / "speakerkit"
     if not (p / "speaker_segmenter").is_dir():
+        if is_bundled():
+            raise FileNotFoundError(
+                "Die Modelle für die Sprechertrennung fehlen im Programmpaket.")
         raise FileNotFoundError(
             f"SpeakerKit-Modelle fehlen ({p}) — im Checkout einmal "
             "`node scripts/hole-argmax.mjs` laufen lassen.")
@@ -289,7 +295,9 @@ DEFAULTS = {
     "diarize": True,
     "speaker_range": "auto",  # "auto" | "min-max"
     "cluster_threshold": 0.5,
-    "ui_language": "de",
+    # Leer = die Oberfläche entscheidet beim ersten Start nach der Systemsprache
+    # und schreibt ihre Wahl hierher. Leser nehmen "de" als letzten Rückfall.
+    "ui_language": "",
     # Wieviele Läufe gleichzeitig rechnen dürfen. 1 = nacheinander
     # (User 2026-09-09: „der Batch startet alle zugleich"). Mehr als
     # einer teilt sich dieselbe GPU und dieselben Kerne — vier Läufe

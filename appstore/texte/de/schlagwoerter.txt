@@ -1,1 +1,1 @@
-Transkription,Interview,KI,Whisper,Sprecher,qualitativ,Forschung,QDA,qdpx,offline,Quellenschutz
+Transkription,Interview,KI,Sprechertrennung,qualitativ,Forschung,QDA,qdpx,offline,Quellenschutz

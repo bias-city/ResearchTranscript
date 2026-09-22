@@ -8,13 +8,37 @@ import { KEYS, lget, lset } from "./storage";
 export type Sprache = "de" | "en" | "fr" | "it";
 
 const _GUELTIG = new Set(["de", "en", "fr", "it"]);
+
+/** Sprache des Systems, auf unsere vier abgebildet; sonst Englisch.
+ *  Ohne das startete die App immer deutsch — auch auf einem englischen Mac,
+ *  und das ist der erste Eindruck für jede Person ausserhalb des
+ *  deutschsprachigen Raums (App Review inbegriffen). Gespeicherte Wahl
+ *  sticht die Systemsprache. */
+function systemsprache(): Sprache {
+  const liste = typeof navigator === "undefined" ? []
+    : [...(navigator.languages ?? []), navigator.language].filter(Boolean);
+  for (const eintrag of liste) {
+    const kurz = String(eintrag).slice(0, 2).toLowerCase();
+    if (_GUELTIG.has(kurz)) return kurz as Sprache;
+  }
+  return "en";
+}
+
 let aktuelle: Sprache = (_GUELTIG.has(lget(KEYS.sprache) ?? "")
-  ? (lget(KEYS.sprache) as Sprache) : "de");
+  ? (lget(KEYS.sprache) as Sprache) : systemsprache());
 const hoerer = new Set<() => void>();
+
+/** `<html lang>` mitführen: VoiceOver und die Rechtschreibprüfung des
+ *  Webviews richten sich danach. */
+function setzeDokumentSprache(s: Sprache): void {
+  if (typeof document !== "undefined") document.documentElement.lang = s;
+}
+setzeDokumentSprache(aktuelle);
 
 export function setSprache(s: Sprache): void {
   aktuelle = s;
   lset(KEYS.sprache, s);
+  setzeDokumentSprache(s);
   hoerer.forEach((h) => h());
 }
 export function getSprache(): Sprache { return aktuelle; }
@@ -94,6 +118,16 @@ const W: Record<string, Eintrag> = {
   "firstrun.waehlen": { de: "Anderen Ordner wählen …",
     en: "Choose another folder …", fr: "Choisir un autre dossier …",
     it: "Scegli un'altra cartella …" },
+  // In der App steht dieser Knopf allein da (der Standardort geht in der
+  // Sandbox nicht ohne Dialog): dann heisst «anderer» nichts. Eigener Text.
+  "firstrun.ordner": { de: "Ordner wählen …",
+    en: "Choose folder …", fr: "Choisir un dossier …",
+    it: "Scegli una cartella …" },
+  "firstrun.hinweis": {
+    de: "Der Dialog öffnet in «Dokumente». Du kannst dort einen Ordner anlegen oder einen vorhandenen wählen.",
+    en: "The dialog opens in “Documents”. You can create a folder there or pick an existing one.",
+    fr: "La fenêtre s'ouvre dans « Documents ». Tu peux y créer un dossier ou en choisir un.",
+    it: "La finestra si apre in «Documenti». Puoi creare una cartella o sceglierne una." },
 
   // Bibliothek
   "bib.drop": { de: "Audio-Dateien hierher ziehen",
@@ -222,10 +256,13 @@ const W: Record<string, Eintrag> = {
     en: "REFI-QDA with video (.qdpx.zip)",
     fr: "REFI-QDA avec vidéo (.qdpx.zip)",
     it: "REFI-QDA con video (.qdpx.zip)" },
-  "ed.export.qdpx": { de: "REFI-QDA für ATLAS.ti (.qdpx.zip)",
-    en: "REFI-QDA for ATLAS.ti (.qdpx.zip)",
-    fr: "REFI-QDA pour ATLAS.ti (.qdpx.zip)",
-    it: "REFI-QDA per ATLAS.ti (.qdpx.zip)" },
+  // Ohne fremden Produktnamen: REFI-QDA ist der offene Standard, den mehrere
+  // Programme lesen. Eine Marke als Funktionsbezeichnung wäre im Store-Bild
+  // eine Fremdwerbung, die wir nicht belegen können.
+  "ed.export.qdpx": { de: "REFI-QDA (.qdpx.zip)",
+    en: "REFI-QDA (.qdpx.zip)",
+    fr: "REFI-QDA (.qdpx.zip)",
+    it: "REFI-QDA (.qdpx.zip)" },
   "ed.export.enrich": { de: "enrich-Dossier (.enrich)",
     en: "enrich dossier (.enrich)",
     fr: "Dossier enrich (.enrich)",
@@ -495,10 +532,10 @@ const W: Record<string, Eintrag> = {
     fr: "E-mail comme identifiant (facultatif)",
     it: "E-mail come ID utente (facoltativo)" },
   "st.email.hinweis": {
-    de: "Diese Adresse wird beim Export in jedes enrich-Dossier geschrieben — als Person im Journal, wer wann was bearbeitet hat. Sie verlässt den Rechner nur mit der Datei, die du selbst weitergibst. Leer lassen, dann steht nur die App.",
-    en: "This address is written into every enrich dossier you export — as the person in the journal of who edited what and when. It leaves the computer only inside the file you pass on yourself. Leave it empty and only the app is named.",
-    fr: "Cette adresse est écrite dans chaque dossier enrich exporté — comme personne dans le journal de qui a modifié quoi et quand. Elle ne quitte l’ordinateur qu’avec le fichier que tu transmets toi-même. Laisse vide et seule l’application est nommée.",
-    it: "Questo indirizzo viene scritto in ogni dossier enrich esportato — come persona nel giornale di chi ha modificato cosa e quando. Lascia il computer solo con il file che consegni tu. Lascia vuoto e compare solo l’app." },
+    de: "Diese Adresse steht im Änderungsjournal jedes Transkripts auf deinem Rechner und wandert von dort in exportierte enrich-Dossiers und Dokumentationspakete — als Person, die wann was bearbeitet hat. Sie verlässt den Rechner nur mit einer Datei, die du selbst weitergibst. Leer lassen, dann steht nur die App.",
+    en: "This address goes into the change journal of every transcript on your computer, and from there into exported enrich dossiers and documentation packages — as the person who edited what and when. It leaves the computer only inside a file you pass on yourself. Leave it empty and only the app is named.",
+    fr: "Cette adresse figure dans le journal des modifications de chaque transcription sur ton ordinateur, puis dans les dossiers enrich et les dossiers de documentation que tu exportes — comme personne ayant modifié quoi et quand. Elle ne quitte l’ordinateur qu’avec un fichier que tu transmets toi-même. Laisse vide et seule l’application est nommée.",
+    it: "Questo indirizzo sta nel giornale delle modifiche di ogni trascrizione sul tuo computer e da lì finisce nei dossier enrich e nei pacchetti di documentazione che esporti — come persona che ha modificato cosa e quando. Lascia il computer solo con un file che consegni tu. Lascia vuoto e compare solo l’app." },
   "st.install": { de: "Kennung dieser Installation",
     en: "ID of this installation", fr: "Identifiant de cette installation",
     it: "ID di questa installazione" },
@@ -528,11 +565,14 @@ const W: Record<string, Eintrag> = {
     en: "Zotero data directory (optional)",
     fr: "Dossier de données Zotero (facultatif)",
     it: "Cartella dati di Zotero (facoltativa)" },
+  // In der App Sandbox sieht die App nur Ordner, die du im Dialog freigegeben
+  // hast — eine Suche an Standardorten liefe dort immer ins Leere. Deshalb
+  // nennt der Hinweis den einen Weg, der funktioniert.
   "st.zotero.dir.hinweis": {
-    de: "Leer = Standardorte: ~/Zotero, das Verzeichnis aus dem Zotero-Profil, externe Volumes.",
-    en: "Empty = default locations: ~/Zotero, the directory from the Zotero profile, external volumes.",
-    fr: "Vide = emplacements par défaut : ~/Zotero, le dossier du profil Zotero, les volumes externes.",
-    it: "Vuoto = percorsi standard: ~/Zotero, la cartella del profilo Zotero, volumi esterni." },
+    de: "Wähle den Zotero-Ordner (er enthält zotero.sqlite). Die App liest ihn nur, wenn du ihn hier freigibst.",
+    en: "Pick the Zotero folder (the one containing zotero.sqlite). The app reads it only after you grant access here.",
+    fr: "Choisis le dossier Zotero (celui qui contient zotero.sqlite). L'app ne le lit qu'après ton autorisation ici.",
+    it: "Scegli la cartella Zotero (quella con zotero.sqlite). L'app la legge solo dopo il tuo consenso qui." },
   "st.zotero.gefunden": { de: "Gefunden: {d}", en: "Found: {d}",
     fr: "Trouvé : {d}", it: "Trovato: {d}" },
   "st.zotero.fehlt": { de: "Keine zotero.sqlite gefunden.",

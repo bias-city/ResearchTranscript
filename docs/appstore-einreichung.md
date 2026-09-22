@@ -1,8 +1,14 @@
 # App Store — Einreichung: Metadaten, Review-Notizen, Checkliste
 
-Stand 17.9.2026, ResearchTranscript 0.6.0 (Branch `eingebettet-spike`).
-Gehört zu `docs/appstore-plan.md` §6. Texte sind Vorschläge zum
-Einfügen in App Store Connect; Grenzen (Zeichen) stehen dabei.
+Stand 22.9.2026, ResearchTranscript 0.6.1 (Branch `eingebettet-spike`).
+Gehört zu `docs/appstore-plan.md` §6.
+
+> **Gültig sind die Dateien unter `appstore/texte/<sprache>/`.** Die Texte in
+> Abschnitt 2 stammen aus der ersten Fassung (17.9.) und weichen ab; sie bleiben
+> als Entwurfsspur stehen. Beim Einreichen immer `appstore/texte/` nehmen,
+> Längen prüft `python3 scripts/appstore-texte.py` dort. Insbesondere gilt die
+> Schlagwortzeile unten NICHT mehr: sie nannte ATLAS.ti, den Namen einer
+> fremden Software, was Richtlinie 2.3.7 untersagt.
 
 ## 1. Was du im Portal anlegst (einmalig)
 

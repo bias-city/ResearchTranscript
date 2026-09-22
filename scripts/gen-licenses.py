@@ -35,33 +35,45 @@ LICENSE_FILE = re.compile(r"^(licen[cs]e|copying|notice|unlicense|copyright)([-.
 
 APP_VERSION = json.loads((FRONTEND / "package.json").read_text())["version"]
 
-#: Bestandteile ohne Paketverwalter — Version, Lizenz, Quelle, Hinweis
+#: Lizenztexte der festen Bestandteile. Sie liegen als Dateien im Repo
+#: (lizenztexte/), weil sie nicht aus einem Paketverwalter kommen: teils aus
+#: dem Quellarchiv (LAME), teils aus der gebündelten Laufzeit (CPython), teils
+#: aus dem Projekt-Repository (whisper.cpp, Whisper, Silero, SpeakerKit,
+#: swift-argument-parser) und einmal der Lizenzvolltext selbst (CC BY 4.0).
+#: App Review 22.9.2026: vorher trug die Tabelle für genau diese Bestandteile
+#: keinen einzigen Lizenztext, obwohl README und App das zusagen.
+TEXTE_DIR = ROOT / "lizenztexte"
+
+#: Bestandteile ohne Paketverwalter — Version, Lizenz, Quelle, Hinweis, Textdatei
 FESTE = [
     ("whisper.cpp (whisper-cli, libwhisper, ggml)", "1.8.2", "MIT",
      "https://github.com/ggml-org/whisper.cpp",
-     "Als Hilfsprogramm `whisper-cli` und Bibliotheken im Bundle (Metal)."),
+     "Als Hilfsprogramm `whisper-cli` und Bibliotheken im Bundle (Metal).", "whisper.cpp.txt"),
     ("Whisper large-v3-turbo (ggml)", "large-v3-turbo", "MIT (OpenAI)",
      "https://github.com/openai/whisper · https://huggingface.co/ggerganov/whisper.cpp",
-     "Sprachmodell, im Bundle unter Resources/models."),
+     "Sprachmodell, im Bundle unter Resources/models.", "whisper-openai.txt"),
     ("Silero VAD (ggml)", "v5.1.2", "MIT",
-     "https://github.com/snakers4/silero-vad", "Sprachaktivitätserkennung für whisper.cpp."),
+     "https://github.com/snakers4/silero-vad", "Sprachaktivitätserkennung für whisper.cpp.", "silero-vad.txt"),
     ("SpeakerKit (argmax-oss-swift)", "ea872ff", "MIT (Teile Apache-2.0, siehe NOTICES)",
      "https://github.com/argmaxinc/argmax-oss-swift",
-     "Sprechertrennung, statisch in die App gelinkt (Swift-Paket RTMotoren)."),
-    ("SpeakerKit-Modelle: pyannote segmentation-3.0", "Core ML (Argmax)", "MIT",
-     "https://huggingface.co/pyannote/segmentation-3.0", "Segmentierung."),
-    ("SpeakerKit-Modelle: WeSpeaker ResNet34 / pyannote community-1", "Core ML (Argmax)",
-     "CC BY 4.0", "https://huggingface.co/argmaxinc/speakerkit-coreml",
-     "Sprecher-Embeddings und Clustering; von Argmax nach Core ML umgewandelt und quantisiert."),
+     "Sprechertrennung, statisch in die App gelinkt (Swift-Paket RTMotoren). Der Text enthält die NOTICES des Projekts.", "speakerkit.txt"),
+    # Ausgeliefert wird Argmax' Core-ML-Fassung; deren Modellkarte nennt
+    # CC BY 4.0 («The models SpeakerKit is built on have CC BY 4 license»).
+    # Eine Kopie der Karte liegt unter models/speakerkit/README.hf.md.
+    ("SpeakerKit-Modelle (Core ML): Segmentierung, Sprecher-Embeddings, Clustering",
+     "Core ML (Argmax)", "CC BY 4.0", "https://huggingface.co/argmaxinc/speakerkit-coreml",
+     "Von Argmax umgewandelt und quantisiert; Ursprungsmodelle pyannote segmentation-3.0 "
+     "und WeSpeaker ResNet34 / pyannote community-1. Namensnennung nach CC BY 4.0: Argmax Inc. "
+     "sowie die Urheber der Ursprungsmodelle.", "cc-by-4.0.txt"),
     ("CPython (python-build-standalone)", "3.13", "PSF-2.0 (Python Software Foundation License)",
      "https://github.com/astral-sh/python-build-standalone",
-     "Eingebetteter Interpreter (libpython3.13.dylib), führt nur die mitgelieferten Skripte aus."),
+     "Eingebetteter Interpreter (libpython3.13.dylib), führt nur die mitgelieferten Skripte aus.", "cpython.txt"),
     ("LAME", "4.0", "LGPL-2.0-or-later",
      "https://lame.sourceforge.io · Quelle wie mitgeliefert: https://bias.city/researchtranscript/quellen/lame-4.0.tar.gz",
      "MP3-Kodierung; dynamisch gelinkt (Contents/Frameworks/libmp3lame.dylib), ohne Decoder gebaut "
-     "(scripts/baue-lame.sh), damit die Bibliothek ausgetauscht werden kann."),
+     "(scripts/baue-lame.sh), damit die Bibliothek ausgetauscht werden kann.", "lame.txt"),
     ("swift-argument-parser", "1.8.2", "Apache-2.0",
-     "https://github.com/apple/swift-argument-parser", "Abhängigkeit von argmax-oss-swift."),
+     "https://github.com/apple/swift-argument-parser", "Abhängigkeit von argmax-oss-swift.", "swift-argument-parser.txt"),
 ]
 
 
@@ -190,9 +202,16 @@ def main() -> None:
          f"mit einer Zusatzerlaubnis für den App Store (LICENSE-EXCEPTION). Die App enthält die folgenden "
          f"Bestandteile (Stand dieses Builds, Ziel {a.target}). Die WebView (WebKit) stellt macOS; sie ist nicht Teil der App.",
          "", "## Bestandteile ausserhalb der Paketverwalter", "",
-         "| Bestandteil | Version | Lizenz | Quelle | Hinweis |", "|---|---|---|---|---|"]
-    for name, ver, liz, quelle, hinweis in FESTE:
-        z.append(f"| {name} | {ver} | {liz} | {quelle} | {hinweis} |")
+         "| Bestandteil | Version | Lizenz | Quelle | Hinweis | Text |", "|---|---|---|---|---|---|"]
+    for name, ver, liz, quelle, hinweis, textdatei in FESTE:
+        datei = TEXTE_DIR / textdatei
+        if not datei.is_file():
+            raise SystemExit(f"ABBRUCH: Lizenztext fehlt: {datei}")
+        t = datei.read_text(encoding="utf-8").strip()
+        h = hashlib.sha1(t.encode()).hexdigest()[:10]
+        e = texte.setdefault(h, {"id": h, "text": t, "pakete": []})
+        e["pakete"].append(f"{name} {ver}")
+        z.append(f"| {name} | {ver} | {liz} | {quelle} | {hinweis} | [{h}](#text-{h}) |")
     for art, titel in (("Rust", "Rust-Crates der Hülle"), ("npm", "npm-Pakete der Oberfläche"),
                        ("Python", "Python-Pakete")):
         teil = [p for p in pakete if p["art"] == art]
@@ -206,7 +225,8 @@ def main() -> None:
         z += [f"### Text {e['id']} <a id=\"text-{e['id']}\"></a>", "",
               "Gilt für: " + ", ".join(e["pakete"]), "", "```", e["text"], "```", ""]
     AUS.write_text("\n".join(z) + "\n", encoding="utf-8")
-    print(f"{AUS.name}: {len(FESTE)} feste Bestandteile, {len(pakete)} Pakete, {len(texte)} Lizenztexte")
+    print(f"{AUS.name}: {len(FESTE)} feste Bestandteile (alle mit Lizenztext), "
+          f"{len(pakete)} Pakete, {len(texte)} Lizenztexte")
 
 
 if __name__ == "__main__":

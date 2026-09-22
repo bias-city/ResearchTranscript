@@ -172,6 +172,12 @@ def settings_post(aend: dict) -> dict:
         aend.pop("install_id")                    # sonst nie von aussen setzbar
     root = aend.get("library_root")
     if root == "default":
+        # Nur im Browser-Betrieb: dort gibt es keinen Öffnen-Dialog, also legt
+        # das Backend den Standardordner selbst an. In der App geht der Weg
+        # ausschliesslich über das Panel (Freigabe als Bookmark) — ein Ordner
+        # ohne Freigabe läge in der Sandbox im Container und wäre unsichtbar.
+        if config.is_bundled():
+            raise ApiFehler(409, "Bitte den Ordner über den Dialog wählen.")
         p = config.default_library_root()
         p.mkdir(parents=True, exist_ok=True)
         aend["library_root"] = str(p)
@@ -722,7 +728,7 @@ def dokument_bytes(art: str, format: str, ids: list[str]) -> tuple[bytes, str]:
     """Begleitdokumente (dokumente.py) — Download-Weg im Browser."""
     from . import dokumente
     try:
-        return dokumente.erzeuge(art, ids, config.read_config().get("ui_language", "de"), format)
+        return dokumente.erzeuge(art, ids, (config.read_config().get("ui_language") or "de"), format)
     except (BibliothekFehler, ValueError) as e:
         raise ApiFehler(409, str(e)) from e
 

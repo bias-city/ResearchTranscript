@@ -1,1 +1,1 @@
-transcription,interview,AI,whisper,speaker,qualitative,research,QDA,qdpx,offline,methods
+transcription,interview,AI,diarization,speaker,qualitative,research,QDA,qdpx,offline,methods

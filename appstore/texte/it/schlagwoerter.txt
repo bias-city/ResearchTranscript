@@ -1,1 +1,1 @@
-trascrizione,intervista,IA,whisper,parlante,qualitativo,ricerca,QDA,qdpx,offline,metodi
+trascrizione,intervista,IA,diarizzazione,parlante,qualitativo,ricerca,QDA,qdpx,offline,metodi

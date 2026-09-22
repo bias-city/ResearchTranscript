@@ -17,7 +17,7 @@ L’HUMAIN VÉRIFIE : L’ÉDITEUR
 • Chaque modification est enregistrée ; l’historique et le journal consignent ce qui a été changé à la main
 
 POUR LA RECHERCHE
-• REFI-QDA (.qdpx) pour ATLAS.ti, MAXQDA et NVivo : texte, audio, repères temporels, locuteurs comme codes, mémos
+• REFI-QDA (.qdpx), le standard ouvert d'échange pour l'analyse qualitative : texte, audio, repères temporels, locuteurs comme codes, mémos
 • Paquet de documentation par transcription : protocole de transcription, paragraphe prêt pour la partie méthodes, modules pour la protection des données et la demande éthique, fiche pour Zenodo et les archives spécialisées, fichier de citation pour Zotero
 • L’app mesure à quel point la transcription IA a été révisée à la main : taux de correction et temps de parole réattribué
 • Autres exports : WebVTT, CSV, texte, Markdown, Word, dossier enrich

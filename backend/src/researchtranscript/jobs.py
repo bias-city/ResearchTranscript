@@ -267,7 +267,7 @@ def _clip(job: dict, wav: Path, start: float, end: float,
 def _sprecher_label(n: int) -> str:
     basis = {"de": "Sprecher", "en": "Speaker", "fr": "Locuteur",
              "it": "Parlante"}.get(
-        read_config().get("ui_language", "de"), "Speaker")
+        (read_config().get("ui_language") or "de"), "Speaker")
     return f"{basis} {n}"
 
 

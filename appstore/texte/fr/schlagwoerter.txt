@@ -1,1 +1,1 @@
-transcription,entretien,IA,whisper,locuteur,qualitatif,recherche,QDA,qdpx,hors ligne,méthodes
+transcription,entretien,IA,diarisation,locuteur,qualitatif,recherche,QDA,qdpx,hors ligne,méthodes

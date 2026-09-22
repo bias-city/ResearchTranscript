@@ -6,6 +6,7 @@ früheren Fassungen bleiben aber lesbar, und Kennungen bleiben stabil.
 """
 from __future__ import annotations
 
+import pathlib
 import uuid
 
 from researchtranscript import config, qdpx
@@ -55,4 +56,20 @@ def test_frischer_start_ohne_erbe(tmp_path, monkeypatch):
 
 
 def test_identitaet_nennt_den_neuen_namen():
-    assert config.identitaet()["app"].startswith("researchtranscript/0.6.0")
+    # Der Name gehört hierher, die Version NICHT fest verdrahtet: bei 0.6.1 hielt
+    # eine hartkodierte Nummer den Test grün, während APP_VERSION zurückblieb —
+    # die App bricht dann beim Start ab, weil die Hülle die Versionen vergleicht.
+    assert config.identitaet()["app"] == f"researchtranscript/{config.APP_VERSION}"
+    for alt in ("localtranscript", "turnscript"):
+        assert alt not in config.identitaet()["app"].lower()
+
+
+def test_app_version_passt_zur_huelle():
+    """APP_VERSION muss zu pyproject und zur Tauri-Konfiguration passen."""
+    import json
+    import re
+    wurzel = pathlib.Path(__file__).resolve().parents[2]
+    conf = json.loads((wurzel / "frontend/src-tauri/tauri.conf.json").read_text())
+    projekt = (wurzel / "backend/pyproject.toml").read_text()
+    pyproject_version = re.search(r'^version = "([^"]+)"', projekt, re.MULTILINE).group(1)
+    assert config.APP_VERSION == conf["version"] == pyproject_version

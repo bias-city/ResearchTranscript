@@ -17,7 +17,7 @@ HUMAN IN THE LOOP: THE EDITOR
 • Every change is saved; history and journal record what was changed by hand
 
 BUILT FOR RESEARCH
-• REFI-QDA (.qdpx) for ATLAS.ti, MAXQDA and NVivo: text, audio, timestamps, speakers as codes, memos
+• REFI-QDA (.qdpx), the open exchange standard for qualitative analysis: text, audio, timestamps, speakers as codes, memos
 • Documentation package per transcript: transcription record, ready-made paragraph for the methods section, building blocks for data protection and ethics applications, data sheet for Zenodo and specialised archives, citation file for Zotero
 • The app measures how much the AI transcript was edited by hand: correction rate and reassigned speech time
 • More exports: WebVTT, CSV, text, Markdown, Word, enrich dossier

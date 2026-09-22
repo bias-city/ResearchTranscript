@@ -8,7 +8,7 @@ import { Badge, Busy, Button, ErrorNote, Flex, Heading, ModalDialog,
   SegTabs, Text } from "./components/ui";
 import { Icon } from "./components/icons";
 import { apiGet, apiSend, errMsg, type Settings } from "./lib/api";
-import { setSprache, useT, type Sprache } from "./lib/i18n";
+import { getSprache, setSprache, useT, type Sprache } from "./lib/i18n";
 import { KEYS, lget, lset } from "./lib/storage";
 import { geoeffneteDateien, hilfeOeffnen, isTauri, lizenzenPfad, neustart, onBlockiert,
   onDateien, onUeber, ordnerMerken, ordnerOeffnen, pickOrdner, standardOrdner,
@@ -64,7 +64,14 @@ export default function App() {
     try {
       const s = await apiGet<Settings>("/api/settings");
       setSettings(s);
-      if (s.ui_language) setSprache(s.ui_language as Sprache);
+      if (s.ui_language) {
+        setSprache(s.ui_language as Sprache);
+      } else {
+        // Erster Start: i18n hat die Systemsprache gewählt. Sie einmal
+        // zurückschreiben, damit Exporte und Dokumentationspakete dieselbe
+        // Sprache nehmen wie die Oberfläche.
+        void apiSend<Settings>("/api/settings", { ui_language: getSprache() });
+      }
       setBoot("bereit");
     } catch (e) {
       setBootFehler(errMsg(e));
@@ -318,12 +325,16 @@ function FirstRun({ onDone }: { onDone: (s: Settings) => void }) {
               await ordnerMerken(p);
               await setze(p);
             });
-          }}>{tr("firstrun.waehlen")}</Button>
+          }}>{tr("firstrun.ordner")}</Button>
         ) : (
           <Button size="1" variant="soft" color="gray" highContrast onClick={() => void setze("default")}>
             {tr("firstrun.standard")}</Button>
         )}
       </Flex>
+      {isTauri() && (
+        <Text size="1" color="gray" style={{ maxWidth: 440, textAlign: "center" }}>
+          {tr("firstrun.hinweis")}</Text>
+      )}
       {fehler && <Text size="1" color="red">{fehler}</Text>}
     </Flex>
   );

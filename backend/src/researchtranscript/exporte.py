@@ -37,7 +37,7 @@ def export_bytes(eid: str, format: str) -> tuple[bytes, str, str]:
     if format in ("md", "docx"):
         from .config import APP_VERSION, read_config
         md = ausgabe.build_md(seg, name=daten["name"], zotero=daten.get("zotero"),
-                              sprache=read_config().get("ui_language", "de"),
+                              sprache=read_config().get("ui_language") or "de",
                               version=APP_VERSION)
         if format == "md":
             return md.encode("utf-8"), f"{stamm}.md", "text/markdown"
