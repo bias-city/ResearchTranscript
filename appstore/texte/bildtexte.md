@@ -52,7 +52,7 @@ Die ersten drei sieht man im Store ohne Blättern.
 | 1 | `01-editor.png` | Editor mit Transkript, zwei Sprechenden, Wellenform unten |
 | 2 | `01b-bearbeiten.png` | **neu** — eine Zeile offen im Text, Einfügepunkt sichtbar |
 | 3 | `08-einstellungen.png` | **neu** — Einstellungen, Karte Datenschutz und Lizenzen |
-| 4 | `02-ai-transkript.png` | Warteliste mit mehreren Dateien und Sprecherzahl |
+| 4 | `02-ai-transkript.png` | Warteliste mit mehreren Dateien und Sprecherzahl — **im dunklen Erscheinungsbild**: die Liste ist kurz, im hellen Modus wirkt die freie Fläche darunter leer |
 | 5 | `03-export.png` | offenes Export-Menü mit allen Formaten |
 | 6 | `04-suchen-ersetzen.png` | Suchen und Ersetzen mit Treffern |
 | 7 | `05-sprecherfarbe.png` | Sprechende benennen und färben |
