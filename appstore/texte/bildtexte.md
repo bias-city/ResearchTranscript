@@ -45,50 +45,53 @@ Zwei Entscheide, die aus dem ersten Entwurf stammen:
 
 ## Motive, in dieser Reihenfolge
 
-Die ersten drei sieht man im Store ohne Blättern.
+Vier Bilder, die zusammen einen Ablauf erzählen — mehr verwässert nur. Hell und
+dunkel wechseln sich ab, damit der Satz im Store nicht monoton wirkt und beide
+Erscheinungsbilder belegt sind.
 
-| # | Rohaufnahme | Was zu sehen sein soll |
-|---|---|---|
-| 1 | `01-editor.png` | Editor mit Transkript, zwei Sprechenden, Wellenform unten — **und eine Zeile offen in Bearbeitung**, Einfügepunkt im Text sichtbar. Der Titel verspricht das Korrigieren, also muss man es sehen. |
-| 2 | `08-einstellungen.png` | **neu** — Einstellungen, Karte Datenschutz und Lizenzen |
-| 3 | `02-ai-transkript.png` | **laufende** Transkription: Blockzähler, Fortschrittsbalken, mitlaufender Text — **im dunklen Erscheinungsbild**. Die reine Warteliste zeigte nur Dateinamen; dass die App gerade arbeitet, sieht man erst am Fortschritt. |
-| 4 | `03-export.png` | offenes Export-Menü mit allen Formaten |
-| 5 | `09-memo.png` | **neu** — Editor mit **offenem Memo-Dialog an einer Zeile**, Memo geschrieben (ein echter Analysegedanke, kein «Test»). Die Bibliothek zeigte nur einen Ordner mit Dateien; das sagt über die Arbeit nichts. |
-| 6 | `04-suchen-ersetzen.png` | Suchen und Ersetzen mit Treffern |
-| 7 | `05-sprecherfarbe.png` | Sprechende benennen und färben |
-| 8 | `07-editor-dunkel.png` | derselbe Editor im dunklen Erscheinungsbild |
+| # | Grund | Rohaufnahme | Was zu sehen ist |
+|---|---|---|---|
+| 1 | hell | `01-editor.png` | Editor mit Transkript, zwei Sprechenden, Wellenform — **eine Zeile offen in Bearbeitung, Text markiert**. Der Titel verspricht das Korrigieren, also muss man es sehen. |
+| 2 | dunkel | `02-ai-transkript.png` | Ein Lauf **arbeitet**: Blockzähler, Fortschritt, mitlaufender Text. Darüber wartet die Schlange mit drei Dateien und ihrer Sprecherzahl, darunter steht ein fertiger Lauf. |
+| 3 | hell | `09-memo.png` | Memo-Dialog an derselben Zeile, Memo **geschrieben** — in der Sprache der Oberfläche. |
+| 4 | dunkel | `03-export.png` | offenes Export-Menü mit allen Formaten |
+
+Nicht mehr im Satz, aber jederzeit wieder aufnehmbar: Suchen und Ersetzen,
+Sprecherfarben, Bibliothek, Einstellungen. Die Datenschutz-Aussage steht jetzt in
+der Unterzeile von Motiv 2, wo sie am Bild hängt.
 
 ## Aufnahme
 
-Die Rohaufnahmen kommen aus der **gebauten Store-App** (TestFlight), nicht aus dem
-Browser: Umschalt-Befehl-Vier, dann Leertaste, dann auf das Fenster klicken. Das Fenster
-vorher **breit ziehen** — je näher es an 2:1 kommt, desto grösser steht es in der
-Montage; ein schmales Fenster lässt links und rechts Luft stehen.
+Die Rohaufnahmen entstehen mit dem Skript — vier Sprachen, beide Erscheinungsbilder,
+in einem Lauf:
 
-macOS nimmt das Fenster **mit Schatten und durchsichtigen Ecken** auf. Beides muss weg,
-sonst zeigt die Montage einen schmutzigen Rand und vier helle Zipfel:
+```
+node scripts/appstore-screenshots.mjs --satz
+node scripts/appstore-montage.mjs
+```
+
+Aufgenommen wird die echte Oberfläche gegen ein Demo-Backend mit dem **erfundenen**
+Interview aus `docs/demo` — nie echtes Forschungsmaterial. Fenster 1440 × 720 bei
+doppelter Auflösung: 2880 × 1440, Seitenverhältnis 2:1, damit das Fenster die Bühne
+der Montage fast ganz füllt. Ergebnis:
+`appstore/screenshots/<sprache>/<hell|dunkel>/2880x1440/`.
+
+**Handaufnahmen nur als Rückfall.** Wo ein Motiv im Browser-Betrieb nicht entstehen
+kann — vor allem die Einstellungsseite, die dort den Knopf «Releases» aus dem
+DMG-Kanal zeigt —, kommt es aus der gebauten Store-App: Umschalt-Befehl-Vier, dann
+Leertaste, dann auf das Fenster klicken; Fenster vorher breit ziehen. macOS nimmt es
+**mit Schatten und durchsichtigen Ecken** auf, beides muss weg:
 
 ```
 python3 scripts/appstore-freistellen.py ~/Desktop/Bildschirmfoto\ ….png \
-        appstore/upload/de/09-memo.png
+        appstore/upload/de/08-einstellungen.png
 ```
 
-Das Skript schneidet auf den deckenden Fensterbereich zu und füllt die gerundeten Ecken
-mit der Farbe des nächsten Fensterpixels. Rundung und Schatten setzt die Montage selbst,
-damit alle Motive gleich aussehen. Ablegen unter `appstore/upload/<sprache>/` mit genau
-den Dateinamen aus der Tabelle.
-
-Warum nicht aus dem Browser: Dort ist `isTauri()` falsch und der Vertriebskanal «dmg».
-Die Einstellungsseite zeigt dann einen Knopf «Releases», der aus dem Store heraus auf
-Downloads ausserhalb des Stores verweist, und es fehlen Bedienelemente, die es nur in
-der App gibt. Genau daran wäre die alte Fassung gescheitert.
-
-Danach montieren:
-
-```
-node scripts/appstore-montage.mjs              # alle vier Sprachen
-node scripts/appstore-montage.mjs --sprachen de
-```
+Das Skript schneidet auf den deckenden Fensterbereich zu und füllt die gerundeten
+Ecken mit der Farbe des nächsten Fensterpixels; Rundung und Schatten setzt die
+Montage, damit alle Motive gleich aussehen. Die Montage nimmt für jedes Motiv zuerst
+das erzeugte Bild und greift nur dort auf `appstore/upload/<sprache>/` zurück, wo
+keines liegt — sie sagt in der Ausgabe, wann sie das tut.
 
 Ergebnis: `appstore/store/<sprache>/NN-motiv.png`, fertig zum Hochladen.
 

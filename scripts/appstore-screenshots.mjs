@@ -23,6 +23,12 @@
 //              höchstens 716 px breit, das reicht für Retina), JPEG, dazu
 //              drei Motive nur fürs Handbuch (Memo, Steuerzeile, Zeile).
 //              Danach `npm run build`, damit sie in dist landen.
+//   --satz:    der KURATIERTE Store-Satz statt aller Motive: Transkript, Edit,
+//              Memo, Export in einem breiten Fenster (1440×720 × 2 = 2880×1440,
+//              füllt die Bühne der Montage) und in beiden Erscheinungsbildern.
+//              Die Montage nimmt je Motiv das hier erzeugte Bild und greift nur
+//              dort auf Handaufnahmen in appstore/upload/ zurück, wo ein Motiv
+//              im Browser-Betrieb nicht entstehen kann.
 //   --site:    Bilder für die Website: site/img/<motiv>-<sprache>.png, 1200×750,
 //              nur hell. Startet scripts/demo_backend.py (erfundene Zotero-
 //              Einträge) und transkribiert zusätzlich ein erzeugtes Demo-Video
@@ -41,6 +47,7 @@ const { webkit } = require("playwright");
 const PORT = 5631;
 const B = `http://127.0.0.1:${PORT}`;
 const HILFE = process.argv.includes("--hilfe");
+const SATZ = process.argv.includes("--satz");
 const SITE = process.argv.includes("--site");
 const AUS = SITE ? path.join(ROOT, "site/img") : HILFE ? path.join(ROOT, "frontend/public/hilfe") : path.join(ROOT, "appstore/screenshots");
 const SCRATCH = fs.mkdtempSync(path.join(os.tmpdir(), "rt-shots-"));
@@ -49,7 +56,7 @@ const DEMO = path.join(ROOT, "docs/demo/housing-cooperatives-interview.mp3");
 const HAUPT = path.resolve(ROOT, "../enrich-transcript");   // argmax-cli + models/speakerkit
 const arg = (n) => { const i = process.argv.indexOf(n); return i >= 0 ? process.argv[i + 1] ?? true : null; };
 const SPRACHEN = arg("--nur") ? [arg("--nur")] : ["de", "en", "fr", "it"];
-const GROESSEN = SITE ? [[1200, 750, 1]] : HILFE ? [[1200, 760, 1.2]] : (arg("--schnell") ? [[1440, 900, 2]] : [[1280, 800, 1], [1440, 900, 1], [1280, 800, 2], [1440, 900, 2]]);
+const GROESSEN = SITE ? [[1200, 750, 1]] : HILFE ? [[1200, 760, 1.2]] : SATZ ? [[1440, 720, 2]] : (arg("--schnell") ? [[1440, 900, 2]] : [[1280, 800, 1], [1440, 900, 1], [1280, 800, 2], [1440, 900, 2]]);
 const MODI = SITE ? [["hell", "light"]] : [["hell", "light"], ["dunkel", "dark"]];
 
 const warte = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -146,8 +153,55 @@ async function neutralisiere(page) {
 
 const browser = await webkit.launch();
 let zahl = 0;
+// Der Store-Satz zeigt die Maschine BEI DER ARBEIT. Dafür braucht es einen Lauf,
+// der lange genug dauert, um alle Sprachen und beide Erscheinungsbilder
+// aufzunehmen — sonst steht im Bild ein fertiger oder abgebrochener Auftrag.
+// Deshalb: das Demo-Interview viermal hintereinander (acht Minuten Ton) und ein
+// Lauf, der bei Bedarf erneuert wird. Abgebrochen wird erst ganz am Schluss.
+let satzLauf = null, satzQuelle = null;
+if (SATZ) {
+  const { execFileSync } = await import("node:child_process");
+  const lang = path.join(SCRATCH, "Interview_06_Baugruppe.mp3");
+  execFileSync("ffmpeg", ["-v", "error", "-y", "-stream_loop", "3", "-i", DEMO, "-c", "copy", lang]);
+  satzQuelle = lang;
+}
+async function laufHalten() {
+  if (satzLauf) {
+    const stand = await (await api(`/api/jobs/${satzLauf}`)).json();
+    if (!["completed", "failed", "cancelled"].includes(stand.status) && stand.progress < 85) return;
+  }
+  const r = await (await api("/api/transcribe-path", json({ path: satzQuelle, language: "en", speaker_range: "2-2" }))).json();
+  satzLauf = r.job_id;
+  for (let i = 0; i < 240; i++) {
+    const stand = await (await api(`/api/jobs/${satzLauf}`)).json();
+    if (stand.progress >= 30 || ["completed", "failed", "cancelled"].includes(stand.status)) break;
+    await warte(500);
+  }
+}
+
+// Memos im Bild sind Nutzertext — sie stehen in der Sprache der Oberfläche.
+const MEMO_TEXTE = {
+  de: { 7: "Kernspannung: Tempo gegen Beteiligung — mit Interview 02 vergleichen.",
+        15: "Neun Monate für die Küche: nachfragen, wie die Entscheidung am Ende fiel." },
+  en: { 7: "Key tension: speed vs. participation — compare with interview 02.",
+        15: "Nine months on the kitchen: follow up on how the decision was finally taken." },
+  fr: { 7: "Tension centrale : rythme contre participation — à comparer avec l'entretien 02.",
+        15: "Neuf mois pour la cuisine : demander comment la décision a finalement été prise." },
+  it: { 7: "Tensione centrale: ritmo contro partecipazione — da confrontare con l'intervista 02.",
+        15: "Nove mesi per la cucina: chiedere come è stata presa la decisione." },
+};
+async function setzeMemos(sprache) {
+  const texte = MEMO_TEXTE[sprache] ?? MEMO_TEXTE.en;
+  const stand = await (await api(`/api/transcripts/${eid}`)).json();
+  await api(`/api/transcripts/${eid}`, json({
+    sprecher: stand.sprecher.map(({ id, name }) => ({ id, name })),
+    segmente: stand.segmente.map(({ id, start, end, sprecher, text }, i) => ({ id, start, end, sprecher, text, memo: texte[i] ?? null })),
+  }, "PUT"));
+}
+
 for (const sprache of SPRACHEN) {
   await api("/api/settings", json({ ui_language: sprache }));
+  if (SATZ) await setzeMemos(sprache);
   for (const [modus, schema] of MODI) {
     for (const [b, h, dpr] of GROESSEN) {
       const ordner = SITE ? AUS : HILFE ? path.join(AUS, sprache, modus) : path.join(AUS, sprache, modus, `${b * dpr}x${h * dpr}`);
@@ -181,6 +235,66 @@ for (const sprache of SPRACHEN) {
         await knips(name, clip);
       };
       const editor = { "lt.ui.tab": "editor", "lt.ui.editor": eid, [`lt.editor.aktiv.${eid}`]: "7", "lt.editor.schrift": "14" };
+
+      // ---------- Kuratierter Store-Satz ----------
+      // Vier Motive, die zusammen den Ablauf erzählen: du korrigierst, du
+      // notierst, du exportierst, und die Maschine arbeitet. Welches Motiv im
+      // Store hell und welches dunkel steht, entscheidet bildtexte.json — hier
+      // entstehen beide Fassungen.
+      if (SATZ) {
+        // 01 Edit: eine Zeile OFFEN in Bearbeitung, Text markiert. Der Titel
+        // verspricht das Korrigieren, also muss man es sehen.
+        await oeffne({ ...editor, "lt.editor.seitentab": "sprecher" });
+        await page.waitForSelector("[data-seg='7']");
+        await warte(1200);                              // Wellenform + Höhenmessung
+        const zeile = page.locator("[data-seg='7'] textarea.seg-text");
+        await zeile.click();
+        await zeile.evaluate((el) => {
+          const ende = el.value.indexOf(" ", 46);
+          el.setSelectionRange(14, ende > 0 ? ende : el.value.length);
+        });
+        await warte(300);
+        await bild("01-editor.png");
+
+        // 09 Memo: dieselbe Zeile, Dialog offen, Memo geschrieben
+        await page.locator("[data-seg='7'] .lucide-notepad-text").first().click();
+        await page.waitForSelector("[role='dialog'] textarea");
+        await warte(400);
+        await knips("09-memo.png");
+        await page.keyboard.press("Escape");
+        await warte(200);
+
+        // 03 Export: offenes Menü mit allen Formaten
+        await page.mouse.click(10, h - 10);
+        await page.locator(".rt-SelectTrigger.rt-variant-soft").first().click();
+        await warte(400);
+        await knips("03-export.png");
+        await page.keyboard.press("Escape");
+
+        // 02 Transkript: ein Lauf ARBEITET — Blockzähler, Balken, mitlaufender
+        // Text —, darüber wartet die Schlange. Der Lauf wird über die
+        // Schnittstelle gestartet und danach abgebrochen, sonst legt jede
+        // Sprache einen weiteren Eintrag an.
+        await oeffne({ "lt.ui.tab": "ai" });
+        await page.setInputFiles("input[type=file][multiple]", ["Interview_04_Lea.m4a", "Interview_05_Tom.wav", "Gruppengespraech_Quartier.mp4"]
+          .map((name) => ({ name, mimeType: "application/octet-stream", buffer: Buffer.from("demo") })));
+        await warte(500);
+        try {
+          const wahl = page.locator(".rt-SelectTrigger").filter({ hasText: /wählen|Choose|Choisir|Scegli|nombre|numero|speaker count/i });
+          for (const [i, wert] of [[0, "2"], [0, "4"]]) {   // nach der ersten Wahl rückt die nächste auf Index 0
+            await wahl.nth(i).click();
+            await page.locator(".rt-SelectItem").filter({ hasText: new RegExp(`^${wert}$`) }).first().click();
+            await warte(200);
+          }
+        } catch (e) { console.log("  (Sprecherzahl nicht gesetzt:", String(e).split("\n")[0], ")"); }
+        await laufHalten();
+        await warte(900);                               // die Oberfläche holt den Stand im Takt
+        await bild("02-ai-transkript.png");
+
+        await ctx.close();
+        console.log(`${sprache} ${modus} ${b * dpr}×${h * dpr} ✓ (Satz)`);
+        continue;
+      }
 
       // 01 Editor: Transkript, Sprecher-Panel, Wellenform
       await oeffne({ ...editor, "lt.editor.seitentab": "sprecher" });
@@ -290,6 +404,7 @@ for (const sprache of SPRACHEN) {
   }
 }
 await browser.close();
+if (satzLauf) await api(`/api/jobs/${satzLauf}/cancel`, { method: "POST" }).catch(() => undefined);
 await api("/api/settings", json({ ui_language: "de" }));
 ende();
 fs.rmSync(SCRATCH, { recursive: true, force: true });

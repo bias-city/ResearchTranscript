@@ -1,5 +1,5 @@
 {
-  "_hinweis": "Beschriftungen der Store-Bilder — EINZIGE Textquelle, das Montageskript liest sie hier. Haltung, Gestaltung und Masse: bildtexte.md. Reihenfolge der Liste = Reihenfolge im Store. `quelle`: Rohaufnahme in appstore/upload/<sprache>/, aufgenommen aus der Store-App. `grund`: steuert nur den Schatten (dunkle Fenster brauchen einen anderen).",
+  "_hinweis": "Beschriftungen der Store-Bilder — EINZIGE Textquelle, das Montageskript liest sie hier. Haltung, Gestaltung und Masse: bildtexte.md. Reihenfolge der Liste = Reihenfolge im Store. `grund` wählt das Erscheinungsbild: die Montage holt das Bild aus appstore/screenshots/<sprache>/<grund>/2880x1440/ (erzeugt mit `node scripts/appstore-screenshots.mjs --satz`) und greift nur dann auf eine Handaufnahme in appstore/upload/<sprache>/ zurück, wenn dort keine liegt.",
   "bilder": [
     {
       "quelle": "01-editor.png",
@@ -22,63 +22,23 @@
       }
     },
     {
-      "quelle": "08-einstellungen.png",
-      "grund": "hell",
-      "de": {
-        "titel": "Nichts verlässt deinen Mac.",
-        "unter": "Kein Konto, keine Cloud, keine Telemetrie. Alle Modelle sind enthalten."
-      },
-      "en": {
-        "titel": "Nothing leaves your Mac.",
-        "unter": "No account, no cloud, no telemetry. All models are included."
-      },
-      "fr": {
-        "titel": "Rien ne quitte ton Mac.",
-        "unter": "Pas de compte, pas de cloud, pas de télémétrie. Tous les modèles sont inclus."
-      },
-      "it": {
-        "titel": "Nulla lascia il tuo Mac.",
-        "unter": "Nessun account, nessun cloud, nessuna telemetria. Tutti i modelli sono inclusi."
-      }
-    },
-    {
       "quelle": "02-ai-transkript.png",
       "grund": "dunkel",
       "de": {
         "titel": "Interviews hinein,\nTranskripte heraus.",
-        "unter": "Mit Sprechertrennung. Mehrere Aufnahmen nacheinander, ohne Aufsicht."
+        "unter": "Mit Sprechertrennung, eine Aufnahme nach der anderen. Nichts verlässt deinen Mac."
       },
       "en": {
         "titel": "Interviews in,\ntranscripts out.",
-        "unter": "With speaker separation. Several recordings in a row, unattended."
+        "unter": "With speaker separation, one recording after another. Nothing leaves your Mac."
       },
       "fr": {
         "titel": "Des entretiens en entrée,\ndes transcriptions en sortie.",
-        "unter": "Avec séparation des locuteurs. Plusieurs enregistrements à la suite."
+        "unter": "Avec séparation des locuteurs, un enregistrement après l’autre. Rien ne quitte ton Mac."
       },
       "it": {
         "titel": "Interviste dentro,\ntrascrizioni fuori.",
-        "unter": "Con separazione dei parlanti. Più registrazioni di seguito."
-      }
-    },
-    {
-      "quelle": "03-export.png",
-      "grund": "hell",
-      "de": {
-        "titel": "Zitierfähig,\nohne Nacharbeit.",
-        "unter": "REFI-QDA für die Analyse, Word für den Text, Dokumentationspaket für den Methodenteil."
-      },
-      "en": {
-        "titel": "Citable,\nwith no extra work.",
-        "unter": "REFI-QDA for analysis, Word for the text, a documentation package for your methods section."
-      },
-      "fr": {
-        "titel": "Citable,\nsans retouches.",
-        "unter": "REFI-QDA pour l'analyse, Word pour le texte, un dossier de documentation pour la partie méthodes."
-      },
-      "it": {
-        "titel": "Citabile,\nsenza rilavorazione.",
-        "unter": "REFI-QDA per l'analisi, Word per il testo, un pacchetto di documentazione per la sezione metodi."
+        "unter": "Con separazione dei parlanti, una registrazione dopo l’altra. Nulla lascia il tuo Mac."
       }
     },
     {
@@ -102,63 +62,23 @@
       }
     },
     {
-      "quelle": "04-suchen-ersetzen.png",
-      "grund": "hell",
-      "de": {
-        "titel": "Pseudonyme in einem Zug.",
-        "unter": "Suchen und Ersetzen über das ganze Transkript, mit Vorschau je Fund."
-      },
-      "en": {
-        "titel": "Pseudonyms in one pass.",
-        "unter": "Search and replace across the whole transcript, with a preview for each hit."
-      },
-      "fr": {
-        "titel": "Les pseudonymes d'un seul geste.",
-        "unter": "Rechercher et remplacer dans toute la transcription, avec aperçu."
-      },
-      "it": {
-        "titel": "Pseudonimi in un colpo solo.",
-        "unter": "Cerca e sostituisci in tutta la trascrizione, con anteprima."
-      }
-    },
-    {
-      "quelle": "05-sprecherfarbe.png",
-      "grund": "hell",
-      "de": {
-        "titel": "Sprechende benennen,\nfärben, zusammenführen.",
-        "unter": "Hörprobe je Stimme, bevor du dich entscheidest."
-      },
-      "en": {
-        "titel": "Name, colour and merge\nyour speakers.",
-        "unter": "Listen to each voice before you decide."
-      },
-      "fr": {
-        "titel": "Nommer, colorer,\nfusionner les locuteurs.",
-        "unter": "Écouter chaque voix avant de décider."
-      },
-      "it": {
-        "titel": "Nomina, colora\ne unisci chi parla.",
-        "unter": "Ascolta ogni voce prima di decidere."
-      }
-    },
-    {
-      "quelle": "07-editor-dunkel.png",
+      "quelle": "03-export.png",
       "grund": "dunkel",
       "de": {
-        "titel": "Timecodes auf die\nHundertstelsekunde.",
-        "unter": "Wellenform in den Farben der Sprechenden, zoombar bis in die Silbe."
+        "titel": "Zitierfähig,\nohne Nacharbeit.",
+        "unter": "REFI-QDA für die Analyse, Word für den Text, Dokumentationspaket für den Methodenteil."
       },
       "en": {
-        "titel": "Timecodes to the\nhundredth of a second.",
-        "unter": "Waveform in the speakers' colours, zoomable down to the syllable."
+        "titel": "Citable,\nwith no extra work.",
+        "unter": "REFI-QDA for analysis, Word for the text, a documentation package for your methods section."
       },
       "fr": {
-        "titel": "Des timecodes au\ncentième de seconde.",
-        "unter": "Forme d'onde aux couleurs des locuteurs, zoomable jusqu'à la syllabe."
+        "titel": "Citable,\nsans retouches.",
+        "unter": "REFI-QDA pour l'analyse, Word pour le texte, un dossier de documentation pour la partie méthodes."
       },
       "it": {
-        "titel": "Timecode al centesimo\ndi secondo.",
-        "unter": "Forma d'onda nei colori di chi parla, con zoom fino alla sillaba."
+        "titel": "Citabile,\nsenza rilavorazione.",
+        "unter": "REFI-QDA per l'analisi, Word per il testo, un pacchetto di documentazione per la sezione metodi."
       }
     }
   ]

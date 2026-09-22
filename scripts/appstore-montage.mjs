@@ -26,6 +26,10 @@ const { webkit } = require("playwright");
 const arg = (name, std) => { const i = process.argv.indexOf(`--${name}`); return i > 0 ? process.argv[i + 1] : std; };
 const SPRACHEN = arg("sprachen", "de,en,fr,it").split(",");
 const QUELLE = path.join(ROOT, arg("quelle", "appstore/upload"));
+// Erzeugter Satz zuerst (scripts/appstore-screenshots.mjs --satz), Handaufnahme
+// nur dort, wo ein Motiv im Browser-Betrieb nicht entstehen kann.
+const SATZ = path.join(ROOT, arg("satz", "appstore/screenshots"));
+const SATZGROESSE = arg("groesse", "2880x1440");
 const ZIEL = path.join(ROOT, arg("ziel", "appstore/store"));
 const DATEN = JSON.parse(fs.readFileSync(path.join(ROOT, "appstore/texte/bildtexte.json"), "utf8"));
 
@@ -116,8 +120,11 @@ for (const sprache of SPRACHEN) {
   let nr = 0;
   for (const eintrag of DATEN.bilder) {
     nr += 1;
-    const quelle = path.join(QUELLE, sprache, eintrag.quelle);
-    if (!fs.existsSync(quelle)) { console.log(`… fehlt, übersprungen: ${path.relative(ROOT, quelle)}`); continue; }
+    const erzeugt = path.join(SATZ, sprache, eintrag.grund, SATZGROESSE, eintrag.quelle);
+    const hand = path.join(QUELLE, sprache, eintrag.quelle);
+    const quelle = fs.existsSync(erzeugt) ? erzeugt : hand;
+    if (!fs.existsSync(quelle)) { console.log(`… fehlt, übersprungen: ${path.relative(ROOT, erzeugt)}`); continue; }
+    if (quelle === hand) console.log(`  ↳ Handaufnahme: ${path.relative(ROOT, hand)}`);
     const text = eintrag[sprache];
     if (!text) { console.error(`ABBRUCH: kein Text für ${sprache} in ${eintrag.quelle}`); process.exit(1); }
     const page = await browser.newPage({ viewport: { width: B, height: H }, deviceScaleFactor: 1 });
