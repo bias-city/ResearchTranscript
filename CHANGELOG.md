@@ -4,6 +4,16 @@ All notable changes to ResearchTranscript (LocalTranscript until 2.5.0,
 TurnScript in 3.0.0). The GitHub release notes for
 a version are the corresponding section of this file.
 
+## 0.6.2 — not yet released
+
+- **Settings: three cards were unreachable.** Frame and columns sat on the same
+  element — fixed height, vertical scrolling and a two-column layout at once. As
+  soon as the content was taller than two screen-high columns, the rest flowed
+  into a third and fourth column to the right, where vertical scrolling never
+  goes. Privacy, licences and the log button were therefore missing in the app;
+  found in the TestFlight build. The frame now scrolls and an inner element holds
+  the columns. Measured before and after at three window sizes.
+
 ## 0.6.1 — not yet released
 
 Answer to Apple's rejection of 0.6.0 (22 September 2026, guideline 2.5.2,

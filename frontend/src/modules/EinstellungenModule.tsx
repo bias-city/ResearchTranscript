@@ -64,8 +64,16 @@ export default function EinstellungenModule({ settings, onChange }: {
   return (
     // Karten in zwei Spalten wie enrich-Einstellungen (User 2026-08-30),
     // seit 2026-09-17 als Masonry (CSS columns): jede Karte so hoch wie
-    // ihr Inhalt, keine leeren Flächen neben hohen Nachbarn
+    // ihr Inhalt, keine leeren Flächen neben hohen Nachbarn.
+    // ZWEI Ebenen, seit dem Befund in der TestFlight-Fassung (22.9.2026):
+    // aussen der Rahmen, der scrollt, innen die Spalten. Lagen beide auf
+    // einem Element (height:100% + overflow-y:auto + columns), floss alles,
+    // was nicht in zwei bildschirmhohe Spalten passte, in eine dritte und
+    // vierte Spalte nach RECHTS — und war nicht erreichbar, weil nur
+    // senkrecht gescrollt wird. Datenschutz, Lizenzen und Protokoll fehlten
+    // dadurch in der App.
     <div className="st-masonry">
+    <div className="st-spalten">
       <Karte titel={tr("st.speicherort")}
              subline={tr("st.speicherort.text")}>
         <Flex align="center" gap="2">
@@ -326,6 +334,7 @@ export default function EinstellungenModule({ settings, onChange }: {
       </Karte>
 
       {fehler && <Text size="1" color="red">{fehler}</Text>}
+    </div>
     </div>
   );
 }
