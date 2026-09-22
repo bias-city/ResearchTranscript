@@ -13,6 +13,7 @@ import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { schreibePyo3Config } from "./pyo3-config.mjs";
+import { pruefe2_5_2 } from "./pruefung-2-5-2.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const RES = path.join(ROOT, "frontend/src-tauri/resources");
@@ -30,10 +31,21 @@ function kopiere(von, nach) {
   fs.cpSync(von, nach, { recursive: true, verbatimSymlinks: true });
 }
 
+/** Ist die Laufzeit noch die vollständige, mit der sich installieren lässt?
+ *  Abschnitt 2a nimmt pip am Ende heraus (Guideline 2.5.2) — ein zweiter Lauf
+ *  bekäme sonst eine Laufzeit ohne pip und könnte site-packages nicht mehr
+ *  bauen. Fehlt pip, holen wir die Laufzeit frisch aus dem Nachbar-Checkout. */
+function laufzeitVollstaendig(ziel) {
+  return fs.existsSync(path.join(ziel, "lib/python3.13/site-packages/pip"))
+      && fs.existsSync(path.join(ziel, "bin/python3"));
+}
+
 // 1. Runtime + Binaries + Modelle
 for (const teil of ["python-runtime", "bin", "lib", "models"]) {
   const ziel = path.join(RES, teil);
-  if (da(ziel) && !leer(ziel)) { console.log(`✓ ${teil} vorhanden`); continue; }
+  const vollstaendig = teil !== "python-runtime" || laufzeitVollstaendig(ziel);
+  if (da(ziel) && !leer(ziel) && vollstaendig) { console.log(`✓ ${teil} vorhanden`); continue; }
+  if (da(ziel) && !vollstaendig) console.log(`… ${teil} ist gestutzt (kein pip) — wird frisch geholt`);
   const quelle = path.join(ALT, teil);
   if (!da(quelle)) {
     console.error(`FEHLT: ${teil} — weder in ${ziel} noch in ${quelle}.`);
@@ -62,6 +74,30 @@ for (const teil of ["python-runtime", "bin", "lib", "models"]) {
   let n = 0;
   for (const p of weg) { if (fs.existsSync(p)) { fs.rmSync(p, { recursive: true, force: true }); n++; } }
   if (n) console.log(`✓ Laufzeit gestutzt: ${n} Einträge (Tcl/Tk, tkinter, IDLE, Tests, ensurepip)`);
+}
+
+// 1a1. App Review 2.5.2 (Ablehnung von 0.6.0 am 22.9.2026): Apples Scan fand
+//      «itms-services» im Paket und las daraus, die App installiere fremden
+//      Code. Der String steht in CPythons `urllib/parse.py`, in der reinen
+//      Datenliste `uses_netloc` (neben `ws`, `wss`, `git+ssh`) — die App ruft
+//      das Schema nirgends auf.
+//      Das ist kein eigener Eingriff, sondern CPythons eigener Patch
+//      `Mac/Resources/app-store-compliance.patch`: python-build-standalone
+//      baut ohne ihn, sichtbar im mitgelieferten
+//      `lib/python3.13/config-3.13-darwin/Makefile` («APP_STORE_COMPLIANCE_PATCH=»,
+//      leer). Wir holen ihn hier nach und erzeugen den Bytecode neu, sonst
+//      bleibt der String in der .pyc stehen. Folge: `urlparse` behandelt
+//      `itms-services://…` wie ein unbekanntes Schema — hier ohne Belang.
+//      Stand im Plan: docs/appstore-plan.md, Bauschritt 1.13.
+{
+  const parse = path.join(RES, "python-runtime/lib/python3.13/urllib/parse.py");
+  const text = fs.readFileSync(parse, "utf8");
+  if (text.includes("'itms-services'")) {
+    fs.writeFileSync(parse, text.replace(/,\s*'itms-services'/, ""));
+    fs.rmSync(path.join(RES, "python-runtime/lib/python3.13/urllib/__pycache__/parse.cpython-313.pyc"), { force: true });
+    execFileSync(path.join(RES, "python-runtime/bin/python3"), ["-m", "compileall", "-q", parse], { stdio: "inherit" });
+    console.log("✓ urllib/parse.py ohne itms-services (App Review 2.5.2)");
+  }
 }
 
 // 1a. SpeakerKit-Modelle (Core ML) für den Shim im Prozess; die CLI
@@ -159,11 +195,58 @@ const py = path.join(RES, "python-runtime/bin/python3");
   console.log("✓ python/site-packages installiert");
 }
 
+// 2a. Ballast der Laufzeit entfernen — erst JETZT, weil Abschnitt 2 pip zum
+//     Installieren braucht. Was hier liegen bleibt, liest ein App-Review-Scan
+//     als «lädt oder installiert Code» (Guideline 2.5.2, Ablehnung 22.9.2026):
+//       · pip samt dist-info: Paketverwalter mit PyPI-Adresse, Download- und
+//         Installationsbefehlen und eigenem HTTP-Stack unter _vendor; darin
+//         auch sechs ausführbare Windows-Dateien (_vendor/distlib/*.exe).
+//       · venv: legt Umgebungen an und holt sich dafür üblicherweise pip.
+//       · config-3.13-darwin und pkgconfig: der Bauordner von CPython
+//         (Makefile, install-sh, makesetup, python.o) — zur Laufzeit ungenutzt.
+//       · ctypes/macholib/fetch_macholib(.bat): Shell-Skript, das per
+//         `svn export` Quellcode von einem fremden Server holt.
+//       · researchtranscript/main.py: der Dev-Server (uvicorn) — im Bundle tot,
+//         liest sich aber wie ein mitgelieferter Webserver. Kein Modul des
+//         Bundles importiert ihn; im Checkout bleibt er unberührt.
+//     Soll-Layout dazu: docs/appstore-plan.md §2.
+{
+  const rt = path.join(RES, "python-runtime");
+  const lib = path.join(rt, "lib/python3.13");
+  const rtSite = path.join(lib, "site-packages");
+  const weg = [
+    ...(fs.existsSync(rtSite) ? fs.readdirSync(rtSite)
+      .filter((n) => n === "pip" || /^pip-.*\.dist-info$/.test(n))
+      .map((n) => path.join(rtSite, n)) : []),
+    path.join(lib, "venv"),
+    path.join(lib, "config-3.13-darwin"),
+    path.join(rt, "lib/pkgconfig"),
+    path.join(lib, "ctypes/macholib/fetch_macholib"),
+    path.join(lib, "ctypes/macholib/fetch_macholib.bat"),
+    path.join(SITE, "researchtranscript/main.py"),
+    ...(fs.existsSync(path.join(SITE, "researchtranscript/__pycache__"))
+      ? fs.readdirSync(path.join(SITE, "researchtranscript/__pycache__"))
+          .filter((n) => n.startsWith("main."))
+          .map((n) => path.join(SITE, "researchtranscript/__pycache__", n))
+      : []),
+  ];
+  let n = 0;
+  for (const p of weg) { if (fs.existsSync(p)) { fs.rmSync(p, { recursive: true, force: true }); n++; } }
+  if (n) console.log(`✓ Laufzeit entrümpelt: ${n} Einträge (pip, venv, Bauordner, fetch_macholib, Dev-Server)`);
+}
+
 // 2b. Lizenzliste erzeugen (kommt über tauri.conf.json → Resources/licenses)
 execFileSync("python3", [path.join(ROOT, "scripts/gen-licenses.py")], { stdio: "inherit" });
 
 // 2c. pyo3-config.txt mit den Pfaden dieses Rechners (nicht eingecheckt)
 console.log("✓", schreibePyo3Config());
+
+// 2d. Wächter gegen Guideline 2.5.2: nichts im Paket, das ein Scan als
+//     «lädt oder installiert Code» lesen kann. Lieber hier abbrechen als eine
+//     abgelehnte Einreichung. Gesucht wird nur in den Python-Teilen; `models`
+//     sind 1,5 GB Gewichte und enthalten keinen Code.
+//     Denselben Satz prüft release-mas.mjs noch einmal am fertigen Bundle.
+console.log(pruefe2_5_2(RES, ["python", "python-runtime"], ["python-runtime/bin"]));
 
 // 3. Marker
 fs.writeFileSync(path.join(RES, "BUNDLED"),

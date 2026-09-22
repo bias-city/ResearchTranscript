@@ -1,0 +1,42 @@
+Antwort auf die Ablehnung vom 22.9.2026 (Submission ID 36213524-f262-40b9-b8be-f135a028dc24,
+Guideline 2.5.2). In App Store Connect unter "Reply to this message" einfügen, zusammen mit
+dem Upload von 0.6.1. Deutsche Fassung des Inhalts: CHANGELOG.md, Abschnitt 0.6.1.
+
+---
+
+Thank you for the review. We looked into the finding and can explain it precisely.
+
+The string "itms-services" comes from the Python standard library that ships inside our app.
+In Lib/urllib/parse.py, CPython keeps a data table named uses_netloc that lists URL schemes
+whose syntax includes a network location; "itms-services" is the last entry, next to "ws",
+"wss" and "git+ssh". It is a constant used when parsing a URL string. ResearchTranscript never
+constructs, opens or handles an itms-services URL, and it does not install any app. There is no
+code path from our app to that scheme.
+
+CPython publishes an official App Store compliance patch (Mac/Resources/app-store-compliance.patch)
+that removes this entry. The Python redistribution we build on does not apply it; this is visible
+in the Makefile that ships with it, where APP_STORE_COMPLIANCE_PATCH is empty. Our build now
+applies the patch and recompiles the affected bytecode, so the string is gone from this build.
+
+While investigating, we also removed everything from the embedded Python runtime that the app
+does not need to run: the pip package manager, venv, CPython's build directory, and a developer
+shell script that fetches source code from a third-party server. The app now contains no package
+manager, no installer and no downloader of any kind. Two checks in our build stop a release if any
+of it ever returns.
+
+For completeness, the architecture is unchanged and fully self-contained:
+
+- The UI is a WKWebView. The application logic is Python, executed by an embedded CPython 3.13
+  interpreter inside the app process (linked as a framework, no child interpreter, no socket).
+- The interpreter runs in an isolated configuration: site_import=0, write_bytecode=0, and exactly
+  three module search paths, all inside the signed, sealed bundle. It executes only files we ship.
+- All models ship inside the bundle. The app has no update mechanism, no telemetry, no account and
+  opens no network connections. The network-client entitlement is present only because WebKit
+  requires it to render the app's own bundled pages inside the sandbox.
+- The one helper process is whisper-cli in Contents/MacOS, signed with our team identity and the
+  com.apple.security.inherit sandbox entitlement. It reads a temporary WAV file inside the app
+  container and the bundled model, and exits with the job.
+- The build carries no com.apple.security.cs.* exceptions: no JIT, no unsigned executable memory,
+  no disabled library validation.
+
+We are happy to provide any further detail that helps the review.

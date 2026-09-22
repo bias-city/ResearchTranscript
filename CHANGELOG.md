@@ -3,6 +3,35 @@
 All notable changes to LocalTranscript. The GitHub release notes for
 a version are the corresponding section of this file.
 
+## 0.6.1 — not yet released
+
+Answer to Apple's rejection of 0.6.0 (22 September 2026, guideline 2.5.2,
+"The app installed or launched executable code. Specifically, the app uses the
+itms-services URL scheme to install an app").
+
+- **The reported string is gone.** `itms-services` came from the Python standard
+  library inside the app: `urllib/parse.py` lists it in the data table
+  `uses_netloc`, next to `ws`, `wss` and `git+ssh`. The app never builds, opens or
+  handles such a URL. CPython ships an official App Store compliance patch that
+  removes the entry; the redistribution we build on leaves it out (visible in the
+  bundled `config-3.13-darwin/Makefile`: `APP_STORE_COMPLIANCE_PATCH=` is empty).
+  The build now applies it and recompiles the bytecode.
+- **The embedded Python runtime no longer carries tooling it does not need.**
+  Removed from the shipped bundle: `pip` (10 MB, with PyPI address, download and
+  install commands, a vendored HTTP stack and six Windows launcher executables),
+  `venv`, CPython's build directory (`Makefile`, `install-sh`, `makesetup`,
+  `python.o`), `pkgconfig`, and `ctypes/macholib/fetch_macholib`, a shell script
+  that fetches source code from a third-party server. The development server
+  `main.py` (uvicorn) is no longer shipped either; nothing in the bundle imports it.
+- **Two guards keep it that way:** `scripts/pruefung-2-5-2.mjs` checks the
+  assembled resources and, a second time, the finished bundle before upload. Either
+  finding stops the build.
+- **Smaller attack surface:** the window's open command only accepts `http`,
+  `https`, `mailto` and `zotero` addresses and treats everything else as a path;
+  `LT_WHISPER_CLI` is honoured inside the bundle only if it points into the bundle;
+  the path to the LAME library always comes from the bundle; the web inspector is a
+  build feature of the DMG channel and is no longer part of the App Store build.
+
 ## Unreleased
 
 - **DOI.** ResearchTranscript is archived on Zenodo in the community

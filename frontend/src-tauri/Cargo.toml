@@ -1,6 +1,6 @@
 [package]
 name = "researchtranscript-app"
-version = "0.6.0"
+version = "0.6.1"
 description = "ResearchTranscript — Tauri-Hülle mit eingebettetem Python (PyO3)"
 authors = ["Ben Pohl / BIAS.City"]
 edition = "2021"
@@ -23,7 +23,11 @@ swift-rs = { version = "1.0.8", features = ["build"], optional = true }
 # Swift-Paket RTMotoren — ohne das Feature bleibt LT_MOTOR=kind der
 # einzige Weg (Plan §5, Standard bis zur belegten Parität, E3).
 motoren = ["dep:swift-rs"]
-default = ["motoren"]
+# Web-Inspector der Oberfläche. Gehört in den DMG-Kanal, nicht in die
+# Store-Fassung: release-mas.mjs baut mit --no-default-features, damit ein
+# eingereichtes Paket kein Entwicklerwerkzeug mitbringt.
+devtools = ["tauri/devtools"]
+default = ["motoren", "devtools"]
 # Mac-App-Store-Fassung (scripts/release-mas.mjs): die Oberfläche blendet
 # den Verweis auf GitHub-Releases aus (Aktualisierungen kommen über den
 # Store, Guideline 2.4.5) und nennt die Zusatzerlaubnis.
@@ -31,7 +35,7 @@ mas = []
 
 [dependencies]
 # protocol-asset: Medien über asset:// (Phase 0, F2) statt HTTP
-tauri = { version = "2", features = ["devtools", "protocol-asset"] }
+tauri = { version = "2", features = ["protocol-asset"] }
 tauri-plugin-dialog = "2"
 tauri-plugin-opener = "2"
 serde = { version = "1", features = ["derive"] }

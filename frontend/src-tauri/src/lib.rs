@@ -30,15 +30,30 @@ fn geoeffnete_dateien(state: tauri::State<'_, Geoeffnet>) -> Vec<String> {
     state.0.lock().map(|mut g| std::mem::take(&mut *g)).unwrap_or_default()
 }
 
-/// Ordner im Finder zeigen oder eine Web-Adresse öffnen — über den
-/// Opener (Sandbox-tauglich; `/usr/bin/open` als Kind wäre es nicht).
+/// Adressen, die die Oberfläche dem System übergeben darf. Alles andere gilt als
+/// Dateipfad. Die Liste ist eng, weil der Opener die Adresse an LaunchServices
+/// weiterreicht (über `/usr/bin/open`): ein offener Öffner beliebiger Schemata ist
+/// genau das, was App Review unter 2.5.2 als Installationsweg liest — die Ablehnung
+/// von 0.6.0 nannte `itms-services://`. `zotero://` braucht der Editor, um einen
+/// Eintrag in Zotero zu zeigen.
+const ERLAUBTE_SCHEMATA: [&str; 4] = ["http://", "https://", "mailto:", "zotero://"];
+
+/// Ordner im Finder zeigen oder eine erlaubte Adresse öffnen. Beides geht über den
+/// Opener; der startet dafür `/usr/bin/open` als losgelöstes Kind, was in der Sandbox
+/// zulässig ist, weil LaunchServices die Datei ausserhalb des Containers öffnet.
 #[tauri::command]
 fn ordner_oeffnen(pfad: String) -> Result<(), String> {
-    if pfad.starts_with("http://") || pfad.starts_with("https://") {
-        tauri_plugin_opener::open_url(&pfad, None::<&str>).map_err(|e| e.to_string())
-    } else {
-        tauri_plugin_opener::open_path(&pfad, None::<&str>).map_err(|e| e.to_string())
+    if ERLAUBTE_SCHEMATA.iter().any(|s| pfad.starts_with(s)) {
+        return tauri_plugin_opener::open_url(&pfad, None::<&str>).map_err(|e| e.to_string());
     }
+    // Ein Pfad, keine Adresse: alles mit «schema:» davor lehnen wir ab, statt es
+    // dem System zu reichen.
+    if let Some(i) = pfad.find(':') {
+        if i > 1 && !pfad.starts_with('/') && pfad[..i].chars().all(|c| c.is_ascii_alphanumeric() || c == '+' || c == '-' || c == '.') {
+            return Err(format!("Adressschema nicht erlaubt: {}", &pfad[..i]));
+        }
+    }
+    tauri_plugin_opener::open_path(&pfad, None::<&str>).map_err(|e| e.to_string())
 }
 
 /// DER Befehl: Name + Argumente an die Python-Fassade. Immer async →

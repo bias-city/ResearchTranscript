@@ -185,10 +185,18 @@ pub fn init_pfad(res: &Path, app: Option<&tauri::AppHandle>) -> Result<f64, Stri
         {
             use crate::motoren::researchtranscript_motoren;
             pyo3::append_to_inittab!(researchtranscript_motoren);
+            // Der Pfad kommt IMMER aus dem Bundle, nie aus der Umgebung: motoren.rs
+            // reicht ihn an dlopen weiter, und ein von aussen gesetzter Wert wäre
+            // genau das, was ein Audit als «lädt Code über eine Umgebungsvariable»
+            // liest. Findet sich die Bibliothek nicht, wird die Variable geleert —
+            // die Selbstprüfung meldet das beim Start (siehe unten).
             let lame = [res.parent().map(|p| p.join("Frameworks/libmp3lame.dylib")),
                         Some(res.join("frameworks/libmp3lame.dylib"))]
                 .into_iter().flatten().find(|p| p.is_file());
-            if let Some(p) = lame { std::env::set_var("LT_LAME_DYLIB", p); }
+            match lame {
+                Some(p) => std::env::set_var("LT_LAME_DYLIB", p),
+                None => std::env::remove_var("LT_LAME_DYLIB"),
+            }
             // Standard seit 0.6.0 (E3, Parität belegt): Motoren im Prozess;
             // LT_MOTOR=kind in der Umgebung erzwingt die Kinder (Fehlersuche).
             if std::env::var_os("LT_MOTOR").is_none() { std::env::set_var("LT_MOTOR", "prozess"); }

@@ -80,11 +80,26 @@ def _find_executable(name: str, bundled: Path) -> str:
 
 
 def get_whisper_cli() -> str:
-    # Im Bundle liegt whisper-cli seit 0.6.0 als Sidecar in Contents/MacOS
-    # (die Hülle setzt LT_WHISPER_CLI); im Checkout wie gehabt
+    """Pfad zum Helfer whisper-cli.
+
+    Im Bundle liegt er seit 0.6.0 als Sidecar in `Contents/MacOS`, und die Hülle
+    setzt `LT_WHISPER_CLI` darauf. Der Wert wird im Bundle nur genommen, wenn er
+    INNERHALB des Pakets liegt: ein Programmpfad aus der Umgebung wäre sonst die
+    eine Stelle, an der die sonst strenge Regel «im Bundle nur Mitgeliefertes»
+    eine Ausnahme hätte — und genau so liest ein Audit «startet fremden Code»
+    (App Review 2.5.2). Im Checkout gilt die Variable wie bisher unverändert.
+    """
     env = os.environ.get("LT_WHISPER_CLI")
     if env and os.access(env, os.X_OK):
-        return env
+        if not is_bundled():
+            return env
+        wurzel = get_app_root().resolve()
+        pfad = Path(env).resolve()
+        # Das Paket ist <App>/Contents/Resources, der Sidecar <App>/Contents/MacOS:
+        # erlaubt ist alles unterhalb von Contents.
+        erlaubt = wurzel.parent if wurzel.name == "Resources" else wurzel
+        if pfad.is_relative_to(erlaubt):
+            return env
     return _find_executable("whisper-cli", get_app_root() / "bin" / "whisper-cli")
 
 

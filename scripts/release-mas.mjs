@@ -15,6 +15,7 @@ import { execFileSync } from "node:child_process";
 import fs from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { pruefe2_5_2 } from "./pruefung-2-5-2.mjs";
 
 const ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..");
 const TAURI = path.join(ROOT, "frontend/src-tauri");
@@ -77,6 +78,10 @@ for (const p of programme) {
   if (!e.includes("com.apple.security.app-sandbox")) { console.error(`ABBRUCH: ausführbares Programm ohne Sandbox-Entitlement: ${p}`); process.exit(1); }
 }
 console.log(`${programme.length} ausführbare Programme, alle mit app-sandbox`);
+// Guideline 2.5.2 am FERTIGEN Bundle — das ist der Stand, den Apple prüft.
+// 0.6.0 wurde hier abgelehnt: ein Textscan fand «itms-services» aus CPythons
+// urllib, und im Paket lagen pip, venv und der CPython-Bauordner.
+console.log(pruefe2_5_2(APP, ["Contents/Resources", "Contents/MacOS", "Contents/Frameworks"]));
 console.log("5/6 Installer-Paket");
 fs.rmSync(PKG, { force: true });
 sh("/usr/bin/xcrun", ["productbuild", "--sign", INSTALLER, "--component", APP, "/Applications", PKG]);
