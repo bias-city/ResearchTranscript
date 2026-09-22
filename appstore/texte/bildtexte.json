@@ -5,19 +5,19 @@
       "quelle": "01-editor.png",
       "grund": "hell",
       "de": {
-        "titel": "Die KI schreibt.\nDu behältst das letzte Wort.",
+        "titel": "Die lokale KI transkribiert.\nDu korrigierst Feinheiten.",
         "unter": "Hören, korrigieren, Sprechende benennen — alles über die Tastatur."
       },
       "en": {
-        "titel": "The AI writes.\nYou have the last word.",
+        "titel": "The local AI transcribes.\nYou correct the details.",
         "unter": "Listen, correct, name speakers — all from the keyboard."
       },
       "fr": {
-        "titel": "L'IA écrit.\nLe dernier mot te revient.",
+        "titel": "L’IA locale transcrit.\nTu corriges les détails.",
         "unter": "Écouter, corriger, nommer les locuteurs — au clavier."
       },
       "it": {
-        "titel": "L'IA scrive.\nL'ultima parola è tua.",
+        "titel": "L’IA locale trascrive.\nTu correggi i dettagli.",
         "unter": "Ascoltare, correggere, dare un nome a chi parla — da tastiera."
       }
     },
