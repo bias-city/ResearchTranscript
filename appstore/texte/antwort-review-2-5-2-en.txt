@@ -1,6 +1,6 @@
 Antwort auf die Ablehnung vom 22.9.2026 (Submission ID 36213524-f262-40b9-b8be-f135a028dc24,
 Guideline 2.5.2). In App Store Connect unter "Reply to this message" einfügen, zusammen mit
-dem Upload von 0.6.1. Deutsche Fassung des Inhalts: CHANGELOG.md, Abschnitt 0.6.1.
+dem Upload von 0.6.2. Deutsche Fassung des Inhalts: CHANGELOG.md, Abschnitt 0.6.1/0.6.2.
 
 ---
 
