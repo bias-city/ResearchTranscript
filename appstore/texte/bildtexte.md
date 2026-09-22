@@ -53,16 +53,30 @@ Die ersten drei sieht man im Store ohne Blättern.
 | 2 | `08-einstellungen.png` | **neu** — Einstellungen, Karte Datenschutz und Lizenzen |
 | 3 | `02-ai-transkript.png` | Warteliste mit mehreren Dateien und Sprecherzahl — **im dunklen Erscheinungsbild**: die Liste ist kurz, im hellen Modus wirkt die freie Fläche darunter leer |
 | 4 | `03-export.png` | offenes Export-Menü mit allen Formaten |
-| 5 | `04-suchen-ersetzen.png` | Suchen und Ersetzen mit Treffern |
-| 6 | `05-sprecherfarbe.png` | Sprechende benennen und färben |
-| 7 | `07-editor-dunkel.png` | derselbe Editor im dunklen Erscheinungsbild |
-| 8 | `06-bibliothek.png` | Bibliothek mit mehreren Transkripten |
+| 5 | `09-memo.png` | **neu** — Editor mit **offenem Memo-Dialog an einer Zeile**, Memo geschrieben (ein echter Analysegedanke, kein «Test»). Die Bibliothek zeigte nur einen Ordner mit Dateien; das sagt über die Arbeit nichts. |
+| 6 | `04-suchen-ersetzen.png` | Suchen und Ersetzen mit Treffern |
+| 7 | `05-sprecherfarbe.png` | Sprechende benennen und färben |
+| 8 | `07-editor-dunkel.png` | derselbe Editor im dunklen Erscheinungsbild |
 
 ## Aufnahme
 
 Die Rohaufnahmen kommen aus der **gebauten Store-App** (TestFlight), nicht aus dem
-Browser: Umschalt-Befehl-Vier, dann Leertaste, dann auf das Fenster klicken. Ablegen
-unter `appstore/upload/<sprache>/` mit genau den Dateinamen aus der Tabelle.
+Browser: Umschalt-Befehl-Vier, dann Leertaste, dann auf das Fenster klicken. Das Fenster
+vorher **breit ziehen** — je näher es an 2:1 kommt, desto grösser steht es in der
+Montage; ein schmales Fenster lässt links und rechts Luft stehen.
+
+macOS nimmt das Fenster **mit Schatten und durchsichtigen Ecken** auf. Beides muss weg,
+sonst zeigt die Montage einen schmutzigen Rand und vier helle Zipfel:
+
+```
+python3 scripts/appstore-freistellen.py ~/Desktop/Bildschirmfoto\ ….png \
+        appstore/upload/de/09-memo.png
+```
+
+Das Skript schneidet auf den deckenden Fensterbereich zu und füllt die gerundeten Ecken
+mit der Farbe des nächsten Fensterpixels. Rundung und Schatten setzt die Montage selbst,
+damit alle Motive gleich aussehen. Ablegen unter `appstore/upload/<sprache>/` mit genau
+den Dateinamen aus der Tabelle.
 
 Warum nicht aus dem Browser: Dort ist `isTauri()` falsch und der Vertriebskanal «dmg».
 Die Einstellungsseite zeigt dann einen Knopf «Releases», der aus dem Store heraus auf

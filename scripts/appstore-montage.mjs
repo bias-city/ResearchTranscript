@@ -107,6 +107,12 @@ let zahl = 0;
 for (const sprache of SPRACHEN) {
   const ordner = path.join(ZIEL, sprache);
   fs.mkdirSync(ordner, { recursive: true });
+  // Alte Ergebnisse weg: die Nummern richten sich nach der Reihenfolge im JSON,
+  // und ein umgestelltes Motiv liesse sonst eine verwaiste Datei mit alter
+  // Nummer liegen — die landet beim Hochladen versehentlich mit im Store.
+  for (const alt of fs.readdirSync(ordner)) {
+    if (alt.endsWith(".png")) fs.unlinkSync(path.join(ordner, alt));
+  }
   let nr = 0;
   for (const eintrag of DATEN.bilder) {
     nr += 1;

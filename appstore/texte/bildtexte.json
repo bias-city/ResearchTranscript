@@ -82,6 +82,26 @@
       }
     },
     {
+      "quelle": "09-memo.png",
+      "grund": "hell",
+      "de": {
+        "titel": "Erste Memos schon beim Korrigieren.",
+        "unter": "Getrennt vom Wortlaut — und im REFI-QDA-Export sitzen sie an der codierten Stelle."
+      },
+      "en": {
+        "titel": "First memos while you edit.",
+        "unter": "Kept apart from the wording — and carried into REFI-QDA, on the coded passage."
+      },
+      "fr": {
+        "titel": "Les premiers mémos dès la relecture.",
+        "unter": "Séparés du verbatim — et repris dans l’export REFI-QDA, sur le passage codé."
+      },
+      "it": {
+        "titel": "I primi memo già in revisione.",
+        "unter": "Separati dal testo — e ripresi nell’esportazione REFI-QDA, sul passaggio codificato."
+      }
+    },
+    {
       "quelle": "04-suchen-ersetzen.png",
       "grund": "hell",
       "de": {
@@ -139,26 +159,6 @@
       "it": {
         "titel": "Timecode al centesimo\ndi secondo.",
         "unter": "Forma d'onda nei colori di chi parla, con zoom fino alla sillaba."
-      }
-    },
-    {
-      "quelle": "06-bibliothek.png",
-      "grund": "hell",
-      "de": {
-        "titel": "Alles in dem Ordner,\nden du wählst.",
-        "unter": "Je Transkript ein Ordner mit Audio, Text und Verlauf."
-      },
-      "en": {
-        "titel": "Everything in the folder\nyou choose.",
-        "unter": "One folder per transcript, with audio, text and history."
-      },
-      "fr": {
-        "titel": "Tout dans le dossier\nque tu choisis.",
-        "unter": "Un dossier par transcription, avec audio, texte et historique."
-      },
-      "it": {
-        "titel": "Tutto nella cartella\nche scegli.",
-        "unter": "Una cartella per trascrizione, con audio, testo e cronologia."
       }
     }
   ]
