@@ -99,16 +99,18 @@ en:
 fr und it: aus de/en übersetzen, wenn die deutsche Fassung steht (die
 Website-Texte in `site/index.html` sind die Vorlage).
 
-**Neuerungen in dieser Version** (0.6.0): «Erste Fassung im Mac App Store.»
+**Neuerungen in dieser Version** (0.6.1): «Erste Fassung im Mac App Store.» (0.6.0 wurde am 22.9.2026 nach Richtlinie 2.5.2 zurückgewiesen und nie veröffentlicht; siehe CHANGELOG 0.6.1 und appstore/texte/antwort-review-2-5-2-en.txt.)
 
 ## 3. Screenshots
 
 1280×800 bis 2880×1800, Seitenverhältnis 16:10, PNG, je Sprache 1–10.
-Motive aus `docs/screenshots/` (01 Warteliste, 02 Bibliothek, 03 Editor,
-04 Suchen/Ersetzen, 05 Export) — mit der Screenshot-Pipeline gegen das
-Demo-Backend neu aufnehmen (Commit 6a36053 beschreibt den Lauf), in der
-neuen Optik (Pillen, Wellenform) und im Hell-Modus, Fenster 1440×900 →
-2880×1800 (Retina).
+
+**Hochgeladen wird `appstore/upload/<sprache>/`** (sieben Bilder, 2880×1800,
+in der Reihenfolge nummeriert). Erzeugt mit
+`node scripts/appstore-screenshots.mjs`; der volle Fundus liegt unter
+`appstore/screenshots/`. Einzelheiten und der Grund, warum die
+Einstellungsseite seit 22.9.2026 fehlt, stehen in `appstore/ANLEITUNG.md`,
+Teil E.
 
 ## 4. Review-Notizen (App Review Information → Notes, ≤ 4000 Zeichen)
 
@@ -126,13 +128,14 @@ Anhang: `docs/demo/researchtranscript-demo.zip` (mp3 + Referenztext).
 
 ## 5. Checkliste vor dem Upload
 
-- [ ] `LICENSE-EXCEPTION` im Repo, in README verlinkt
-- [ ] `THIRD_PARTY_LICENSES.md` erzeugt (`python3 scripts/gen-licenses.py`), im Bundle, Knopf «Lizenzen» in den Einstellungen
-- [ ] Über-Dialog in der Store-Fassung (Cargo-Feature `mas`, setzt `release-mas.mjs`): kein Knopf «Releases», dafür Datenschutzerklärung (Guideline 5.1.1), Zusatzerlaubnis, Lizenzliste, Quellcode-Links (AGPL/LGPL-Angebot)
-- [ ] `site/privacy.html` hochgeladen, URL im Portal eingetragen
-- [ ] LAME-Tarball unter bias.city/researchtranscript/quellen/ (LGPL-Angebot)
-- [ ] Zertifikate, Profil, API-Schlüssel vorhanden
-- [ ] `node scripts/release-mas.mjs` läuft durch (Prüfungen 4/6)
-- [ ] TestFlight-Build getestet: Erststart (Ordnerdialog), Transkription per Drop, Export in fremden Ordner, Zotero-Ordner, Neustart (Bookmarks)
-- [ ] Screenshots je Sprache, Beschreibung, Schlagwörter, Datenschutz-Fragebogen
-- [ ] Review-Notizen mit Demo-Zip
+- [x] `LICENSE-EXCEPTION` im Repo, in README verlinkt
+- [x] `THIRD_PARTY_LICENSES.md` erzeugt (`python3 scripts/gen-licenses.py`), im Bundle, Knopf «Lizenzen» in den Einstellungen — seit 0.6.1 **mit Lizenztext für jeden festen Bestandteil** (lizenztexte/)
+- [x] Über-Dialog in der Store-Fassung (Cargo-Feature `mas`, setzt `release-mas.mjs`): kein Knopf «Releases», dafür Datenschutzerklärung (Guideline 5.1.1), Zusatzerlaubnis, Lizenzliste, Quellcode-Links (AGPL/LGPL-Angebot)
+- [x] `site/privacy.html` hochgeladen, URL im Portal eingetragen
+- [x] LAME-Quelle: seit 0.6.1 **im Paket** (Contents/Resources/quellen/) und unter bias.city/researchtranscript/quellen/ (geprüft: HTTP 200)
+- [x] Zertifikate, Profil, API-Schlüssel vorhanden
+- [x] `node scripts/release-mas.mjs` läuft durch (Prüfungen 4/6, inkl. Wächter 2.5.2)
+- [ ] TestFlight-Build getestet: Erststart (Ordnerdialog), Transkription per Drop, Export in fremden Ordner, Zotero-Ordner, Neustart (Bookmarks) — **die Store-Fassung startet lokal nicht (Store-Profil), also nur über TestFlight prüfbar**
+- [x] Screenshots je Sprache (appstore/upload/, ohne Einstellungsseite), Beschreibung, Schlagwörter (ohne fremde Produktnamen), Datenschutz-Fragebogen
+- [x] Review-Notizen mit Demo-Zip
+- [ ] Antwort auf die Ablehnung von 0.6.0 einfügen: `appstore/texte/antwort-review-2-5-2-en.txt`
