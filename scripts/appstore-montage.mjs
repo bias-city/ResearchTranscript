@@ -31,8 +31,12 @@ const DATEN = JSON.parse(fs.readFileSync(path.join(ROOT, "appstore/texte/bildtex
 
 // Apple, Mac: 16:10. Wir liefern die grösste Fassung, Apple skaliert herunter.
 const B = 2880, H = 1800;
-const RAND = 140;          // Aussenrand
-const FENSTER_B = B - 2 * RAND;
+const RAND = 100;
+// Das Fenster wird GANZ gezeigt, nicht unten angeschnitten: im Editor sitzt die
+// Wellenform am unteren Rand, und genau die wäre sonst weg. Also Text kompakt
+// halten und das Bild in den Rest einpassen, mittig.
+const TEXTHOEHE = 300;     // Linie + Schlagzeile (zwei Zeilen) + Unterzeile
+const LUFT = 44;           // zwischen Text und Fenster
 
 const TYPEN = { ".png": "image/png", ".woff2": "font/woff2", ".html": "text/html; charset=utf-8" };
 const server = http.createServer((req, res) => {
@@ -52,12 +56,17 @@ const esc = (s) => s.replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, 
 /** Zeilenumbrüche der Schlagzeile stehen in den Texten als \n. */
 const zeilen = (s) => esc(s).split("\n").join("<br>");
 
+// EIN Grund für alle Motive, und zwar der helle Markenton der Website
+// (--lila-050). Das neutrale Grau von dort (--wash) lag zu nah an der
+// Fensterleiste von macOS — das Fenster verschwand im Hintergrund. Der
+// Farbton trennt klar, bleibt ruhig und trägt sowohl helle als auch dunkle
+// Fenster. `dunkel` im JSON steuert deshalb nur noch den Schatten.
 function seite(bild, titel, unter, dunkel) {
-  const grund = dunkel ? "#1a1d20" : "#f3f5f6";
-  const tinte = dunkel ? "#ffffff" : "#000000";
-  const leise = dunkel ? "rgba(255,255,255,.72)" : "rgba(0,0,0,.70)";
-  const schatten = dunkel ? "0 24px 70px rgba(0,0,0,.55)" : "0 24px 60px rgba(0,0,0,.18)";
-  const rahmen = dunkel ? "rgba(255,255,255,.14)" : "rgba(0,0,0,.10)";
+  const grund = "#eef2ff";
+  const tinte = "#000000";
+  const leise = "rgba(0,0,0,.70)";
+  const schatten = dunkel ? "0 26px 70px rgba(26,29,32,.38)" : "0 24px 60px rgba(49,46,129,.20)";
+  const rahmen = "rgba(49,46,129,.14)";
   return `<!doctype html><meta charset="utf-8"><style>
   @font-face { font-family:"Recursive"; src:url("${BASIS}site/fonts/Recursive_VF.woff2") format("woff2");
                font-weight:300 1000; font-display:block; }
@@ -67,22 +76,29 @@ function seite(bild, titel, unter, dunkel) {
          font-family:"Recursive", system-ui, sans-serif;
          font-variation-settings:'CASL' 0, 'MONO' 0;
          -webkit-font-smoothing:antialiased; }
-  .blatt { padding:${RAND}px ${RAND}px 0; }
+  .blatt { padding:${RAND}px ${RAND}px ${RAND}px; height:${H}px;
+           display:flex; flex-direction:column; }
+  .kopf { height:${TEXTHOEHE}px; }
   /* Feine Linie in der Akzentfarbe: der einzige Schmuck. */
-  .strich { width:120px; height:4px; background:#4f46e5; border-radius:2px; margin-bottom:34px; }
-  h1 { font-size:96px; line-height:1.12; font-weight:640; letter-spacing:-.015em; }
-  p { font-size:44px; line-height:1.32; font-weight:400; color:${leise}; margin-top:20px;
-      max-width:2100px; }
-  /* Das Fenster läuft unten aus dem Bild — so bleibt die Oberfläche gross lesbar. */
-  .fenster { margin-top:72px; width:${FENSTER_B}px; border-radius:18px; overflow:hidden;
+  .strich { width:110px; height:4px; background:#4f46e5; border-radius:2px; margin-bottom:26px; }
+  h1 { font-size:76px; line-height:1.1; font-weight:640; letter-spacing:-.015em; }
+  p { font-size:38px; line-height:1.3; font-weight:400; color:${leise}; margin-top:16px;
+      max-width:2200px; }
+  /* Ganzes Fenster, mittig in der Restfläche — nichts wird abgeschnitten. */
+  .buehne { flex:1; margin-top:${LUFT}px; display:flex; align-items:center; justify-content:center;
+            min-height:0; }
+  .fenster { border-radius:18px; overflow:hidden; max-width:100%; max-height:100%;
              box-shadow:${schatten}; outline:1px solid ${rahmen}; outline-offset:-1px; }
-  .fenster img { display:block; width:100%; }
+  .fenster img { display:block; max-width:100%; max-height:${H - 2 * RAND - TEXTHOEHE - LUFT}px;
+                 width:auto; height:auto; }
   </style>
   <div class="blatt">
-    <div class="strich"></div>
-    <h1>${zeilen(titel)}</h1>
-    <p>${esc(unter)}</p>
-    <div class="fenster"><img src="${BASIS}${bild}"></div>
+    <div class="kopf">
+      <div class="strich"></div>
+      <h1>${zeilen(titel)}</h1>
+      <p>${esc(unter)}</p>
+    </div>
+    <div class="buehne"><div class="fenster"><img src="${BASIS}${bild}"></div></div>
   </div>`;
 }
 
