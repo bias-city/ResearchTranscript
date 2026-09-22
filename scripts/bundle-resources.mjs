@@ -224,6 +224,10 @@ const py = path.join(RES, "python-runtime/bin/python3");
     path.join(lib, "ctypes/macholib/fetch_macholib"),
     path.join(lib, "ctypes/macholib/fetch_macholib.bat"),
     path.join(SITE, "researchtranscript/main.py"),
+    // Herkunfts-README der SpeakerKit-Gewichte: verweist auf eine TestFlight-Beta
+    // einer fremden App. Im Repo bleibt sie (models/speakerkit/README.hf.md), im
+    // ausgelieferten Paket hat ein Verweis auf eine Beta-Verteilung nichts zu suchen.
+    path.join(RES, "models/speakerkit/README.hf.md"),
     ...(fs.existsSync(path.join(SITE, "researchtranscript/__pycache__"))
       ? fs.readdirSync(path.join(SITE, "researchtranscript/__pycache__"))
           .filter((n) => n.startsWith("main."))
@@ -233,6 +237,27 @@ const py = path.join(RES, "python-runtime/bin/python3");
   let n = 0;
   for (const p of weg) { if (fs.existsSync(p)) { fs.rmSync(p, { recursive: true, force: true }); n++; } }
   if (n) console.log(`✓ Laufzeit entrümpelt: ${n} Einträge (pip, venv, Bauordner, fetch_macholib, Dev-Server)`);
+}
+
+// 2a2. Wächter: die Version des gebündelten Backends muss zur Hülle passen.
+//      `python.rs` vergleicht beides beim Start und bricht mit einem Dialog ab
+//      («Backend x passt nicht zur App y») — in der Store-Fassung fällt das erst
+//      auf dem Gerät des Prüfers auf, weil sie sich lokal nicht starten lässt.
+//      Also hier, im Bau.
+{
+  const conf = JSON.parse(fs.readFileSync(path.join(ROOT, "frontend/src-tauri/tauri.conf.json"), "utf8"));
+  const config = fs.readFileSync(path.join(SITE, "researchtranscript/config.py"), "utf8");
+  const treffer = config.match(/^APP_VERSION\s*=\s*"([^"]+)"/m);
+  if (!treffer) {
+    console.error("ABBRUCH: APP_VERSION in researchtranscript/config.py nicht gefunden.");
+    process.exit(1);
+  }
+  if (treffer[1] !== conf.version) {
+    console.error(`ABBRUCH: Backend ${treffer[1]} passt nicht zur App ${conf.version}.`);
+    console.error("backend/src/researchtranscript/config.py (APP_VERSION) nachziehen, sonst startet die App nicht.");
+    process.exit(1);
+  }
+  console.log(`✓ Backend und Hülle auf ${conf.version}`);
 }
 
 // 2b. Lizenzliste erzeugen (kommt über tauri.conf.json → Resources/licenses)

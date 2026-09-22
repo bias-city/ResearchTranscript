@@ -55,8 +55,9 @@ Third-party components bundled with the app (whisper.cpp, the
 large-v3-turbo and silero-vad models, SpeakerKit and its models,
 CPython, pydantic, React/Radix, LAME and others) are licensed under
 their own terms, listed in THIRD_PARTY_LICENSES.md and in the app's
-settings. LAME (GNU LGPL 2.1 or later) is linked dynamically; its
-source code is shipped with the app and offered at
+settings. LAME (GNU Library General Public License 2.0 or later, as shipped in
+the LAME 4.0 tarball) is linked dynamically; its source code ships inside
+the app under Contents/Resources/quellen/ and is offered at
 https://bias.city/researchtranscript/quellen/ so that it can be
 replaced, as the LGPL requires. None of these components requires the
 AGPL; the AGPL is the copyright holder's own choice for the

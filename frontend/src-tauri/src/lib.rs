@@ -38,9 +38,17 @@ fn geoeffnete_dateien(state: tauri::State<'_, Geoeffnet>) -> Vec<String> {
 /// Eintrag in Zotero zu zeigen.
 const ERLAUBTE_SCHEMATA: [&str; 4] = ["http://", "https://", "mailto:", "zotero://"];
 
-/// Ordner im Finder zeigen oder eine erlaubte Adresse öffnen. Beides geht über den
-/// Opener; der startet dafür `/usr/bin/open` als losgelöstes Kind, was in der Sandbox
-/// zulässig ist, weil LaunchServices die Datei ausserhalb des Containers öffnet.
+/// Endungen, die als Dokument geöffnet werden dürfen. Alles andere — besonders
+/// `.app`, `.pkg`, `.command`, `.sh`, `.scpt` — wird nur im Finder gezeigt. So kann
+/// über diesen Weg nie ein Programm starten, auch wenn ein Pfad aus der Oberfläche
+/// je manipuliert würde.
+const ERLAUBTE_ENDUNGEN: [&str; 10] = ["md", "txt", "log", "json", "csv", "vtt", "srt", "pdf", "docx", "qdpx"];
+
+/// Ordner im Finder zeigen, ein Dokument öffnen oder eine erlaubte Adresse aufrufen.
+/// Der Opener reicht das an LaunchServices weiter (dafür startet er `/usr/bin/open`
+/// als losgelöstes Kind, in der Sandbox zulässig). Drei Fälle, in dieser Reihenfolge:
+/// erlaubtes Schema → öffnen; Verzeichnis → öffnen; Datei → nur bei bekannter,
+/// nicht ausführbarer Endung öffnen, sonst im Finder zeigen.
 #[tauri::command]
 fn ordner_oeffnen(pfad: String) -> Result<(), String> {
     if ERLAUBTE_SCHEMATA.iter().any(|s| pfad.starts_with(s)) {
@@ -53,7 +61,15 @@ fn ordner_oeffnen(pfad: String) -> Result<(), String> {
             return Err(format!("Adressschema nicht erlaubt: {}", &pfad[..i]));
         }
     }
-    tauri_plugin_opener::open_path(&pfad, None::<&str>).map_err(|e| e.to_string())
+    let p = PathBuf::from(&pfad);
+    if p.is_dir() {
+        return tauri_plugin_opener::open_path(&pfad, None::<&str>).map_err(|e| e.to_string());
+    }
+    let endung = p.extension().map(|e| e.to_string_lossy().to_lowercase()).unwrap_or_default();
+    if ERLAUBTE_ENDUNGEN.contains(&endung.as_str()) {
+        return tauri_plugin_opener::open_path(&pfad, None::<&str>).map_err(|e| e.to_string());
+    }
+    tauri_plugin_opener::reveal_item_in_dir(&pfad).map_err(|e| e.to_string())
 }
 
 /// DER Befehl: Name + Argumente an die Python-Fassade. Immer async →

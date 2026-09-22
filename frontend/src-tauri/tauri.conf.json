@@ -46,6 +46,7 @@
       "resources/python": "python",
       "resources/models": "models",
       "resources/BUNDLED": "BUNDLED",
+      "resources/frameworks/lame-4.0.tar.gz": "quellen/lame-4.0.tar.gz",
       "../../THIRD_PARTY_LICENSES.md": "licenses/THIRD_PARTY_LICENSES.md"
     },
     "macOS": {
