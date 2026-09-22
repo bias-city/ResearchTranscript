@@ -1,4 +1,4 @@
-# Drittanbieter-Lizenzen · ResearchTranscript 0.6.0
+# Drittanbieter-Lizenzen · ResearchTranscript 0.6.1
 
 ResearchTranscript ist freie Software unter der GNU AGPL, Version 3 oder später (LICENSE), mit einer Zusatzerlaubnis für den App Store (LICENSE-EXCEPTION). Die App enthält die folgenden Bestandteile (Stand dieses Builds, Ziel aarch64-apple-darwin). Die WebView (WebKit) stellt macOS; sie ist nicht Teil der App.
 
