@@ -1,0 +1,61 @@
+{
+  "_hinweis": "Beschriftungen der Store-Bilder. Erklärung und Gestaltung: bildtexte.md. Reihenfolge = Reihenfolge im Store. `grund`: hell oder dunkel. `quelle`: Dateiname der Rohaufnahme in appstore/upload/<sprache>/.",
+  "bilder": [
+    {
+      "quelle": "01-editor.png",
+      "grund": "hell",
+      "de": { "titel": "Die KI schreibt.\nDu behältst das letzte Wort.", "unter": "Hören, korrigieren, Sprechende benennen — alles über die Tastatur." },
+      "en": { "titel": "The AI writes.\nYou have the last word.", "unter": "Listen, correct, name speakers — all from the keyboard." },
+      "fr": { "titel": "L'IA écrit.\nLe dernier mot te revient.", "unter": "Écouter, corriger, nommer les locuteurs — au clavier." },
+      "it": { "titel": "L'IA scrive.\nL'ultima parola è tua.", "unter": "Ascoltare, correggere, dare un nome a chi parla — da tastiera." }
+    },
+    {
+      "quelle": "02-ai-transkript.png",
+      "grund": "hell",
+      "de": { "titel": "Interviews hinein,\nTranskripte heraus.", "unter": "Mit Sprechertrennung. Mehrere Aufnahmen nacheinander, ohne Aufsicht." },
+      "en": { "titel": "Interviews in,\ntranscripts out.", "unter": "With speaker separation. Several recordings in a row, unattended." },
+      "fr": { "titel": "Des entretiens en entrée,\ndes transcriptions en sortie.", "unter": "Avec séparation des locuteurs. Plusieurs enregistrements à la suite." },
+      "it": { "titel": "Interviste dentro,\ntrascrizioni fuori.", "unter": "Con separazione dei parlanti. Più registrazioni di seguito." }
+    },
+    {
+      "quelle": "03-export.png",
+      "grund": "hell",
+      "de": { "titel": "Zitierfähig,\nohne Nacharbeit.", "unter": "REFI-QDA für die Analyse, Word für den Text, Dokumentationspaket für den Methodenteil." },
+      "en": { "titel": "Citable,\nwith no extra work.", "unter": "REFI-QDA for analysis, Word for the text, a documentation package for your methods section." },
+      "fr": { "titel": "Citable,\nsans retouches.", "unter": "REFI-QDA pour l'analyse, Word pour le texte, un dossier de documentation pour la partie méthodes." },
+      "it": { "titel": "Citabile,\nsenza rilavorazione.", "unter": "REFI-QDA per l'analisi, Word per il testo, un pacchetto di documentazione per la sezione metodi." }
+    },
+    {
+      "quelle": "04-suchen-ersetzen.png",
+      "grund": "hell",
+      "de": { "titel": "Pseudonyme in einem Zug.", "unter": "Suchen und Ersetzen über das ganze Transkript, mit Vorschau je Fund." },
+      "en": { "titel": "Pseudonyms in one pass.", "unter": "Search and replace across the whole transcript, with a preview for each hit." },
+      "fr": { "titel": "Les pseudonymes d'un seul geste.", "unter": "Rechercher et remplacer dans toute la transcription, avec aperçu." },
+      "it": { "titel": "Pseudonimi in un colpo solo.", "unter": "Cerca e sostituisci in tutta la trascrizione, con anteprima." }
+    },
+    {
+      "quelle": "05-sprecherfarbe.png",
+      "grund": "hell",
+      "de": { "titel": "Sprechende benennen,\nfärben, zusammenführen.", "unter": "Hörprobe je Stimme, bevor du dich entscheidest." },
+      "en": { "titel": "Name, colour and merge\nyour speakers.", "unter": "Listen to each voice before you decide." },
+      "fr": { "titel": "Nommer, colorer,\nfusionner les locuteurs.", "unter": "Écouter chaque voix avant de décider." },
+      "it": { "titel": "Nomina, colora\ne unisci chi parla.", "unter": "Ascolta ogni voce prima di decidere." }
+    },
+    {
+      "quelle": "06-bibliothek.png",
+      "grund": "hell",
+      "de": { "titel": "Alles in dem Ordner,\nden du wählst.", "unter": "Je Transkript ein Ordner mit Audio, Text und Verlauf." },
+      "en": { "titel": "Everything in the folder\nyou choose.", "unter": "One folder per transcript, with audio, text and history." },
+      "fr": { "titel": "Tout dans le dossier\nque tu choisis.", "unter": "Un dossier par transcription, avec audio, texte et historique." },
+      "it": { "titel": "Tutto nella cartella\nche scegli.", "unter": "Una cartella per trascrizione, con audio, testo e cronologia." }
+    },
+    {
+      "quelle": "07-editor-dunkel.png",
+      "grund": "dunkel",
+      "de": { "titel": "Timecodes auf die\nHundertstelsekunde.", "unter": "Wellenform in den Farben der Sprechenden, zoombar bis in die Silbe." },
+      "en": { "titel": "Timecodes to the\nhundredth of a second.", "unter": "Waveform in the speakers' colours, zoomable down to the syllable." },
+      "fr": { "titel": "Des timecodes au\ncentième de seconde.", "unter": "Forme d'onde aux couleurs des locuteurs, zoomable jusqu'à la syllabe." },
+      "it": { "titel": "Timecode al centesimo\ndi secondo.", "unter": "Forma d'onda nei colori di chi parla, con zoom fino alla sillaba." }
+    }
+  ]
+}
