@@ -49,15 +49,14 @@ Die ersten drei sieht man im Store ohne Blättern.
 
 | # | Rohaufnahme | Was zu sehen sein soll |
 |---|---|---|
-| 1 | `01-editor.png` | Editor mit Transkript, zwei Sprechenden, Wellenform unten |
-| 2 | `01b-bearbeiten.png` | **neu** — eine Zeile offen im Text, Einfügepunkt sichtbar |
-| 3 | `08-einstellungen.png` | **neu** — Einstellungen, Karte Datenschutz und Lizenzen |
-| 4 | `02-ai-transkript.png` | Warteliste mit mehreren Dateien und Sprecherzahl — **im dunklen Erscheinungsbild**: die Liste ist kurz, im hellen Modus wirkt die freie Fläche darunter leer |
-| 5 | `03-export.png` | offenes Export-Menü mit allen Formaten |
-| 6 | `04-suchen-ersetzen.png` | Suchen und Ersetzen mit Treffern |
-| 7 | `05-sprecherfarbe.png` | Sprechende benennen und färben |
-| 8 | `07-editor-dunkel.png` | derselbe Editor im dunklen Erscheinungsbild |
-| 9 | `06-bibliothek.png` | Bibliothek mit mehreren Transkripten |
+| 1 | `01-editor.png` | Editor mit Transkript, zwei Sprechenden, Wellenform unten — **und eine Zeile offen in Bearbeitung**, Einfügepunkt im Text sichtbar. Der Titel verspricht das Korrigieren, also muss man es sehen. |
+| 2 | `08-einstellungen.png` | **neu** — Einstellungen, Karte Datenschutz und Lizenzen |
+| 3 | `02-ai-transkript.png` | Warteliste mit mehreren Dateien und Sprecherzahl — **im dunklen Erscheinungsbild**: die Liste ist kurz, im hellen Modus wirkt die freie Fläche darunter leer |
+| 4 | `03-export.png` | offenes Export-Menü mit allen Formaten |
+| 5 | `04-suchen-ersetzen.png` | Suchen und Ersetzen mit Treffern |
+| 6 | `05-sprecherfarbe.png` | Sprechende benennen und färben |
+| 7 | `07-editor-dunkel.png` | derselbe Editor im dunklen Erscheinungsbild |
+| 8 | `06-bibliothek.png` | Bibliothek mit mehreren Transkripten |
 
 ## Aufnahme
 

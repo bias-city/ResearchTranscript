@@ -22,26 +22,6 @@
       }
     },
     {
-      "quelle": "01b-bearbeiten.png",
-      "grund": "hell",
-      "de": {
-        "titel": "Korrigieren, während du hörst.",
-        "unter": "Die Zeile öffnet sich an Ort und Stelle. Jede Änderung steht im Journal."
-      },
-      "en": {
-        "titel": "Correct while you listen.",
-        "unter": "The line opens in place. Every change goes into the journal."
-      },
-      "fr": {
-        "titel": "Corriger en écoutant.",
-        "unter": "La ligne s'ouvre sur place. Chaque modification entre dans le journal."
-      },
-      "it": {
-        "titel": "Correggi mentre ascolti.",
-        "unter": "La riga si apre sul posto. Ogni modifica entra nel giornale."
-      }
-    },
-    {
       "quelle": "08-einstellungen.png",
       "grund": "hell",
       "de": {
