@@ -159,10 +159,13 @@ let zahl = 0;
 // Deshalb: das Demo-Interview viermal hintereinander (acht Minuten Ton) und ein
 // Lauf, der bei Bedarf erneuert wird. Abgebrochen wird erst ganz am Schluss.
 let satzLauf = null, satzQuelle = null;
-if (SATZ) {
+if (SATZ || SITE) {
   const { execFileSync } = await import("node:child_process");
   const lang = path.join(SCRATCH, "Interview_06_Baugruppe.mp3");
-  execFileSync("ffmpeg", ["-v", "error", "-y", "-stream_loop", "3", "-i", DEMO, "-c", "copy", lang]);
+  // Acht bzw. sechzehn Minuten Ton: der Lauf muss alle Aufnahmen überdauern,
+  // sonst steht in einem Bild «Fertig» statt eines arbeitenden Auftrags — und
+  // für die Website darf er auch keinen zusätzlichen Bibliothekseintrag anlegen.
+  execFileSync("ffmpeg", ["-v", "error", "-y", "-stream_loop", SITE ? "7" : "3", "-i", DEMO, "-c", "copy", lang]);
   satzQuelle = lang;
 }
 async function laufHalten() {
@@ -201,7 +204,7 @@ async function setzeMemos(sprache) {
 
 for (const sprache of SPRACHEN) {
   await api("/api/settings", json({ ui_language: sprache }));
-  if (SATZ) await setzeMemos(sprache);
+  if (SATZ || SITE) await setzeMemos(sprache);
   for (const [modus, schema] of MODI) {
     for (const [b, h, dpr] of GROESSEN) {
       const ordner = SITE ? AUS : HILFE ? path.join(AUS, sprache, modus) : path.join(AUS, sprache, modus, `${b * dpr}x${h * dpr}`);
@@ -217,7 +220,8 @@ for (const sprache of SPRACHEN) {
       // Store: PNG in voller Grösse · Handbuch: JPEG, optional nur ein Ausschnitt
       // Website: andere Dateinamen (<motiv>-<sprache>.png); Motive ohne Eintrag entfallen
       const SITE_NAMEN = { "01-editor.png": "hero", "02-ai-transkript.png": "batch", "03-bibliothek.png": "library",
-        "04-suchen-ersetzen.png": "find", "05-sprecherfarbe.png": "edit", "06-export.png": "export", "07-einstellungen.png": "settings" };
+        "04-suchen-ersetzen.png": "find", "05-sprecherfarbe.png": "edit", "06-export.png": "export", "07-einstellungen.png": "settings",
+        "09-memo.png": "memo" };
       const knips = async (name, clip) => {
         if (SITE) {
           const motiv = SITE_NAMEN[name] ?? name.replace(/\.png$/, "");
@@ -300,7 +304,27 @@ for (const sprache of SPRACHEN) {
       await oeffne({ ...editor, "lt.editor.seitentab": "sprecher" });
       await page.waitForSelector("[data-seg='7']");
       await warte(1200);                               // Wellenform + Höhenmessung
+      if (SITE) {
+        // Das Hero-Bild trägt die Aussage «du korrigierst» — also muss eine
+        // Zeile offen in Bearbeitung sein, nicht bloss ausgewählt.
+        const zeile = page.locator("[data-seg='7'] textarea.seg-text");
+        await zeile.click();
+        await zeile.evaluate((el) => {
+          const ende = el.value.indexOf(" ", 46);
+          el.setSelectionRange(14, ende > 0 ? ende : el.value.length);
+        });
+        await warte(300);
+      }
       await bild("01-editor.png");
+      if (SITE) {
+        // Memo-Dialog derselben Zeile — die Website hatte dafür bisher kein Bild
+        await page.locator("[data-seg='7'] .lucide-notepad-text").first().click();
+        await page.waitForSelector("[role='dialog'] textarea");
+        await warte(400);
+        await knips("09-memo.png");
+        await page.keyboard.press("Escape");
+        await warte(200);
+      }
       if (HILFE) {
         // 09 Wellenform + Steuerzeile, 11 drei Zeilen (Zeile 7 trägt ein Memo)
         const welle = await page.locator("canvas").last().boundingBox();
@@ -332,6 +356,7 @@ for (const sprache of SPRACHEN) {
           await warte(200);
         }
       } catch (e) { console.log("  (Sprecherzahl nicht gesetzt:", String(e).split("\n")[0], ")"); }
+      if (SITE) { await laufHalten(); await warte(900); }   // ein Lauf arbeitet, siehe altBatch
       await bild("02-ai-transkript.png");
 
       // 03 Bibliothek (Human-Editor)
