@@ -2,8 +2,8 @@
 
 What the app is, which AI in it does what, where the code lives, and
 why the transcript never leaves your computer. For handing to a project
-lead, an ethics board or colleagues. As of 18 September 2026, version
-0.6.0.
+lead, an ethics board or colleagues. As of 23 September 2026, version
+0.6.2.
 
 This sheet is the general template. Since 0.6.0 the app itself
 generates the version for an individual transcript (Editor › Export ›
@@ -120,7 +120,7 @@ folder inside a synchronised folder synchronises the recordings.
 
 ## For the methods section
 
-> The recordings were transcribed locally with ResearchTranscript 0.6.0
+> The recordings were transcribed locally with ResearchTranscript 0.6.2
 > (B/IAS Basel, AGPL-3.0-or-later; speech recognition whisper.cpp with
 > the model large-v3-turbo, speaker diarisation SpeakerKit with pyannote
 > models) on a computer of the research group; the app transmits no data

@@ -3,7 +3,7 @@
 Bloc de texte à insérer dans un registre des activités de traitement,
 une analyse d'impact relative à la protection des données, une demande
 au comité d'éthique ou un plan de gestion des données. État au
-18 septembre 2026, ResearchTranscript 0.6.0. Les mentions entre
+23 septembre 2026, ResearchTranscript 0.6.2. Les mentions entre
 `[crochets]` sont complétées par le responsable du traitement.
 
 Ce texte décrit ce que le logiciel fait et ne fait pas. La
@@ -23,7 +23,7 @@ données et fichier de citation.
 
 ## 1. Logiciel utilisé
 
-ResearchTranscript, version `[0.6.0]`. Logiciel libre sous
+ResearchTranscript, version `[0.6.2]`. Logiciel libre sous
 AGPL-3.0-or-later (avec une permission additionnelle pour la
 distribution par l'App Store), développé au B/IAS – Basel Institut für
 angewandte Stadtforschung. Code source public :

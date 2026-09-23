@@ -3,7 +3,7 @@
 Blocco di testo da inserire in un registro delle attività di
 trattamento, una valutazione d'impatto sulla protezione dei dati, una
 domanda al comitato etico o un piano di gestione dei dati. Stato al
-18 settembre 2026, ResearchTranscript 0.6.0. Le voci tra `[parentesi
+23 settembre 2026, ResearchTranscript 0.6.2. Le voci tra `[parentesi
 quadre]` vengono completate dal titolare del trattamento.
 
 Il testo descrive che cosa il software fa e che cosa non fa. La
@@ -23,7 +23,7 @@ file di citazione.
 
 ## 1. Software impiegato
 
-ResearchTranscript, versione `[0.6.0]`. Software libero sotto
+ResearchTranscript, versione `[0.6.2]`. Software libero sotto
 AGPL-3.0-or-later (con un permesso aggiuntivo per la distribuzione
 tramite l'App Store), sviluppato al B/IAS – Basel Institut für
 angewandte Stadtforschung. Codice sorgente pubblico:

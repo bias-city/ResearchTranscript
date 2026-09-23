@@ -3,7 +3,7 @@
 Ce qu'est l'application, quelle IA y fait quoi, où se trouve le code,
 et pourquoi la transcription ne quitte jamais l'ordinateur. À remettre à
 une direction de projet, un comité d'éthique ou des collègues. État au
-18 septembre 2026, version 0.6.0.
+23 septembre 2026, version 0.6.2.
 
 Cette fiche est le modèle général. Depuis la version 0.6.0,
 l'application génère elle-même la version propre à chaque transcription
@@ -136,7 +136,7 @@ les enregistrements.
 ## Pour la partie méthodes
 
 > Les enregistrements ont été transcrits en local avec
-> ResearchTranscript 0.6.0 (B/IAS Bâle, AGPL-3.0-or-later ;
+> ResearchTranscript 0.6.2 (B/IAS Bâle, AGPL-3.0-or-later ;
 > reconnaissance vocale whisper.cpp avec le modèle large-v3-turbo,
 > séparation des locuteurs par SpeakerKit avec des modèles pyannote) sur
 > un ordinateur du groupe de recherche ; l'application ne transmet alors

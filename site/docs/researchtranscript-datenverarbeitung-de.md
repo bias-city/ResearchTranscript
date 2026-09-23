@@ -2,7 +2,7 @@
 
 Textbaustein zum Einfügen in ein Verfahrensverzeichnis, eine
 Datenschutz-Folgenabschätzung, einen Ethikantrag oder einen
-Datenmanagementplan. Stand 18. September 2026, ResearchTranscript 0.6.0.
+Datenmanagementplan. Stand 23. September 2026, ResearchTranscript 0.6.2.
 Angaben in `[eckigen Klammern]` ergänzt die verantwortliche Stelle.
 
 Der Text beschreibt, was die Software tut und was sie nicht tut. Die
@@ -21,7 +21,7 @@ Datenblatt für das Repositorium und Zitierdatei.
 
 ## 1. Eingesetzte Software
 
-ResearchTranscript, Version `[0.6.0]`. Freie Software unter
+ResearchTranscript, Version `[0.6.2]`. Freie Software unter
 AGPL-3.0-or-later (mit einer Zusatzerlaubnis für den Vertrieb über den
 App Store), entwickelt am B/IAS – Basel Institut für angewandte
 Stadtforschung. Quellcode öffentlich unter

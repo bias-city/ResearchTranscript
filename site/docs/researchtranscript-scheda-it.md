@@ -3,7 +3,7 @@
 Che cos'è l'app, quale IA al suo interno fa che cosa, dove si trova il
 codice e perché la trascrizione non lascia mai il computer. Da
 consegnare alla direzione del progetto, al comitato etico o ai colleghi.
-Stato al 18 settembre 2026, versione 0.6.0.
+Stato al 23 settembre 2026, versione 0.6.2.
 
 Questa scheda è il modello generale. Dalla versione 0.6.0 l'app genera
 da sé la versione riferita alla singola trascrizione (Editor ›
@@ -131,7 +131,7 @@ sincronizza le registrazioni.
 ## Per la sezione metodi
 
 > Le registrazioni sono state trascritte in locale con
-> ResearchTranscript 0.6.0 (B/IAS Basilea, AGPL-3.0-or-later;
+> ResearchTranscript 0.6.2 (B/IAS Basilea, AGPL-3.0-or-later;
 > riconoscimento vocale whisper.cpp con il modello large-v3-turbo,
 > separazione dei parlanti con SpeakerKit e modelli pyannote) su un
 > computer del gruppo di ricerca; l'app non trasmette dati. Le

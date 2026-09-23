@@ -3,7 +3,7 @@
 Was die App ist, welche KI darin was tut, wo der Code liegt, und warum
 das Transkript den Rechner nicht verlässt. Zum Weitergeben an
 Projektleitung, Ethikkommission oder Kolleg:innen. Stand 18. September
-2026, Version 0.6.0.
+2026, Version 0.6.2.
 
 Dieses Blatt ist die allgemeine Vorlage. Seit 0.6.0 erzeugt die App
 selbst die Fassung zum einzelnen Transkript (Editor › Export ›
@@ -126,7 +126,7 @@ die Aufnahmen.
 
 ## Für den Methodenteil
 
-> Die Aufnahmen wurden mit ResearchTranscript 0.6.0 (B/IAS Basel,
+> Die Aufnahmen wurden mit ResearchTranscript 0.6.2 (B/IAS Basel,
 > AGPL-3.0-or-later; Spracherkennung whisper.cpp mit dem Modell
 > large-v3-turbo, Sprechertrennung SpeakerKit mit pyannote-Modellen)
 > lokal auf einem Rechner der Forschungsgruppe transkribiert; die App

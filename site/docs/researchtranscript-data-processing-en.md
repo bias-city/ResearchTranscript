@@ -2,7 +2,7 @@
 
 A text block to paste into a record of processing activities, a data
 protection impact assessment, an ethics application or a data
-management plan. As of 18 September 2026, ResearchTranscript 0.6.0. Items
+management plan. As of 23 September 2026, ResearchTranscript 0.6.2. Items
 in `[square brackets]` are completed by the controller.
 
 The text describes what the software does and does not do. The legal
@@ -21,7 +21,7 @@ the repository and a citation file.
 
 ## 1. Software used
 
-ResearchTranscript, version `[0.6.0]`. Free software under
+ResearchTranscript, version `[0.6.2]`. Free software under
 AGPL-3.0-or-later (with an additional permission for distribution
 through the App Store), developed at B/IAS – Basel Institut für
 angewandte Stadtforschung. Source code public at
