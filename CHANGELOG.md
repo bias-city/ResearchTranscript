@@ -4,7 +4,13 @@ All notable changes to ResearchTranscript (LocalTranscript until 2.5.0,
 TurnScript in 3.0.0). The GitHub release notes for
 a version are the corresponding section of this file.
 
-## 0.6.2 — not yet released
+## 0.6.2 — 2026-09-23
+
+Everything the App Store review brought to light, plus the archiving work from the
+days after 0.6.0. Version 0.6.1 was never published on its own; its changes are
+listed here.
+
+### Fixed
 
 - **Settings: three cards were unreachable.** Frame and columns sat on the same
   element — fixed height, vertical scrolling and a two-column layout at once. As
@@ -14,11 +20,11 @@ a version are the corresponding section of this file.
   found in the TestFlight build. The frame now scrolls and an inner element holds
   the columns. Measured before and after at three window sizes.
 
-## 0.6.1 — not yet released
+### App Store compliance (guideline 2.5.2)
 
-Answer to Apple's rejection of 0.6.0 (22 September 2026, guideline 2.5.2,
-"The app installed or launched executable code. Specifically, the app uses the
-itms-services URL scheme to install an app").
+Answer to Apple's rejection of 0.6.0 (22 September 2026, "The app installed or
+launched executable code. Specifically, the app uses the itms-services URL scheme
+to install an app").
 
 - **The reported string is gone.** `itms-services` came from the Python standard
   library inside the app: `urllib/parse.py` lists it in the data table
@@ -43,15 +49,15 @@ itms-services URL scheme to install an app").
   the path to the LAME library always comes from the bundle; the web inspector is a
   build feature of the DMG channel and is no longer part of the App Store build.
 
-## Unreleased
+### Added
 
 - **DOI.** ResearchTranscript is archived on Zenodo in the community
   [BIAS.CITY](https://zenodo.org/communities/bias-city):
   [10.5281/zenodo.22831469](https://doi.org/10.5281/zenodo.22831469)
   for all versions, 10.5281/zenodo.22831470 for 0.6.0. The DOI is in
   `CITATION.cff` (with ORCID), the README, the website, the About dialog
-  and the BibLaTeX entry of the documentation package (app: from the
-  next build). `scripts/zenodo.py` files each release as a new version.
+  and the BibLaTeX entry of the documentation package (in the app
+  from this build on). `scripts/zenodo.py` files each release as a new version.
 - **Authorship and AI assistance** stated in the README, on the website
   and on Zenodo.
 - README: ffmpeg is no longer listed as bundled (gone since 0.6.0).
