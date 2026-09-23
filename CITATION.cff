@@ -7,8 +7,8 @@ authors:
     given-names: Ben
     orcid: "https://orcid.org/0009-0002-9233-4931"
     affiliation: "B/IAS – Basel Institut für angewandte Stadtforschung"
-version: 0.6.0
-date-released: 2026-09-18
+version: 0.6.2
+date-released: 2026-09-23
 license: AGPL-3.0-or-later
 doi: 10.5281/zenodo.22831469
 url: "https://bias.city/researchtranscript/"
@@ -20,5 +20,5 @@ identifiers:
     value: 10.5281/zenodo.22831469
     description: "Alle Versionen / all versions (Zenodo concept DOI)"
   - type: doi
-    value: 10.5281/zenodo.22831470
-    description: "Version 0.6.0"
+    value: 10.5281/zenodo.22912254
+    description: "Version 0.6.2"
